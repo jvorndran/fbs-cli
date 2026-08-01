@@ -1,0 +1,32 @@
+[
+  {
+    "id": 52,
+    "school": "Florida State",
+    "mascot": "Seminoles",
+    "abbreviation": "FSU",
+    "alternateNames": ["Florida State University"],
+    "conference": "ACC",
+    "division": null,
+    "classification": "fbs",
+    "color": "#782F40",
+    "alternateColor": "#CEB888",
+    "logos": ["https://example.test/fsu.png"],
+    "twitter": "@FSUFootball",
+    "location": {
+      "id": 3697,
+      "name": "Doak Campbell Stadium",
+      "city": "Tallahassee",
+      "state": "FL",
+      "zip": null,
+      "countryCode": "US",
+      "timezone": "America/New_York",
+      "latitude": 30.4382,
+      "longitude": -84.3044,
+      "elevation": "85.7",
+      "capacity": 79560,
+      "constructionYear": 1950,
+      "grass": true,
+      "dome": false
+    }
+  }
+]

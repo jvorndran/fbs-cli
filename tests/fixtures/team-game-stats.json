@@ -1,0 +1,31 @@
+[
+  {
+    "id": 401752731,
+    "teams": [
+      {
+        "teamId": 52,
+        "team": "Florida State",
+        "conference": "ACC",
+        "homeAway": "home",
+        "points": 31,
+        "stats": [
+          { "category": "totalYards", "stat": "412" },
+          { "category": "rushingYards", "stat": "156.5" },
+          { "category": "completionAttempts", "stat": "21/32" },
+          { "category": "timeOfPossession", "stat": "31:07" },
+          { "category": "turnovers", "stat": "0" }
+        ]
+      },
+      {
+        "teamId": 333,
+        "team": "Alabama",
+        "conference": null,
+        "homeAway": "away",
+        "points": 17,
+        "stats": [
+          { "category": "totalYards", "stat": "287" }
+        ]
+      }
+    ]
+  }
+]

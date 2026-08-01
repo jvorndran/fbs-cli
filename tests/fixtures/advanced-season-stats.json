@@ -1,0 +1,114 @@
+[
+  {
+    "season": 2026,
+    "team": "Florida State",
+    "conference": "ACC",
+    "offense": {
+      "passingPlays": {
+        "explosiveness": 1.34,
+        "successRate": 0.49,
+        "totalPPA": 96.25,
+        "ppa": 0.24,
+        "rate": 0.55
+      },
+      "rushingPlays": {
+        "explosiveness": 1.08,
+        "successRate": 0.43,
+        "totalPPA": 35.2,
+        "ppa": 0.11,
+        "rate": 0.45
+      },
+      "passingDowns": {
+        "explosiveness": null,
+        "successRate": 0.4,
+        "ppa": 0.13,
+        "rate": 0.32
+      },
+      "standardDowns": {
+        "explosiveness": 1.19,
+        "successRate": 0.51,
+        "ppa": 0.22,
+        "rate": 0.68
+      },
+      "havoc": {
+        "db": 0.04,
+        "frontSeven": 0.09,
+        "total": 0.13
+      },
+      "fieldPosition": {
+        "averagePredictedPoints": 1.37,
+        "averageStart": 71.2
+      },
+      "pointsPerOpportunity": 4.25,
+      "totalOpportunies": 51,
+      "openFieldYardsTotal": 480,
+      "openFieldYards": 1.5,
+      "secondLevelYardsTotal": 610,
+      "secondLevelYards": 1.91,
+      "lineYardsTotal": 1030,
+      "lineYards": 3.22,
+      "stuffRate": 0.12,
+      "powerSuccess": 0.75,
+      "explosiveness": 1.210987654321,
+      "successRate": 0.46,
+      "totalPPA": 131.45,
+      "ppa": 0.18,
+      "drives": 110,
+      "plays": 720
+    },
+    "defense": {
+      "passingPlays": {
+        "explosiveness": 1.1,
+        "successRate": 0.35,
+        "totalPPA": -24,
+        "ppa": -0.08,
+        "rate": 0.52
+      },
+      "rushingPlays": {
+        "explosiveness": 0.98,
+        "successRate": 0.39,
+        "totalPPA": -23.6,
+        "ppa": -0.06,
+        "rate": 0.48
+      },
+      "passingDowns": {
+        "explosiveness": null,
+        "successRate": 0.3,
+        "totalPPA": -15.1,
+        "ppa": -0.1,
+        "rate": 0.33
+      },
+      "standardDowns": {
+        "explosiveness": 1.02,
+        "successRate": 0.4,
+        "ppa": -0.05,
+        "rate": 0.67
+      },
+      "havoc": {
+        "db": null,
+        "frontSeven": 0.14,
+        "total": 0.19
+      },
+      "fieldPosition": {
+        "averagePredictedPoints": null,
+        "averageStart": 73.1
+      },
+      "pointsPerOpportunity": 2.85,
+      "totalOpportunies": 44,
+      "openFieldYardsTotal": 330,
+      "openFieldYards": 1.1,
+      "secondLevelYardsTotal": 450,
+      "secondLevelYards": 1.5,
+      "lineYardsTotal": 830,
+      "lineYards": 2.77,
+      "stuffRate": 0.22,
+      "powerSuccess": null,
+      "explosiveness": 1.02,
+      "successRate": 0.37,
+      "totalPPA": -47.6,
+      "ppa": -0.07,
+      "drives": 100,
+      "plays": 680
+    }
+  }
+]

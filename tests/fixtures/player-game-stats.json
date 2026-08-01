@@ -1,0 +1,43 @@
+[
+  {
+    "id": 401752731,
+    "teams": [
+      {
+        "team": "Florida State",
+        "conference": "ACC",
+        "homeAway": "home",
+        "points": 31,
+        "categories": [
+          {
+            "name": "passing",
+            "types": [
+              {
+                "name": "C/ATT",
+                "athletes": [
+                  { "id": "4433971", "name": "Example Player", "stat": "21/32" }
+                ]
+              },
+              {
+                "name": "YDS",
+                "athletes": [
+                  { "id": "4433971", "name": "Example Player", "stat": "245" }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "rushing",
+            "types": [
+              {
+                "name": "CAR",
+                "athletes": [
+                  { "id": "9007199254740993", "name": "Big Identifier", "stat": "0" }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

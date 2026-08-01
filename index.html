@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Get started with FBS CLI, an agent-first interface covering all 71 CollegeFootballData GET routes."
+    />
+    <title>FBS CLI — Welcome</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #f7f3ea;
+        --muted: #aeb7c7;
+        --panel: rgba(19, 28, 45, 0.82);
+        --panel-strong: #111b2c;
+        --line: rgba(255, 255, 255, 0.1);
+        --accent: #ffb84d;
+        --accent-strong: #ff8f3d;
+        --success: #75e0a7;
+        --page: #07101f;
+        --code: #080e19;
+        --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        min-width: 320px;
+        margin: 0;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 80% 4%, rgba(255, 143, 61, 0.16), transparent 31rem),
+          radial-gradient(circle at 8% 38%, rgba(73, 121, 255, 0.12), transparent 28rem),
+          var(--page);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        line-height: 1.6;
+      }
+
+      body::before {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background-image:
+          linear-gradient(var(--line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--line) 1px, transparent 1px);
+        background-size: 56px 56px;
+        content: "";
+        mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.34), transparent 72%);
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .skip-link {
+        position: fixed;
+        top: 0.75rem;
+        left: 0.75rem;
+        z-index: 10;
+        padding: 0.65rem 0.9rem;
+        color: #07101f;
+        background: var(--accent);
+        border-radius: 0.55rem;
+        transform: translateY(-160%);
+      }
+
+      .skip-link:focus {
+        transform: translateY(0);
+      }
+
+      .shell {
+        width: min(1120px, calc(100% - 2rem));
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 76px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .brand {
+        display: inline-flex;
+        gap: 0.7rem;
+        align-items: center;
+        color: var(--ink);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        text-decoration: none;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 2.2rem;
+        height: 2.2rem;
+        place-items: center;
+        color: #1a1208;
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        border-radius: 0.62rem;
+        box-shadow: 0 8px 24px rgba(255, 143, 61, 0.22);
+        font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.82rem;
+      }
+
+      nav {
+        display: flex;
+        gap: 1.3rem;
+      }
+
+      nav a {
+        color: var(--muted);
+        font-size: 0.92rem;
+        text-decoration: none;
+      }
+
+      nav a:hover,
+      nav a:focus-visible {
+        color: var(--ink);
+      }
+
+      main {
+        padding-bottom: 5rem;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.95fr);
+        gap: clamp(2rem, 6vw, 5.5rem);
+        align-items: center;
+        min-height: 650px;
+        padding: 5rem 0;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        gap: 0.5rem;
+        align-items: center;
+        margin: 0 0 1.2rem;
+        color: var(--accent);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before {
+        width: 1.8rem;
+        height: 1px;
+        background: currentColor;
+        content: "";
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        max-width: 720px;
+        margin-bottom: 1.4rem;
+        font-size: clamp(3rem, 7vw, 5.8rem);
+        line-height: 0.98;
+        letter-spacing: -0.065em;
+      }
+
+      h1 span {
+        color: var(--accent);
+      }
+
+      .lede {
+        max-width: 620px;
+        margin-bottom: 2rem;
+        color: var(--muted);
+        font-size: clamp(1.05rem, 2vw, 1.22rem);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        padding: 0.75rem 1.05rem;
+        border: 1px solid var(--line);
+        border-radius: 0.7rem;
+        font-weight: 750;
+        text-decoration: none;
+      }
+
+      .button-primary {
+        color: #1a1208;
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        border-color: transparent;
+      }
+
+      .button-secondary {
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .button:hover {
+        transform: translateY(-1px);
+      }
+
+      .terminal {
+        overflow: hidden;
+        background: var(--code);
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        box-shadow: var(--shadow);
+      }
+
+      .terminal-bar {
+        display: flex;
+        gap: 0.42rem;
+        align-items: center;
+        padding: 0.85rem 1rem;
+        background: rgba(255, 255, 255, 0.035);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .terminal-dot {
+        width: 0.65rem;
+        height: 0.65rem;
+        background: #566175;
+        border-radius: 50%;
+      }
+
+      .terminal-dot:first-child {
+        background: #ff6b6b;
+      }
+
+      .terminal-dot:nth-child(2) {
+        background: #ffd166;
+      }
+
+      .terminal-dot:nth-child(3) {
+        background: var(--success);
+      }
+
+      .terminal-title {
+        margin-left: auto;
+        color: #7e8aa0;
+        font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.72rem;
+      }
+
+      pre {
+        max-width: 100%;
+        margin: 0;
+        overflow: auto;
+        color: #dfe7f5;
+        font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.82rem;
+        line-height: 1.72;
+        white-space: pre;
+      }
+
+      .terminal pre {
+        min-height: 360px;
+        padding: 1.35rem;
+      }
+
+      .prompt {
+        color: var(--success);
+      }
+
+      .command {
+        color: #f5c879;
+      }
+
+      .key {
+        color: #8db9ff;
+      }
+
+      .section {
+        padding: 5rem 0 1rem;
+      }
+
+      .section-heading {
+        display: grid;
+        grid-template-columns: 1fr minmax(260px, 0.65fr);
+        gap: 2rem;
+        align-items: end;
+        margin-bottom: 2rem;
+      }
+
+      h2 {
+        margin-bottom: 0;
+        font-size: clamp(2rem, 5vw, 3.4rem);
+        line-height: 1.05;
+        letter-spacing: -0.045em;
+      }
+
+      .section-heading p {
+        margin-bottom: 0.25rem;
+        color: var(--muted);
+      }
+
+      .steps,
+      .command-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .card {
+        position: relative;
+        padding: 1.35rem;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 0.9rem;
+        backdrop-filter: blur(14px);
+      }
+
+      .step-number {
+        display: grid;
+        width: 2rem;
+        height: 2rem;
+        margin-bottom: 1.1rem;
+        place-items: center;
+        color: var(--accent);
+        background: rgba(255, 184, 77, 0.1);
+        border: 1px solid rgba(255, 184, 77, 0.25);
+        border-radius: 50%;
+        font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      h3 {
+        margin-bottom: 0.5rem;
+        font-size: 1.05rem;
+      }
+
+      .card p {
+        margin-bottom: 1rem;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .code-row {
+        display: flex;
+        gap: 0.55rem;
+        align-items: flex-start;
+        justify-content: space-between;
+        min-width: 0;
+        padding: 0.8rem;
+        background: var(--code);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 0.62rem;
+      }
+
+      code {
+        overflow-wrap: anywhere;
+        color: #f5c879;
+        font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.78rem;
+      }
+
+      .copy-button {
+        flex: 0 0 auto;
+        padding: 0.3rem 0.5rem;
+        color: var(--muted);
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: 0.45rem;
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.7rem;
+      }
+
+      .copy-button:hover,
+      .copy-button:focus-visible {
+        color: var(--ink);
+        border-color: rgba(255, 255, 255, 0.24);
+      }
+
+      .route {
+        min-height: 158px;
+      }
+
+      .route-label {
+        margin-bottom: 0.65rem;
+        color: var(--accent);
+        font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .route h3 {
+        font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      }
+
+      .output-panel {
+        display: grid;
+        grid-template-columns: minmax(0, 0.76fr) minmax(380px, 1.24fr);
+        gap: 1.5rem;
+        align-items: center;
+        padding: clamp(1.5rem, 4vw, 3rem);
+        background: linear-gradient(145deg, rgba(19, 28, 45, 0.92), rgba(13, 22, 37, 0.9));
+        border: 1px solid var(--line);
+        border-radius: 1.2rem;
+        box-shadow: var(--shadow);
+      }
+
+      .output-panel p {
+        color: var(--muted);
+      }
+
+      .check-list {
+        display: grid;
+        gap: 0.62rem;
+        padding: 0;
+        list-style: none;
+      }
+
+      .check-list li::before {
+        margin-right: 0.55rem;
+        color: var(--success);
+        content: "✓";
+        font-weight: 900;
+      }
+
+      .yaml {
+        padding: 1.2rem;
+        background: var(--code);
+        border: 1px solid var(--line);
+        border-radius: 0.8rem;
+      }
+
+      footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 2rem 0 2.5rem;
+        color: #8490a4;
+        border-top: 1px solid var(--line);
+        font-size: 0.86rem;
+      }
+
+      :focus-visible {
+        outline: 3px solid rgba(255, 184, 77, 0.72);
+        outline-offset: 3px;
+      }
+
+      @media (max-width: 860px) {
+        .hero,
+        .section-heading,
+        .output-panel {
+          grid-template-columns: 1fr;
+        }
+
+        .hero {
+          min-height: auto;
+          padding: 4rem 0 2rem;
+        }
+
+        .steps,
+        .command-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 620px) {
+        nav {
+          display: none;
+        }
+
+        h1 {
+          font-size: clamp(2.8rem, 16vw, 4rem);
+        }
+
+        .steps,
+        .command-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .terminal pre {
+          min-height: 320px;
+          font-size: 0.76rem;
+        }
+
+        .output-panel {
+          padding: 1.2rem;
+        }
+
+        footer {
+          flex-direction: column;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <div class="shell">
+      <header>
+        <a class="brand" href="#top" aria-label="FBS CLI home">
+          <span class="brand-mark" aria-hidden="true">&gt;_</span>
+          <span>FBS CLI</span>
+        </a>
+        <nav aria-label="Primary navigation">
+          <a href="#quick-start">Quick start</a>
+          <a href="#commands">Commands</a>
+          <a href="#output">Output</a>
+        </nav>
+      </header>
+
+      <main id="main">
+        <section class="hero" id="top" aria-labelledby="hero-title">
+          <div>
+            <p class="eyebrow">71 read-only routes, agent-ready</p>
+            <h1 id="hero-title">The shortest path from <span>question</span> to kickoff data.</h1>
+            <p class="lede">
+              FBS CLI is a read-only command line interface for CollegeFootballData. It covers
+              all 71 GET routes in the pinned client, including historical lines and team ATS
+              records, and returns every result as clean YAML.
+            </p>
+            <div class="actions">
+              <a class="button button-primary" href="#quick-start">Start in three steps</a>
+              <a class="button button-secondary" href="README.md">Read the full guide</a>
+            </div>
+          </div>
+
+          <div class="terminal" aria-label="Example FBS CLI response">
+            <div class="terminal-bar" aria-hidden="true">
+              <span class="terminal-dot"></span>
+              <span class="terminal-dot"></span>
+              <span class="terminal-dot"></span>
+              <span class="terminal-title">fbs — powershell</span>
+            </div>
+            <pre><span class="prompt">PS&gt;</span> <span class="command">.\dist\fbs.exe games --year 2026 --team "Florida State"</span>
+
+<span class="key">command:</span> games
+<span class="key">endpoint:</span> /games
+<span class="key">query:</span>
+  <span class="key">year:</span> 2026
+  <span class="key">team:</span> Florida State
+<span class="key">count:</span> 1
+<span class="key">games:</span>
+  - <span class="key">id:</span> 401752731
+    <span class="key">week:</span> 1
+    <span class="key">matchup:</span> Alabama at Florida State
+    <span class="key">status:</span> completed</pre>
+          </div>
+        </section>
+
+        <section class="section" id="quick-start" aria-labelledby="quick-start-title">
+          <div class="section-heading">
+            <h2 id="quick-start-title">Up and running in three steps.</h2>
+            <p>The project is already built. Add your key, check the command surface, then make a narrow first query.</p>
+          </div>
+
+          <div class="steps">
+            <article class="card">
+              <span class="step-number">01</span>
+              <h3>Configure access</h3>
+              <p>Add your CollegeFootballData key to the local <code>.env</code> file.</p>
+              <div class="code-row">
+                <code>CFBD_API_KEY=your_key_here</code>
+                <button class="copy-button" type="button" data-copy="CFBD_API_KEY=your_key_here">Copy</button>
+              </div>
+            </article>
+
+            <article class="card">
+              <span class="step-number">02</span>
+              <h3>Explore commands</h3>
+              <p>Open the built-in help to see every route and supported query flag.</p>
+              <div class="code-row">
+                <code>.\dist\fbs.exe --help</code>
+                <button class="copy-button" type="button" data-copy=".\dist\fbs.exe --help">Copy</button>
+              </div>
+            </article>
+
+            <article class="card">
+              <span class="step-number">03</span>
+              <h3>Make a first call</h3>
+              <p>Start with teams or games, then reuse returned IDs for deeper queries.</p>
+              <div class="code-row">
+                <code>.\dist\fbs.exe teams fbs --year 2026</code>
+                <button class="copy-button" type="button" data-copy=".\dist\fbs.exe teams fbs --year 2026">Copy</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="commands" aria-labelledby="commands-title">
+          <div class="section-heading">
+            <h2 id="commands-title">One predictable surface, across every research domain.</h2>
+            <p>Command families stay close to CFBD REST paths. Use built-in help for the exact flags on any of the 71 endpoint commands.</p>
+          </div>
+
+          <div class="command-grid">
+            <article class="card route">
+              <div class="route-label">Teams &amp; reference</div>
+              <h3>teams · roster · records</h3>
+              <p>Discover programs, conferences, venues, talent, calendars, rosters, historical series, and ATS records.</p>
+            </article>
+            <article class="card route">
+              <div class="route-label">Games &amp; live</div>
+              <h3>games · lines · live</h3>
+              <p>Find schedules and IDs, then retrieve box scores, historical provider lines, media, weather, scoreboards, and live plays.</p>
+            </article>
+            <article class="card route">
+              <div class="route-label">Possessions</div>
+              <h3>drives · plays</h3>
+              <p>Trace possessions, play-by-play, play types, and explicit athlete-to-play stat associations.</p>
+            </article>
+            <article class="card route">
+              <div class="route-label">Performance</div>
+              <h3>stats · player</h3>
+              <p>Query team and player production, advanced efficiency, havoc, usage, transfers, and success rates.</p>
+            </article>
+            <article class="card route">
+              <div class="route-label">Analytics</div>
+              <h3>ppa · metrics · wepa</h3>
+              <p>Explore predicted points, win probability, field-goal EP, and opponent-adjusted team or player metrics.</p>
+            </article>
+            <article class="card route">
+              <div class="route-label">History &amp; context</div>
+              <h3>ratings · recruiting · more</h3>
+              <p>Cover polls, ratings, recruiting, playoffs, draft history, coaches, and returning production.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="output" aria-labelledby="output-title">
+          <div class="output-panel">
+            <div>
+              <p class="eyebrow">Designed for reliable handoffs</p>
+              <h2 id="output-title">One quiet, predictable YAML document.</h2>
+              <p>
+                Successful requests write only structured YAML to stdout. Errors use the same
+                approach on stderr, with stable codes and useful hints.
+              </p>
+              <ul class="check-list">
+                <li>Snake-case keys</li>
+                <li>Null values removed</li>
+                <li>Provider IDs preserved</li>
+                <li>No banners, spinners, or color codes</li>
+              </ul>
+            </div>
+            <pre class="yaml"><span class="key">command:</span> games teams
+<span class="key">endpoint:</span> /games/teams
+<span class="key">query:</span>
+  <span class="key">id:</span> 401752731
+<span class="key">count:</span> 1
+<span class="key">games:</span>
+  - <span class="key">game_id:</span> 401752731
+    <span class="key">teams:</span>
+      - <span class="key">team:</span> Florida State
+        <span class="key">home_away:</span> home
+        <span class="key">stats:</span>
+          <span class="key">total_yards:</span> 412
+          <span class="key">rushing_yards:</span> 156</pre>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <span>FBS CLI · Bun + TypeScript + CollegeFootballData</span>
+        <span>71/71 GET routes · Read-only historical betting data · YAML-only</span>
+      </footer>
+    </div>
+
+    <script>
+      const copyText = async (value) => {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(value);
+          return;
+        }
+
+        const input = document.createElement("textarea");
+        input.value = value;
+        input.setAttribute("readonly", "");
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        input.remove();
+      };
+
+      document.querySelectorAll("[data-copy]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const original = button.textContent;
+          try {
+            await copyText(button.dataset.copy);
+            button.textContent = "Copied";
+          } catch {
+            button.textContent = "Select text";
+          }
+          window.setTimeout(() => {
+            button.textContent = original;
+          }, 1400);
+        });
+      });
+    </script>
+  </body>
+</html>

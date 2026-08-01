@@ -1,0 +1,28 @@
+{
+  "window": {
+    "start": "2026-07-25T00:00:00.000Z",
+    "end": "2026-07-31T23:59:59.999Z"
+  },
+  "api": "all",
+  "totals": {
+    "requests": 12,
+    "cfbRequests": 12,
+    "cbbRequests": 0,
+    "uniqueEndpoints": 3
+  },
+  "topEndpoints": [
+    {
+      "api": "cfb",
+      "endpoint": "/games",
+      "requests": 8,
+      "lastUsedAt": "2026-07-31T12:00:00.000Z"
+    }
+  ],
+  "recentRequests": [
+    {
+      "api": "cfb",
+      "endpoint": "/plays",
+      "requestedAt": "2026-07-31T12:01:00.000Z"
+    }
+  ]
+}

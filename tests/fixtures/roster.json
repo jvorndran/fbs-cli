@@ -1,0 +1,38 @@
+[
+  {
+    "id": "4433971",
+    "firstName": "Example",
+    "lastName": "Player",
+    "team": "Florida State",
+    "height": 74,
+    "weight": 215,
+    "jersey": 10,
+    "year": 3,
+    "position": "QB",
+    "homeCity": "Jacksonville",
+    "homeState": "FL",
+    "homeCountry": "USA",
+    "homeLatitude": 30.3322,
+    "homeLongitude": -81.6557,
+    "homeCountyFIPS": "12031",
+    "recruitIds": ["987654"]
+  },
+  {
+    "id": "9007199254740993",
+    "firstName": "Zero",
+    "lastName": "Values",
+    "team": "Florida State",
+    "height": null,
+    "weight": null,
+    "jersey": 0,
+    "year": 1,
+    "position": null,
+    "homeCity": null,
+    "homeState": null,
+    "homeCountry": null,
+    "homeLatitude": null,
+    "homeLongitude": null,
+    "homeCountyFIPS": null,
+    "recruitIds": []
+  }
+]

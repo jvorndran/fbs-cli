@@ -1,0 +1,86 @@
+[
+  {
+    "gameId": 401752731,
+    "season": 2026,
+    "seasonType": "regular",
+    "week": 1,
+    "team": "Florida State",
+    "opponent": "Alabama",
+    "offense": {
+      "passingPlays": {
+        "explosiveness": 1.345678901,
+        "successRate": 0.49,
+        "totalPPA": 9.6,
+        "ppa": 0.24
+      },
+      "rushingPlays": {
+        "explosiveness": null,
+        "successRate": 0.43,
+        "totalPPA": 3.52,
+        "ppa": 0.11
+      },
+      "passingDowns": {
+        "explosiveness": 1.31,
+        "successRate": 0.4,
+        "ppa": 0.13
+      },
+      "standardDowns": {
+        "explosiveness": 1.19,
+        "successRate": 0.51,
+        "ppa": 0.22
+      },
+      "openFieldYardsTotal": 48,
+      "openFieldYards": null,
+      "secondLevelYardsTotal": 61,
+      "secondLevelYards": 1.91,
+      "lineYardsTotal": 103,
+      "lineYards": 3.22,
+      "stuffRate": 0.12,
+      "powerSuccess": 0.75,
+      "explosiveness": 1.210987654321,
+      "successRate": 0.46,
+      "totalPPA": 12.96,
+      "ppa": 0.18,
+      "drives": 11,
+      "plays": 72
+    },
+    "defense": {
+      "passingPlays": {
+        "explosiveness": 1.1,
+        "successRate": 0.35,
+        "totalPPA": -2.4,
+        "ppa": -0.08
+      },
+      "rushingPlays": {
+        "explosiveness": 0.98,
+        "successRate": 0.39,
+        "totalPPA": -2.36,
+        "ppa": -0.06
+      },
+      "passingDowns": {
+        "explosiveness": null,
+        "successRate": 0.3,
+        "ppa": -0.1
+      },
+      "standardDowns": {
+        "explosiveness": 1.02,
+        "successRate": 0.4,
+        "ppa": -0.05
+      },
+      "openFieldYardsTotal": null,
+      "openFieldYards": 1.1,
+      "secondLevelYardsTotal": 45,
+      "secondLevelYards": 1.5,
+      "lineYardsTotal": 83,
+      "lineYards": 2.77,
+      "stuffRate": 0.22,
+      "powerSuccess": null,
+      "explosiveness": 1.02,
+      "successRate": 0.37,
+      "totalPPA": -4.76,
+      "ppa": -0.07,
+      "drives": 10,
+      "plays": 68
+    }
+  }
+]

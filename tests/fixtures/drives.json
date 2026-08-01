@@ -1,0 +1,29 @@
+[
+  {
+    "offense": "Florida State",
+    "offenseConference": "ACC",
+    "defense": "Alabama",
+    "defenseConference": null,
+    "gameId": 401752731,
+    "id": "drive-9007199254740993",
+    "driveNumber": 1,
+    "scoring": true,
+    "startPeriod": 1,
+    "startYardline": 25,
+    "startYardsToGoal": 75,
+    "startTime": { "seconds": 0, "minutes": 15 },
+    "endPeriod": 1,
+    "endYardline": 100,
+    "endYardsToGoal": 0,
+    "endTime": { "seconds": 42, "minutes": 10 },
+    "elapsed": { "seconds": 18, "minutes": 4 },
+    "plays": 9,
+    "yards": 75,
+    "driveResult": "TD",
+    "isHomeOffense": true,
+    "startOffenseScore": 0,
+    "startDefenseScore": 0,
+    "endOffenseScore": 7,
+    "endDefenseScore": 0
+  }
+]

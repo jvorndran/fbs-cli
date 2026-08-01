@@ -1,0 +1,26 @@
+[
+  {
+    "id": 401752731,
+    "season": 2026,
+    "week": 1,
+    "seasonType": "regular",
+    "startTime": "2026-09-05T23:30:00.000Z",
+    "gameIndoors": false,
+    "homeTeam": "Florida State",
+    "homeConference": "ACC",
+    "awayTeam": "Alabama",
+    "awayConference": "SEC",
+    "venueId": 3697,
+    "venue": "Doak Campbell Stadium",
+    "temperature": 82,
+    "dewPoint": 74,
+    "humidity": 77,
+    "precipitation": 0.08,
+    "snowfall": 0,
+    "windDirection": 180,
+    "windSpeed": 9,
+    "pressure": 1011.125,
+    "weatherConditionCode": null,
+    "weatherCondition": "Light rain"
+  }
+]

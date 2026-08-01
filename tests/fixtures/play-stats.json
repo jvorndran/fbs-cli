@@ -1,0 +1,23 @@
+[
+  {
+    "gameId": 401752731,
+    "season": 2026,
+    "week": 1,
+    "team": "Florida State",
+    "conference": "ACC",
+    "opponent": "Alabama",
+    "teamScore": 7,
+    "opponentScore": 0,
+    "driveId": "drive-9007199254740993",
+    "playId": "play-9007199254740993",
+    "period": 1,
+    "clock": { "seconds": 2, "minutes": 14 },
+    "yardsToGoal": 75,
+    "down": 1,
+    "distance": 10,
+    "athleteId": "9007199254740993",
+    "athleteName": "Example Player",
+    "statType": "Rush",
+    "stat": 6.125
+  }
+]
