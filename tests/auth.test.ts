@@ -1,24 +1,16 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import {
-  chmod,
-  mkdtemp,
-  readFile,
-  readdir,
-  rm,
-  stat,
-  writeFile,
-} from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
 import { PassThrough, Readable } from "node:stream";
 import { parse } from "yaml";
 
 import {
-  getCredentialsFilePath,
-  loadStoredCredential,
+  getEnvironmentFilePath,
   normalizeAuthApiKey,
   saveCredential,
-} from "../src/auth/credentials.ts";
+  updateEnvironmentFile,
+} from "../src/auth/env-file.ts";
 import {
   readAuthApiKey,
   readPipedAuthApiKey,
@@ -49,53 +41,78 @@ afterEach(async () => {
   }
 });
 
-describe("credential paths", () => {
-  test("uses LocalAppData on Windows and ignores a relative override", () => {
-    expect(
-      getCredentialsFilePath({
-        platform: "win32",
-        environment: { LOCALAPPDATA: "C:\\Users\\Ada\\AppData\\Local" },
-        homeDirectory: "C:\\Users\\Ada",
-      }),
-    ).toBe("C:\\Users\\Ada\\AppData\\Local\\fbs-cli\\credentials.env");
-
-    expect(
-      getCredentialsFilePath({
-        platform: "win32",
-        environment: { LOCALAPPDATA: "relative" },
-        homeDirectory: "C:\\Users\\Ada",
-      }),
-    ).toBe("C:\\Users\\Ada\\AppData\\Local\\fbs-cli\\credentials.env");
+describe("auth .env storage", () => {
+  test("targets .env in the current working directory", async () => {
+    const root = await createTemporaryDirectory();
+    expect(getEnvironmentFilePath(root)).toBe(resolve(root, ".env"));
   });
 
-  test("uses native macOS and XDG Linux config locations", () => {
+  test("creates, appends, and replaces CFBD_API_KEY while preserving other entries", () => {
+    expect(updateEnvironmentFile("", "new-key")).toBe(
+      "CFBD_API_KEY=new-key\n",
+    );
+    expect(updateEnvironmentFile("OTHER=value\r\n", "new-key")).toBe(
+      "OTHER=value\r\nCFBD_API_KEY=new-key\r\n",
+    );
+    expect(updateEnvironmentFile("OTHER=value", "new-key")).toBe(
+      "OTHER=value\nCFBD_API_KEY=new-key\n",
+    );
     expect(
-      getCredentialsFilePath({
-        platform: "darwin",
-        environment: {},
-        homeDirectory: "/Users/ada",
-      }),
-    ).toBe("/Users/ada/Library/Application Support/fbs-cli/credentials.env");
+      updateEnvironmentFile(
+        "FIRST=one\nexport CFBD_API_KEY=old\nSECOND=two\nCFBD_API_KEY=duplicate\n",
+        "new-key",
+      ),
+    ).toBe("FIRST=one\nCFBD_API_KEY=new-key\nSECOND=two\n");
+  });
 
-    expect(
-      getCredentialsFilePath({
-        platform: "linux",
-        environment: { XDG_CONFIG_HOME: "/var/config/ada" },
-        homeDirectory: "/home/ada",
-      }),
-    ).toBe("/var/config/ada/fbs-cli/credentials.env");
+  test("writes the current directory .env and updates it on later runs", async () => {
+    const root = await createTemporaryDirectory();
+    const environmentFile = join(root, ".env");
 
-    expect(
-      getCredentialsFilePath({
-        platform: "linux",
-        environment: { XDG_CONFIG_HOME: "relative" },
-        homeDirectory: "/home/ada",
-      }),
-    ).toBe("/home/ada/.config/fbs-cli/credentials.env");
+    await saveCredential("first-key", { environmentFile });
+    expect(await readFile(environmentFile, "utf8")).toBe(
+      "CFBD_API_KEY=first-key\n",
+    );
+
+    await writeFile(
+      environmentFile,
+      "OTHER=value\nCFBD_API_KEY=old-key\n",
+      "utf8",
+    );
+    await saveCredential("second-key", { environmentFile });
+    expect(await readFile(environmentFile, "utf8")).toBe(
+      "OTHER=value\nCFBD_API_KEY=second-key\n",
+    );
+  });
+
+  test("normalizes file failures without exposing the key", async () => {
+    const root = await createTemporaryDirectory();
+    const blockingFile = join(root, "not-a-directory");
+    const sentinel = "never-render-this-write-key";
+    await writeFile(blockingFile, "blocking file", "utf8");
+
+    try {
+      await saveCredential(sentinel, {
+        environmentFile: join(blockingFile, ".env"),
+      });
+      throw new Error("Expected .env storage to fail.");
+    } catch (error) {
+      expect(error).toMatchObject({ code: "env_file_update_failed" });
+      const rendered = renderErrorYaml(
+        error as Parameters<typeof renderErrorYaml>[0],
+      );
+      expect(rendered).not.toContain(sentinel);
+      expect(parse(rendered)).toMatchObject({
+        error: {
+          code: "env_file_update_failed",
+          command: "auth",
+        },
+      });
+    }
   });
 });
 
-describe("credential input and storage", () => {
+describe("credential input", () => {
   test("normalizes one terminal newline and rejects unsafe input", async () => {
     expect(normalizeAuthApiKey("  abc-123._=  \n")).toBe("abc-123._=");
     expect(await readPipedAuthApiKey(Readable.from(["abc-123\n"]))).toBe(
@@ -169,10 +186,9 @@ describe("credential input and storage", () => {
     expect(renderedPrompt).not.toContain("secret-key");
 
     const cancelledInput = new TtyInput();
-    const cancelledOutput = new TtyOutput();
     const cancelledRead = readAuthApiKey(
       cancelledInput as unknown as NodeJS.ReadStream,
-      cancelledOutput as unknown as NodeJS.WriteStream,
+      new TtyOutput() as unknown as NodeJS.WriteStream,
     );
     cancelledInput.emit("keypress", "\u0003", {
       ctrl: true,
@@ -181,10 +197,7 @@ describe("credential input and storage", () => {
       sequence: "\u0003",
       shift: false,
     });
-
-    await expect(cancelledRead).rejects.toMatchObject({
-      code: "auth_cancelled",
-    });
+    await expect(cancelledRead).rejects.toMatchObject({ code: "auth_cancelled" });
     expect(cancelledInput.rawModes).toEqual([true, false]);
 
     const restoreFailureInput = new TtyInput();
@@ -220,114 +233,13 @@ describe("credential input and storage", () => {
     ).rejects.toMatchObject({ code: "auth_input_required" });
     expect(setupFailureInput.rawModes).toEqual([true, false]);
   });
-
-  test("normalizes write failures without exposing the key", async () => {
-    const root = await createTemporaryDirectory();
-    const blockingFile = join(root, "not-a-directory");
-    const sentinel = "never-render-this-write-key";
-    await writeFile(blockingFile, "blocking file", "utf8");
-
-    try {
-      await saveCredential(sentinel, {
-        credentialsFile: join(blockingFile, "credentials.env"),
-      });
-      throw new Error("Expected credential storage to fail.");
-    } catch (error) {
-      expect(error).toMatchObject({ code: "credential_write_failed" });
-      const rendered = renderErrorYaml(error as Parameters<typeof renderErrorYaml>[0]);
-      expect(rendered).not.toContain(sentinel);
-      expect(parse(rendered)).toMatchObject({
-        error: {
-          code: "credential_write_failed",
-          command: "auth",
-        },
-      });
-    }
-  });
-
-  test("creates and atomically overwrites a credential without temp leftovers", async () => {
-    const root = await createTemporaryDirectory();
-    const credentialsFile = join(root, "config", "fbs-cli", "credentials.env");
-
-    await saveCredential("first-key", { credentialsFile });
-    await saveCredential("second-key", { credentialsFile });
-
-    expect(await readFile(credentialsFile, "utf8")).toBe(
-      "CFBD_API_KEY=second-key\n",
-    );
-    expect(await readdir(join(root, "config", "fbs-cli"))).toEqual([
-      "credentials.env",
-    ]);
-
-    if (process.platform !== "win32") {
-      expect((await stat(join(root, "config", "fbs-cli"))).mode & 0o777).toBe(
-        0o700,
-      );
-      expect((await stat(credentialsFile)).mode & 0o777).toBe(0o600);
-    }
-  });
-
-  test("loads the saved key only when the environment has no value", async () => {
-    const root = await createTemporaryDirectory();
-    const credentialsFile = join(root, "credentials.env");
-    await writeFile(credentialsFile, "CFBD_API_KEY=saved-key\n", "utf8");
-
-    const emptyEnvironment: NodeJS.ProcessEnv = {};
-    expect(
-      await loadStoredCredential({
-        credentialsFile,
-        environment: emptyEnvironment,
-      }),
-    ).toBe(true);
-    expect(emptyEnvironment.CFBD_API_KEY).toBe("saved-key");
-
-    for (const existingValue of ["environment-key", ""]) {
-      const environment: NodeJS.ProcessEnv = {
-        CFBD_API_KEY: existingValue,
-      };
-      expect(
-        await loadStoredCredential({ credentialsFile, environment }),
-      ).toBe(false);
-      expect(environment.CFBD_API_KEY).toBe(existingValue);
-    }
-
-    const missingEnvironment: NodeJS.ProcessEnv = {};
-    expect(
-      await loadStoredCredential({
-        credentialsFile: join(root, "missing.env"),
-        environment: missingEnvironment,
-      }),
-    ).toBe(false);
-    expect(missingEnvironment.CFBD_API_KEY).toBeUndefined();
-  });
-
-  test("normalizes corrupt and unreadable credential files to stable errors", async () => {
-    const root = await createTemporaryDirectory();
-    const credentialsFile = join(root, "credentials.env");
-    await writeFile(credentialsFile, "not-a-credential\n", "utf8");
-
-    await expect(
-      loadStoredCredential({ credentialsFile, environment: {} }),
-    ).rejects.toMatchObject({ code: "credential_read_failed" });
-
-    if (process.platform !== "win32") {
-      await chmod(credentialsFile, 0o000);
-      await expect(
-        loadStoredCredential({ credentialsFile, environment: {} }),
-      ).rejects.toMatchObject({ code: "credential_read_failed" });
-      await chmod(credentialsFile, 0o600);
-    }
-  });
 });
 
 describe("auth command", () => {
-  test("stores through the injected service without calling CFBD or exposing a key", async () => {
-    const sentinel = "never-print-this-auth-key";
+  test("stores through the injected service without calling CFBD", async () => {
     const mock = await createMockApi();
     const auth: AuthService = {
-      saveCredential: async () => ({
-        credentialsFile: "/user/config/fbs-cli/credentials.env",
-      }),
+      saveCredential: async () => ({ environmentFile: "/project/.env" }),
     };
     let stdout = "";
     let stderr = "";
@@ -349,25 +261,35 @@ describe("auth command", () => {
     expect(exitCode).toBe(0);
     expect(stderr).toBe("");
     expect(mock.calls).toEqual([]);
-    expect(`${stdout}${stderr}`).not.toContain(sentinel);
     expect(parse(stdout)).toEqual({
       command: "auth",
       status: "saved",
-      credentials_file: "/user/config/fbs-cli/credentials.env",
+      env_file: "/project/.env",
     });
   });
 
   test("advertises only the key-safe auth command surface", async () => {
     const auth: AuthService = {
-      saveCredential: async () => ({ credentialsFile: "unused" }),
+      saveCredential: async () => ({ environmentFile: "unused" }),
     };
     const program = createProgram({ auth });
     const rootHelp = program.helpInformation();
     const authCommand = program.commands.find((command) => command.name() === "auth");
+    let authHelp = "";
+    const helpExitCode = await runCli(["auth", "--help"], {
+      auth,
+      environment: {},
+      io: {
+        stdout: (value) => {
+          authHelp += value;
+        },
+      },
+    });
 
     expect(rootHelp).toContain("auth");
     expect(authCommand).toBeDefined();
-    const authHelp = authCommand?.helpInformation() ?? "";
+    expect(helpExitCode).toBe(0);
+    expect(authHelp).toContain("current directory");
     expect(authHelp).toContain("fbs auth");
     expect(authHelp).not.toContain("--key");
     expect(authHelp).not.toContain("<api-key>");

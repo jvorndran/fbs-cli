@@ -14,13 +14,21 @@ npm install --global @jvorndran/fbs-cli
 
 This adds the `fbs` command on Windows, macOS, and Linux.
 
-### 2. Save your API key
+### 2. Configure your API key
+
+You can create a `.env` file manually in the directory where you will run `fbs`:
+
+```env
+CFBD_API_KEY=your_key_here
+```
+
+Or let the CLI create or update that file for you:
 
 ```bash
 fbs auth
 ```
 
-Paste your CollegeFootballData API key at the masked prompt. The command saves it for your user account, but does not make an API request or validate that the key is active. Your first data command will report any authentication problem returned by CFBD.
+Paste your CollegeFootballData API key at the masked prompt. `fbs auth` writes `CFBD_API_KEY` to `.env` in the current directory, preserves other entries, and replaces an existing key instead of adding a duplicate. It does not make an API request or validate that the key is active.
 
 ### 3. Run a command
 
@@ -41,31 +49,11 @@ npx @jvorndran/fbs-cli auth
 npx @jvorndran/fbs-cli games --year 2026 --team "Florida State"
 ```
 
-## Credentials
+## API key setup
 
-The key saved by `fbs auth` is plaintext in a per-user `credentials.env` file:
+`fbs` checks `CFBD_API_KEY` already set in your shell first, then `.env` in the current directory. `fbs auth` is simply a shortcut for creating or updating that local `.env` file; it does not use a global credential folder or operating-system-specific storage.
 
-| Platform | Location |
-|---|---|
-| Windows | `%LOCALAPPDATA%\fbs-cli\credentials.env` |
-| macOS | `~/Library/Application Support/fbs-cli/credentials.env` |
-| Linux | `${XDG_CONFIG_HOME:-~/.config}/fbs-cli/credentials.env` |
-
-Run `fbs auth` again to replace the saved key. To remove it, delete only the `credentials.env` file shown for your platform.
-
-On macOS and Linux, the CLI applies `0700` directory and `0600` file permissions on a best-effort basis. On Windows, the file uses the access controls of your LocalAppData folder. Anyone who can read the file can read the key, so do not copy it into a repository, issue, log, or agent prompt.
-
-You can override the saved key for a shell or project. Credentials are checked in this order:
-
-1. `CFBD_API_KEY` already set in the environment
-2. `CFBD_API_KEY` in a `.env` file in the current directory
-3. The per-user file written by `fbs auth`
-
-For example, a project-specific `.env` can contain:
-
-```env
-CFBD_API_KEY=your_key_here
-```
+Run `fbs auth` from each directory where you want a separate `.env`, or create the file manually. Because `.env` contains the key as plaintext, add it to `.gitignore` and never commit it or paste the key into commands, issues, logs, or agent prompts.
 
 An API command without a key fails before making a request:
 
@@ -73,7 +61,7 @@ An API command without a key fails before making a request:
 error:
   code: missing_api_key
   message: CFBD_API_KEY is required.
-  hint: Run fbs auth, set CFBD_API_KEY, or add it to a .env file.
+  hint: Set CFBD_API_KEY or run fbs auth to create .env in the current directory.
 ```
 
 ## Command reference

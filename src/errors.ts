@@ -53,7 +53,7 @@ export class MissingApiKeyError extends CliError {
     super({
       code: "missing_api_key",
       message: "CFBD_API_KEY is required.",
-      hint: "Run fbs auth, set CFBD_API_KEY, or add it to a .env file.",
+      hint: "Set CFBD_API_KEY or run fbs auth to create .env in the current directory.",
       exitCode: 2,
     });
   }
@@ -95,25 +95,13 @@ export class AuthCancelledError extends CliError {
   }
 }
 
-export class CredentialWriteError extends CliError {
+export class EnvironmentFileUpdateError extends CliError {
   constructor(cause?: unknown) {
     super({
-      code: "credential_write_failed",
-      message: "The CFBD API key could not be saved.",
+      code: "env_file_update_failed",
+      message: "The .env file could not be updated.",
       command: "auth",
-      hint: "Check permissions for the user configuration folder and try again.",
-      exitCode: 1,
-      cause,
-    });
-  }
-}
-
-export class CredentialReadError extends CliError {
-  constructor(cause?: unknown) {
-    super({
-      code: "credential_read_failed",
-      message: "Saved CFBD credentials could not be read.",
-      hint: "Run fbs auth to replace the saved credential or check its file permissions.",
+      hint: "Check permissions for .env in the current directory and try again.",
       exitCode: 1,
       cause,
     });

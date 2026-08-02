@@ -10,9 +10,9 @@ Query CFBD through endpoint-shaped commands, then perform analysis on the return
 ## Prepare
 
 1. Use Node.js >=22.12.0 and install the command with `npm install --global @jvorndran/fbs-cli`. For occasional use, run `npx @jvorndran/fbs-cli <arguments>` instead.
-2. Ask the user to run `fbs auth` in their terminal when no credential is configured. Let the command collect the key at its masked prompt; never place the key in an argument, log, issue, or agent prompt. Explain that `auth` saves the key but makes no CFBD request and does not validate it.
-3. Respect credential precedence: `CFBD_API_KEY` in the environment, then `CFBD_API_KEY` in the current directory's `.env`, then the per-user credential written by `fbs auth`.
-4. Treat the saved credential as plaintext. Its location is `%LOCALAPPDATA%\fbs-cli\credentials.env` on Windows, `~/Library/Application Support/fbs-cli/credentials.env` on macOS, and `${XDG_CONFIG_HOME:-~/.config}/fbs-cli/credentials.env` on Linux. The CLI applies `0700` directory and `0600` file permissions on macOS and Linux on a best-effort basis; Windows uses LocalAppData access controls.
+2. Configure `CFBD_API_KEY` manually in the environment or in `.env` in the current directory. As a convenience, the user can run `fbs auth` from that directory to create or update the same `.env` file at a masked prompt. The command preserves other entries, makes no CFBD request, and does not validate the key.
+3. Never place the key in a command argument, log, issue, or agent prompt. `.env` is plaintext and must remain ignored by Git.
+4. Respect credential precedence: `CFBD_API_KEY` already set in the environment, then `CFBD_API_KEY` in the current directory's `.env`. There is no global or operating-system-specific credential store.
 5. From this repository, replace `fbs` with `bun run src/cli.ts` when needed; Bun 1.3+ is a development tool and is not required by npm users.
 6. Run `fbs --help` for top-level families and `fbs <command path> --help` for the exact accepted flags, enum choices, rules, and examples.
 7. Quote multiword values, scope live queries narrowly because each call consumes CFBD quota, and prefer returned provider IDs for follow-up game, player, coach, and play queries.
@@ -234,12 +234,12 @@ error:
 
 Correct deterministic filters from `hint` when present. Preserve validation, authorization, tier, and rate failures in the final account. Do not repeatedly retry broad requests.
 
-For `missing_api_key`, direct the user to run `fbs auth`, set `CFBD_API_KEY`, or add it to the current directory's `.env`. Never ask the user to paste the key into the conversation.
+For `missing_api_key`, direct the user to set `CFBD_API_KEY` manually or run `fbs auth` to create `.env` in the current directory. Never ask the user to paste the key into the conversation.
 
 ## Respect scope
 
 - Treat betting fields, lines, and ATS records as historical read-only data.
-- Treat `fbs auth` as the only local-write and interactive operation; it stores the user's credential and does not call CFBD.
+- Treat `fbs auth` as the only local-write and interactive operation; it updates `.env` in the current directory and does not call CFBD.
 - Do not expect custom pagination, caching, raw output, format switches, file export, or endpoint writes.
 - Do not treat a tier-denied endpoint as an empty successful result.
 - Do not infer predictions, rankings, schemes, or opinions from the transformer itself.

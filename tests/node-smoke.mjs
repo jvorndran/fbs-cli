@@ -52,10 +52,6 @@ try {
   const cleanEnvironment = { ...process.env };
   delete cleanEnvironment.CFBD_API_KEY;
   delete cleanEnvironment.NODE_OPTIONS;
-  cleanEnvironment.HOME = temporaryRoot;
-  cleanEnvironment.USERPROFILE = temporaryRoot;
-  cleanEnvironment.LOCALAPPDATA = join(temporaryRoot, "config");
-  cleanEnvironment.XDG_CONFIG_HOME = join(temporaryRoot, "config");
 
   const missingKey = runCli(["games", "--year", "2026"], {
     cwd: temporaryRoot,
@@ -67,23 +63,19 @@ try {
     error: {
       code: "missing_api_key",
       message: "CFBD_API_KEY is required.",
-      hint: "Run fbs auth, set CFBD_API_KEY, or add it to a .env file.",
+      hint: "Set CFBD_API_KEY or run fbs auth to create .env in the current directory.",
     },
   });
 
   const sentinel = "node-smoke-auth-key";
-  const poisonedConfigRoot = join(temporaryRoot, "project-controlled-config");
   writeFileSync(
     join(temporaryRoot, ".env"),
-    `LOCALAPPDATA=${poisonedConfigRoot.replaceAll("\\", "/")}\nXDG_CONFIG_HOME=${poisonedConfigRoot.replaceAll("\\", "/")}\n`,
+    "OTHER_SETTING=keep\n",
     "utf8",
   );
-  const authEnvironment = { ...cleanEnvironment };
-  delete authEnvironment.LOCALAPPDATA;
-  delete authEnvironment.XDG_CONFIG_HOME;
   const auth = runCli(["auth"], {
     cwd: temporaryRoot,
-    env: authEnvironment,
+    env: cleanEnvironment,
     input: `${sentinel}\n`,
   });
   assert.equal(auth.status, 0, auth.stderr);
@@ -92,23 +84,27 @@ try {
   const authOutput = parse(auth.stdout);
   assert.equal(authOutput.command, "auth");
   assert.equal(authOutput.status, "saved");
-  const expectedCredentialFile =
-    process.platform === "win32"
-      ? join(temporaryRoot, "AppData", "Local", "fbs-cli", "credentials.env")
-      : process.platform === "darwin"
-        ? join(
-            temporaryRoot,
-            "Library",
-            "Application Support",
-            "fbs-cli",
-            "credentials.env",
-          )
-        : join(temporaryRoot, ".config", "fbs-cli", "credentials.env");
-  assert.equal(authOutput.credentials_file, expectedCredentialFile);
-  assert.ok(!authOutput.credentials_file.startsWith(poisonedConfigRoot));
+  const expectedEnvironmentFile = join(temporaryRoot, ".env");
+  assert.equal(authOutput.env_file, expectedEnvironmentFile);
   assert.equal(
-    readFileSync(authOutput.credentials_file, "utf8"),
-    `CFBD_API_KEY=${sentinel}\n`,
+    readFileSync(expectedEnvironmentFile, "utf8"),
+    `OTHER_SETTING=keep\nCFBD_API_KEY=${sentinel}\n`,
+  );
+
+  const replacement = "node-smoke-replacement-key";
+  const repeatedAuth = runCli(["auth"], {
+    cwd: temporaryRoot,
+    env: cleanEnvironment,
+    input: `${replacement}\n`,
+  });
+  assert.equal(repeatedAuth.status, 0, repeatedAuth.stderr);
+  assert.doesNotMatch(
+    `${repeatedAuth.stdout}${repeatedAuth.stderr}`,
+    new RegExp(replacement, "u"),
+  );
+  assert.equal(
+    readFileSync(expectedEnvironmentFile, "utf8"),
+    `OTHER_SETTING=keep\nCFBD_API_KEY=${replacement}\n`,
   );
   unlinkSync(join(temporaryRoot, ".env"));
 

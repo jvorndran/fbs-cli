@@ -10,17 +10,16 @@ import {
   normalizeAuthApiKey,
   saveCredential,
   type SavedCredential,
-} from "./credentials";
+} from "./env-file";
 
 export interface AuthService {
   saveCredential(): Promise<SavedCredential>;
 }
 
 export interface CreateAuthServiceOptions {
-  credentialsFile?: string;
+  environmentFile?: string;
   input?: NodeJS.ReadStream;
   output?: NodeJS.WriteStream;
-  platform?: NodeJS.Platform;
 }
 
 type PipedInput = AsyncIterable<string | Uint8Array>;
@@ -159,10 +158,9 @@ export function createAuthService(
     async saveCredential(): Promise<SavedCredential> {
       const apiKey = await readAuthApiKey(input, output);
       return saveCredential(apiKey, {
-        ...(options.credentialsFile === undefined
+        ...(options.environmentFile === undefined
           ? {}
-          : { credentialsFile: options.credentialsFile }),
-        ...(options.platform === undefined ? {} : { platform: options.platform }),
+          : { environmentFile: options.environmentFile }),
       });
     },
   };

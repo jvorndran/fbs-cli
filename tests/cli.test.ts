@@ -577,7 +577,7 @@ describe("offline CLI failures", () => {
       error: {
         code: "missing_api_key",
         message: "CFBD_API_KEY is required.",
-        hint: "Run fbs auth, set CFBD_API_KEY, or add it to a .env file.",
+        hint: "Set CFBD_API_KEY or run fbs auth to create .env in the current directory.",
       },
     });
   });

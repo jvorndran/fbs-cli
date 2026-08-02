@@ -11,10 +11,10 @@ export function registerAuthCommand(
 ): void {
   program
     .command("auth")
-    .description("Save a CFBD API key for future commands")
+    .description("Create or update .env with a CFBD API key")
     .addHelpText(
       "after",
-      "\nPaste the key at the hidden prompt. No CFBD request is made.\n\nExample:\n  fbs auth\n",
+      "\nPaste the key at the hidden prompt. The command updates .env in the current directory and makes no CFBD request.\n\nExample:\n  fbs auth\n",
     )
     .action(async () => {
       const result = await auth.saveCredential();
@@ -23,9 +23,9 @@ export function registerAuthCommand(
           {
             command: "auth",
             status: "saved",
-            credentialsFile: result.credentialsFile,
+            envFile: result.environmentFile,
           },
-          ["command", "status", "credentials_file"],
+          ["command", "status", "env_file"],
         ),
       );
     })
