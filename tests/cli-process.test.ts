@@ -57,8 +57,8 @@ describe("offline CLI subprocess harness", () => {
 });
 
 describe("real entrypoint process wiring without network", () => {
-  test("--help reaches import.meta.main and exits cleanly without a key", async () => {
-    const result = await spawnBun(["run", "src/index.ts", "--help"]);
+  test("--help reaches the Node-compatible entrypoint and exits cleanly without a key", async () => {
+    const result = await spawnBun(["run", "src/cli.ts", "--help"]);
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
@@ -67,10 +67,10 @@ describe("real entrypoint process wiring without network", () => {
     expect(result.stdout).toContain("plays");
   });
 
-  test("missing key reaches import.meta.main, writes YAML to stderr, and exits two", async () => {
+  test("missing key reaches the entrypoint, writes YAML to stderr, and exits two", async () => {
     const result = await spawnBun([
       "run",
-      "src/index.ts",
+      "src/cli.ts",
       "games",
       "--year",
       "2026",

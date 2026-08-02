@@ -12,26 +12,34 @@ The CLI does not provide writes, custom pagination, caching, file export, raw JS
 
 ## Requirements
 
-- [Bun](https://bun.sh/) 1.3 or newer
+- [Node.js](https://nodejs.org/) >=22.12.0
 - A CollegeFootballData API key
+
+The published npm package is `fbs-cli`, and it installs the `fbs` command on Windows, macOS, and Linux. [Bun](https://bun.sh/) 1.3 or newer is required only when developing, testing, or building the repository.
 
 The generated API client is pinned exactly to `cfbd` 5.21.0. Upgrade it intentionally and re-run the query-builder, transformer, type, CLI, and route-coverage suites when its generated types change.
 
 ## Install and configure
 
-Install the exact locked dependencies:
+Install the CLI globally from npm:
 
 ```bash
-bun install --frozen-lockfile
+npm install --global fbs-cli
 ```
 
-Create `.env` from `.env.example`, then add your key:
+This makes `fbs` available from your shell. You can also run a command without installing the package globally:
+
+```bash
+npx fbs-cli --help
+```
+
+Create a `.env` file in the directory where you run the CLI, then add your key:
 
 ```env
 CFBD_API_KEY=your_key_here
 ```
 
-Bun loads `.env` automatically. The key is sent as a Bearer token and is never included in normal output or errors. Do not commit `.env` or paste the key into commands, logs, issues, or agent prompts.
+The CLI optionally loads `.env` from the current working directory. An existing environment value takes precedence and is never overwritten by the file. The key is sent as a Bearer token and is never included in normal output or errors. Do not commit `.env` or paste the key into commands, logs, issues, or agent prompts.
 
 An API command without a key fails before making a request:
 
@@ -44,23 +52,25 @@ error:
 
 ## Run the CLI
 
-Run directly from TypeScript during development:
+Run the globally installed command from Windows, macOS, or Linux:
 
 ```bash
-bun run src/index.ts --help
-bun run src/index.ts games --year 2026 --team "Florida State"
-```
-
-Use the development script when passing arguments through Bun:
-
-```bash
-bun run dev -- games --year 2026 --team "Florida State"
-```
-
-After building the standalone executable, use the same command surface through `fbs` or `dist/fbs.exe` on Windows:
-
-```bash
+fbs --help
 fbs games --year 2026 --team "Florida State"
+```
+
+Or use npm without a global install:
+
+```bash
+npx fbs-cli games --year 2026 --team "Florida State"
+```
+
+When developing from this repository, install the locked dependencies and run the executable Node entry through Bun:
+
+```bash
+bun install --frozen-lockfile
+bun run src/cli.ts --help
+bun run dev -- games --year 2026 --team "Florida State"
 ```
 
 ## Command reference
@@ -307,7 +317,7 @@ Errors never include a stack trace, authorization header, or API key by default.
 
 ```bash
 # Run from source
-bun run src/index.ts --help
+bun run src/cli.ts --help
 
 # Run through the development script
 bun run dev -- games --year 2026 --team "Florida State"
@@ -318,8 +328,11 @@ bun run typecheck
 # Run the default offline/mocked suite
 bun test
 
-# Compile the current-platform standalone executable
-bun run build
+# Build the cross-platform Node.js npm entry
+bun run build:npm
+
+# Optionally compile a current-platform standalone executable
+bun run build:native
 ```
 
 Default tests must not call the live CFBD API. Live smoke tests are separate, consume quota, and require both explicit authorization and the opt-in flag:
@@ -328,4 +341,4 @@ Default tests must not call the live CFBD API. Live smoke tests are separate, co
 CFBD_API_KEY=... CFBD_LIVE_TESTS=1 bun test tests/live
 ```
 
-In PowerShell, set process-local variables instead. Never run the live suite merely because `CFBD_API_KEY` happens to exist. The build script emits `dist/fbs` or the current-platform equivalent such as `dist/fbs.exe`.
+In PowerShell, set process-local variables instead. Never run the live suite merely because `CFBD_API_KEY` happens to exist. `build:npm` emits `dist/fbs.js`, which is the npm package entry and runs on Node.js >=22.12.0 across supported operating systems. The npm package allowlist publishes only that JavaScript entry. `build:native` optionally emits `dist/fbs` or the current-platform equivalent such as `dist/fbs.exe`.

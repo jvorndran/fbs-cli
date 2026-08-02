@@ -2,7 +2,7 @@
 
 ## Product contract
 
-This repository implements `fbs`, an agent-first, read-only Bun and TypeScript CLI over the CollegeFootballData REST API. Keep the integration thin:
+This repository implements `fbs`, an agent-first, read-only Node.js and TypeScript CLI over the CollegeFootballData REST API. It is published to npm as `fbs-cli`. Keep the integration thin:
 
 ```text
 Commander options -> pure query builder -> Zod validation -> cfbd client -> endpoint transformer -> YAML
@@ -14,7 +14,9 @@ The product scope explicitly excludes writes, MCP, databases, caches, RAG, custo
 
 ## Toolchain
 
-- Runtime, package manager, test runner, and compiler: Bun 1.3+
+- Installed runtime: Node.js >=22.12.0
+- Development package manager, test runner, bundler, and compiler: Bun 1.3+
+- npm package: `fbs-cli`; installed command: `fbs`
 - Language: strict TypeScript
 - CLI: Commander
 - API client: official `cfbd` package, pinned exactly to 5.21.0
@@ -28,12 +30,15 @@ Common commands:
 
 ```bash
 bun install --frozen-lockfile
-bun run src/index.ts --help
+bun run src/cli.ts --help
 bun run dev -- games --year 2026 --team "Florida State"
 bun run typecheck
 bun test
-bun run build
+bun run build:npm
+bun run build:native
 ```
+
+`build:npm` emits the cross-platform Node entry at `dist/fbs.js`, and the npm package allowlist publishes only that file. `build:native` is optional and compiles a standalone executable for the current platform.
 
 The default test suite must remain offline. Live smoke tests are opt-in only:
 
@@ -106,7 +111,7 @@ Use these generated-client enum domains unless an intentional `cfbd` upgrade cha
 
 ## Authentication and side effects
 
-Read only `CFBD_API_KEY`. Configure the client once with `Authorization: Bearer <key>`. API commands must fail before a network request when the key is absent. The missing-key document is:
+Read only `CFBD_API_KEY`. The executable entry may load an optional `.env` from the current working directory, but it must not overwrite an environment value that is already set. Configure the client once with `Authorization: Bearer <key>`. API commands must fail before a network request when the key is absent. The missing-key document is:
 
 ```yaml
 error:
@@ -119,7 +124,8 @@ All endpoint operations are read-only, but live calls consume CFBD quota. Keep f
 
 ## Code boundaries
 
-- `src/index.ts`: create the Commander root and register first-level command groups.
+- `src/index.ts`: expose the importable Commander root and register first-level command groups without executing the process.
+- `src/cli.ts`: executable Node entry; load the optional working-directory `.env`, invoke the CLI, and set the process exit code.
 - `src/commands/*.ts`: explicit `registerX(program)` functions; keep endpoint actions small.
 - `src/cfbd/client.ts`: key loading and one-time client configuration.
 - `src/cfbd/execute.ts`: response extraction and provider-error translation.
@@ -190,7 +196,7 @@ When changing behavior:
 
 1. Update or add offline tests first.
 2. Run `bun run typecheck` and `bun test`.
-3. Run a current-platform compile for distribution changes.
+3. Run `bun run build:npm` for distribution changes; also run `bun run build:native` when changing the optional native distribution.
 4. Run `CFBD_LIVE_TESTS=1 bun test tests/live` only when explicitly authorized and keyed.
 5. Keep `README.md` and `skills/fbs-cli/SKILL.md` synchronized with command/query changes.
 

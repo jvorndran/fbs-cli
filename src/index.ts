@@ -1,5 +1,3 @@
-#!/usr/bin/env bun
-
 import { Command, CommanderError } from "commander";
 
 import { registerCoachesCommand } from "./commands/coaches";
@@ -113,8 +111,4 @@ export async function runCli(
     runtime.io.stderr(renderErrorYaml(normalized));
     return normalized.exitCode;
   }
-}
-
-if (import.meta.main) {
-  process.exitCode = await runCli();
 }

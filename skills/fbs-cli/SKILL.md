@@ -9,11 +9,11 @@ Query CFBD through endpoint-shaped commands, then perform analysis on the return
 
 ## Prepare
 
-1. Prefer the installed `fbs` executable. From this repository, replace `fbs` with `bun run src/index.ts` when needed.
-2. Require `CFBD_API_KEY` in the environment or `.env`. Never request, echo, log, or expose the key.
-3. Run `fbs --help` for top-level families and `fbs <command path> --help` for the exact accepted flags, enum choices, rules, and examples.
-4. Quote multiword values and scope live queries narrowly because each call consumes CFBD quota.
-5. Prefer returned provider IDs for follow-up game, player, coach, and play queries.
+1. Use Node.js >=22.12.0. Prefer the `fbs` executable installed with `npm install --global fbs-cli`; use `npx fbs-cli` when a global install is not appropriate.
+2. From this repository, replace `fbs` with `bun run src/cli.ts` when needed; Bun 1.3+ is a development tool and is not required by npm users.
+3. Require `CFBD_API_KEY` in the environment or an optional `.env` in the current working directory. An existing environment value takes precedence. Never request, echo, log, or expose the key.
+4. Run `fbs --help` for top-level families and `fbs <command path> --help` for the exact accepted flags, enum choices, rules, and examples.
+5. Quote multiword values, scope live queries narrowly because each call consumes CFBD quota, and prefer returned provider IDs for follow-up game, player, coach, and play queries.
 
 ## Choose an endpoint command
 

@@ -11,7 +11,7 @@ interface CliResult {
 }
 
 async function invoke(args: readonly string[]): Promise<CliResult> {
-  const child = Bun.spawn([process.execPath, "run", "src/index.ts", ...args], {
+  const child = Bun.spawn([process.execPath, "run", "src/cli.ts", ...args], {
     cwd: workspace,
     env: {
       ...process.env,

@@ -560,9 +560,9 @@
               <span class="terminal-dot"></span>
               <span class="terminal-dot"></span>
               <span class="terminal-dot"></span>
-              <span class="terminal-title">fbs — powershell</span>
+              <span class="terminal-title">fbs — terminal</span>
             </div>
-            <pre><span class="prompt">PS&gt;</span> <span class="command">.\dist\fbs.exe games --year 2026 --team "Florida State"</span>
+            <pre><span class="prompt">$</span> <span class="command">fbs games --year 2026 --team "Florida State"</span>
 
 <span class="key">command:</span> games
 <span class="key">endpoint:</span> /games
@@ -581,14 +581,24 @@
         <section class="section" id="quick-start" aria-labelledby="quick-start-title">
           <div class="section-heading">
             <h2 id="quick-start-title">Up and running in three steps.</h2>
-            <p>The project is already built. Add your key, check the command surface, then make a narrow first query.</p>
+            <p>Install the cross-platform npm package, add your key, then make a narrow first query.</p>
           </div>
 
           <div class="steps">
             <article class="card">
               <span class="step-number">01</span>
+              <h3>Install the CLI</h3>
+              <p>Use Node.js &gt;=22.12.0 on Windows, macOS, or Linux. You can also run it directly with <code>npx fbs-cli</code>.</p>
+              <div class="code-row">
+                <code>npm install --global fbs-cli</code>
+                <button class="copy-button" type="button" data-copy="npm install --global fbs-cli">Copy</button>
+              </div>
+            </article>
+
+            <article class="card">
+              <span class="step-number">02</span>
               <h3>Configure access</h3>
-              <p>Add your CollegeFootballData key to the local <code>.env</code> file.</p>
+              <p>Set your CollegeFootballData key in the environment or a local <code>.env</code> file; existing environment values take precedence.</p>
               <div class="code-row">
                 <code>CFBD_API_KEY=your_key_here</code>
                 <button class="copy-button" type="button" data-copy="CFBD_API_KEY=your_key_here">Copy</button>
@@ -596,22 +606,12 @@
             </article>
 
             <article class="card">
-              <span class="step-number">02</span>
-              <h3>Explore commands</h3>
-              <p>Open the built-in help to see every route and supported query flag.</p>
-              <div class="code-row">
-                <code>.\dist\fbs.exe --help</code>
-                <button class="copy-button" type="button" data-copy=".\dist\fbs.exe --help">Copy</button>
-              </div>
-            </article>
-
-            <article class="card">
               <span class="step-number">03</span>
               <h3>Make a first call</h3>
-              <p>Start with teams or games, then reuse returned IDs for deeper queries.</p>
+              <p>Run <code>fbs --help</code>, start with teams or games, then reuse returned IDs for deeper queries.</p>
               <div class="code-row">
-                <code>.\dist\fbs.exe teams fbs --year 2026</code>
-                <button class="copy-button" type="button" data-copy=".\dist\fbs.exe teams fbs --year 2026">Copy</button>
+                <code>fbs teams fbs --year 2026</code>
+                <button class="copy-button" type="button" data-copy="fbs teams fbs --year 2026">Copy</button>
               </div>
             </article>
           </div>
@@ -691,7 +691,7 @@
       </main>
 
       <footer>
-        <span>FBS CLI · Bun + TypeScript + CollegeFootballData</span>
+        <span>FBS CLI · Node.js + TypeScript + CollegeFootballData</span>
         <span>71/71 GET routes · Read-only historical betting data · YAML-only</span>
       </footer>
     </div>
