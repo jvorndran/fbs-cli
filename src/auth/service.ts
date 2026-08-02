@@ -5,6 +5,7 @@ import {
   AuthInputRequiredError,
   InvalidAuthKeyError,
 } from "../errors";
+import { createCfbdApi } from "../cfbd/api";
 import {
   AUTH_KEY_MAX_LENGTH,
   normalizeAuthApiKey,
@@ -20,7 +21,10 @@ export interface CreateAuthServiceOptions {
   environmentFile?: string;
   input?: NodeJS.ReadStream;
   output?: NodeJS.WriteStream;
+  validateApiKey?: AuthApiKeyValidator;
 }
+
+export type AuthApiKeyValidator = (apiKey: string) => Promise<void>;
 
 type PipedInput = AsyncIterable<string | Uint8Array>;
 
@@ -148,15 +152,21 @@ export async function readAuthApiKey(
   throw new AuthInputRequiredError();
 }
 
+async function validateApiKeyWithUserInfo(apiKey: string): Promise<void> {
+  await createCfbdApi(apiKey).userInfo();
+}
+
 export function createAuthService(
   options: CreateAuthServiceOptions = {},
 ): AuthService {
   const input = options.input ?? process.stdin;
   const output = options.output ?? process.stderr;
+  const validateApiKey = options.validateApiKey ?? validateApiKeyWithUserInfo;
 
   return {
     async saveCredential(): Promise<SavedCredential> {
       const apiKey = await readAuthApiKey(input, output);
+      await validateApiKey(apiKey);
       return saveCredential(apiKey, {
         ...(options.environmentFile === undefined
           ? {}

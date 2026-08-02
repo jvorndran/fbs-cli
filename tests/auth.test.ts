@@ -12,10 +12,12 @@ import {
   updateEnvironmentFile,
 } from "../src/auth/env-file.ts";
 import {
+  createAuthService,
   readAuthApiKey,
   readPipedAuthApiKey,
   type AuthService,
 } from "../src/auth/service.ts";
+import { CfbdRequestError } from "../src/errors.ts";
 import { createProgram, runCli } from "../src/index.ts";
 import { renderErrorYaml } from "../src/output/error.ts";
 import { createMockApi } from "./helpers/mock-api.ts";
@@ -235,8 +237,78 @@ describe("credential input", () => {
   });
 });
 
+describe("auth validation", () => {
+  test("validates the normalized key exactly once before writing .env", async () => {
+    const root = await createTemporaryDirectory();
+    const environmentFile = join(root, ".env");
+    const validatedKeys: string[] = [];
+    const auth = createAuthService({
+      environmentFile,
+      input: Readable.from(["  validated-key  \n"]) as NodeJS.ReadStream,
+      validateApiKey: async (apiKey) => {
+        validatedKeys.push(apiKey);
+      },
+    });
+
+    expect(await auth.saveCredential()).toEqual({ environmentFile });
+    expect(validatedKeys).toEqual(["validated-key"]);
+    expect(await readFile(environmentFile, "utf8")).toBe(
+      "CFBD_API_KEY=validated-key\n",
+    );
+  });
+
+  test("does not change .env when CFBD rejects the key", async () => {
+    const root = await createTemporaryDirectory();
+    const environmentFile = join(root, ".env");
+    const originalContent = "OTHER=value\nCFBD_API_KEY=previous-key\n";
+    await writeFile(environmentFile, originalContent, "utf8");
+    let validationCalls = 0;
+    const auth = createAuthService({
+      environmentFile,
+      input: Readable.from(["rejected-key\n"]) as NodeJS.ReadStream,
+      validateApiKey: async () => {
+        validationCalls += 1;
+        throw new CfbdRequestError({
+          code: "cfbd_unauthorized",
+          status: 401,
+          message: "Unauthorized",
+          hint: "Verify that CFBD_API_KEY is valid and active.",
+        });
+      },
+    });
+
+    await expect(auth.saveCredential()).rejects.toMatchObject({
+      code: "cfbd_unauthorized",
+      status: 401,
+    });
+    expect(validationCalls).toBe(1);
+    expect(await readFile(environmentFile, "utf8")).toBe(originalContent);
+  });
+
+  test("does not validate or create .env when the input format is invalid", async () => {
+    const root = await createTemporaryDirectory();
+    const environmentFile = join(root, ".env");
+    let validationCalls = 0;
+    const auth = createAuthService({
+      environmentFile,
+      input: Readable.from(["invalid key\n"]) as NodeJS.ReadStream,
+      validateApiKey: async () => {
+        validationCalls += 1;
+      },
+    });
+
+    await expect(auth.saveCredential()).rejects.toMatchObject({
+      code: "auth_invalid_key",
+    });
+    expect(validationCalls).toBe(0);
+    await expect(readFile(environmentFile, "utf8")).rejects.toMatchObject({
+      code: "ENOENT",
+    });
+  });
+});
+
 describe("auth command", () => {
-  test("stores through the injected service without calling CFBD", async () => {
+  test("emits the saved result from the injected auth service", async () => {
     const mock = await createMockApi();
     const auth: AuthService = {
       saveCredential: async () => ({ environmentFile: "/project/.env" }),
@@ -265,6 +337,48 @@ describe("auth command", () => {
       command: "auth",
       status: "saved",
       env_file: "/project/.env",
+    });
+  });
+
+  test("adds auth context to a validation failure without exposing a key", async () => {
+    const sentinel = "never-print-this-rejected-key";
+    const auth: AuthService = {
+      saveCredential: async () => {
+        throw new CfbdRequestError({
+          code: "cfbd_unauthorized",
+          status: 401,
+          message: `Unauthorized Bearer ${sentinel}`,
+          hint: "Verify that CFBD_API_KEY is valid and active.",
+        });
+      },
+    };
+    let stdout = "";
+    let stderr = "";
+
+    const exitCode = await runCli(["auth"], {
+      auth,
+      environment: {},
+      io: {
+        stdout: (value) => {
+          stdout += value;
+        },
+        stderr: (value) => {
+          stderr += value;
+        },
+      },
+    });
+
+    expect(exitCode).toBe(1);
+    expect(stdout).toBe("");
+    expect(stderr).not.toContain(sentinel);
+    expect(parse(stderr)).toEqual({
+      error: {
+        code: "cfbd_unauthorized",
+        status: 401,
+        message: "Unauthorized Bearer [REDACTED]",
+        command: "auth",
+        hint: "Verify that CFBD_API_KEY is valid and active.",
+      },
     });
   });
 

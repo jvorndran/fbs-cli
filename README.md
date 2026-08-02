@@ -28,7 +28,7 @@ Or let the CLI create or update that file for you:
 fbs auth
 ```
 
-Paste your CollegeFootballData API key at the masked prompt. `fbs auth` writes `CFBD_API_KEY` to `.env` in the current directory, preserves other entries, and replaces an existing key instead of adding a duplicate. It does not make an API request or validate that the key is active.
+Paste your CollegeFootballData API key at the masked prompt. `fbs auth` makes one authenticated `GET /info` request to verify the key, then writes `CFBD_API_KEY` to `.env` in the current directory. It preserves other entries and replaces an existing key instead of adding a duplicate. If validation fails, `.env` is not changed.
 
 ### 3. Run a command
 
@@ -51,9 +51,9 @@ npx @jvorndran/fbs-cli games --year 2026 --team "Florida State"
 
 ## API key setup
 
-`fbs` checks `CFBD_API_KEY` already set in your shell first, then `.env` in the current directory. `fbs auth` is simply a shortcut for creating or updating that local `.env` file; it does not use a global credential folder or operating-system-specific storage.
+`fbs` checks `CFBD_API_KEY` already set in your shell first, then `.env` in the current directory. `fbs auth` validates the entered key with one `/info` request before creating or updating that local `.env` file. The request consumes one CFBD API call. The CLI does not use a global credential folder or operating-system-specific storage.
 
-Run `fbs auth` from each directory where you want a separate `.env`, or create the file manually. Because `.env` contains the key as plaintext, add it to `.gitignore` and never commit it or paste the key into commands, issues, logs, or agent prompts.
+Run `fbs auth` from each directory where you want a separate `.env`, or create the file manually. Manual setup skips the immediate validation request; the next data command will report any authentication problem. Because `.env` contains the key as plaintext, add it to `.gitignore` and never commit it or paste the key into commands, issues, logs, or agent prompts.
 
 An API command without a key fails before making a request:
 

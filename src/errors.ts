@@ -30,17 +30,18 @@ export class CliError extends Error {
     this.exitCode = options.exitCode ?? 1;
   }
 
-  withContext(command: string, query: Record<string, unknown>): CliError {
+  withContext(command: string, query?: Record<string, unknown>): CliError {
     if (this.code === "missing_api_key") {
       return this;
     }
 
+    const contextualQuery = this.query ?? query;
     return new CliError({
       code: this.code,
       message: this.message,
       ...(this.status === undefined ? {} : { status: this.status }),
       command: this.command ?? command,
-      query: this.query ?? query,
+      ...(contextualQuery === undefined ? {} : { query: contextualQuery }),
       ...(this.hint === undefined ? {} : { hint: this.hint }),
       exitCode: this.exitCode,
       cause: this.cause,

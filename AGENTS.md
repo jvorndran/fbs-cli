@@ -10,7 +10,7 @@ Commander options -> pure query builder -> Zod validation -> cfbd client -> endp
 
 Commands mirror CFBD endpoint paths and flags mirror CFBD query parameters. Do not introduce domain-specific aliases when the provider term is already clear.
 
-The product scope explicitly excludes endpoint writes, MCP, databases, caches, RAG, custom pagination, output-format switches, file export, model execution, spinners, and decorative terminal UI. `fbs auth` is the sole local-write and interactive-prompt exception: it collects a key at a masked prompt and creates or updates `.env` in the current working directory. No other command may prompt or write locally. Betting fields, provider lines, and ATS records are supported as historical read-only data.
+The product scope explicitly excludes endpoint writes, MCP, databases, caches, RAG, custom pagination, output-format switches, file export, model execution, spinners, and decorative terminal UI. `fbs auth` is the sole local-write and interactive-prompt exception: it collects a key at a masked prompt, validates it with one `GET /info` request, and creates or updates `.env` in the current working directory. No other command may prompt or write locally. Betting fields, provider lines, and ATS records are supported as historical read-only data.
 
 ## Toolchain
 
@@ -115,7 +115,7 @@ Use these generated-client enum domains unless an intentional `cfbd` upgrade cha
 
 Resolve `CFBD_API_KEY` from an existing environment value, then an optional `.env` in the current working directory. Never overwrite an environment value with `.env`. Configure the client once with `Authorization: Bearer <key>`.
 
-`fbs auth` must read the key from a masked TTY prompt or from stdin when piped, create or update `.env` in the current working directory with `CFBD_API_KEY=<key>`, and emit only the saved status and path. Preserve unrelated `.env` entries, replace an existing key instead of adding duplicates, and create the file when it is missing. It must not accept the key as a command argument, echo it, call CFBD, or claim to validate it.
+`fbs auth` must read the key from a masked TTY prompt or from stdin when piped, validate that exact candidate with one authenticated `GET /info` request, then create or update `.env` in the current working directory with `CFBD_API_KEY=<key>`. Preserve unrelated `.env` entries, replace an existing key instead of adding duplicates, and create the file when it is missing. Validation must happen before writing so any provider or transport failure leaves `.env` unchanged. It must not accept the key as a command argument or echo it.
 
 Do not add global credential folders, operating-system-specific path selection, or another credential fallback. `.env` is plaintext and must remain ignored by Git. Never commit, log, echo, or otherwise expose a saved or supplied key.
 
@@ -135,7 +135,7 @@ All CFBD endpoint operations are read-only, but live calls consume CFBD quota. S
 - `src/index.ts`: expose the importable Commander root and register first-level command groups without executing the process.
 - `src/cli.ts`: executable Node entry; load the optional working-directory `.env` for endpoint commands, invoke the CLI, and set the process exit code.
 - `src/commands/auth.ts`: register the local `auth` command and emit its key-safe YAML result.
-- `src/auth/service.ts`: collect masked input and orchestrate credential saving without provider calls.
+- `src/auth/service.ts`: collect masked input, validate it once through `/info`, and save it only after validation succeeds.
 - `src/auth/env-file.ts`: normalize keys and create or update `.env` in the current working directory.
 - `src/commands/*.ts`: explicit `registerX(program)` functions; keep endpoint actions small.
 - `src/cfbd/client.ts`: one-time provider client configuration from the resolved key.
@@ -190,6 +190,8 @@ status: saved
 env_file: /project/.env
 ```
 
+This success document means `/info` accepted the entered key and `.env` was updated. Validation consumes one CFBD API request. Authentication, network, quota, and server failures use the normal structured error codes and do not modify `.env`.
+
 When `auth` runs interactively, its masked prompt is the sole permitted prose on stderr; an interactive cancellation or invalid key therefore places the prompt before the YAML error. Piped `auth` input emits no prompt and retains the YAML-only stream contract for agents and scripts.
 
 `query` includes only supplied fields, `count` is the top-level record count, and the final key is endpoint-specific. Emit no prose, logs, banners, spinners, colors, anchors, or aliases. End output with exactly one newline.
@@ -213,7 +215,7 @@ Use stable machine-actionable codes, preserve useful provider messages, and add 
 
 For every command, cover exact option-to-query mapping and conditional validation. Transformer fixtures should prove snake_case conversion, null removal, ID preservation, nested grouping/flattening, clock formatting, and unchanged numerical precision. CLI tests should use a mocked API layer and assert YAML parsing, stream separation, exit codes, nested command parsing, and complete help options.
 
-For `auth`, cover missing-file creation, preservation of unrelated `.env` entries, replacement without duplicate keys, input normalization, hidden interactive input, file failures, key redaction, and the guarantee that saving makes no CFBD call. Distribution smoke tests must exercise `auth` only inside an isolated temporary working directory.
+For `auth`, cover missing-file creation, preservation of unrelated `.env` entries, replacement without duplicate keys, input normalization, hidden interactive input, file failures, key redaction, exactly one `/info` validation request, and no write when validation fails. Distribution smoke tests must exercise `auth` only inside an isolated temporary working directory with a mocked fetch; the default suite must never call live CFBD.
 
 When changing behavior:
 

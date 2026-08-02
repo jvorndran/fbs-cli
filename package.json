@@ -1,6 +1,6 @@
 {
   "name": "@jvorndran/fbs-cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Explore the CollegeFootballData API from your terminal with clean YAML output",
   "keywords": [
     "college-football",

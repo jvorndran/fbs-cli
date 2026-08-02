@@ -10,18 +10,21 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve, sep } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { parse } from "yaml";
 
 const workspace = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const cliPath = join(workspace, "dist", "fbs.js");
+const authFetchMockUrl = pathToFileURL(
+  join(workspace, "tests", "node-auth-fetch-mock.mjs"),
+).href;
 const packageJson = JSON.parse(
   readFileSync(join(workspace, "package.json"), "utf8"),
 );
 
 function runCli(args, options = {}) {
-  return spawnSync(process.execPath, [cliPath, ...args], {
+  return spawnSync(process.execPath, [...(options.nodeArgs ?? []), cliPath, ...args], {
     cwd: options.cwd ?? workspace,
     encoding: "utf8",
     env: options.env ?? process.env,
@@ -68,15 +71,22 @@ try {
   });
 
   const sentinel = "node-smoke-auth-key";
+  const authRequestLog = join(temporaryRoot, "auth-requests.log");
   writeFileSync(
     join(temporaryRoot, ".env"),
     "OTHER_SETTING=keep\n",
     "utf8",
   );
+  const authEnvironment = {
+    ...cleanEnvironment,
+    FBS_AUTH_TEST_EXPECTED_KEY: sentinel,
+    FBS_AUTH_TEST_REQUEST_LOG: authRequestLog,
+  };
   const auth = runCli(["auth"], {
     cwd: temporaryRoot,
-    env: cleanEnvironment,
+    env: authEnvironment,
     input: `${sentinel}\n`,
+    nodeArgs: ["--import", authFetchMockUrl],
   });
   assert.equal(auth.status, 0, auth.stderr);
   assert.equal(auth.stderr, "");
@@ -90,12 +100,19 @@ try {
     readFileSync(expectedEnvironmentFile, "utf8"),
     `OTHER_SETTING=keep\nCFBD_API_KEY=${sentinel}\n`,
   );
+  assert.equal(readFileSync(authRequestLog, "utf8"), "GET /info\n");
 
   const replacement = "node-smoke-replacement-key";
+  const replacementEnvironment = {
+    ...cleanEnvironment,
+    FBS_AUTH_TEST_EXPECTED_KEY: replacement,
+    FBS_AUTH_TEST_REQUEST_LOG: authRequestLog,
+  };
   const repeatedAuth = runCli(["auth"], {
     cwd: temporaryRoot,
-    env: cleanEnvironment,
+    env: replacementEnvironment,
     input: `${replacement}\n`,
+    nodeArgs: ["--import", authFetchMockUrl],
   });
   assert.equal(repeatedAuth.status, 0, repeatedAuth.stderr);
   assert.doesNotMatch(
@@ -105,6 +122,10 @@ try {
   assert.equal(
     readFileSync(expectedEnvironmentFile, "utf8"),
     `OTHER_SETTING=keep\nCFBD_API_KEY=${replacement}\n`,
+  );
+  assert.equal(
+    readFileSync(authRequestLog, "utf8"),
+    "GET /info\nGET /info\n",
   );
   unlinkSync(join(temporaryRoot, ".env"));
 

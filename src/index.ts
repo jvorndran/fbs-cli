@@ -33,7 +33,7 @@ function buildProgram(runtime: CommandRuntime, auth: AuthService): Command {
   const program = new Command()
     .name("fbs")
     .description("Explore CollegeFootballData with clean YAML output")
-    .version("0.2.0")
+    .version("0.2.1")
     .helpOption("-h, --help", "Display help for a command")
     .showHelpAfterError(false)
     .showSuggestionAfterError(false)

@@ -10,7 +10,7 @@ Query CFBD through endpoint-shaped commands, then perform analysis on the return
 ## Prepare
 
 1. Use Node.js >=22.12.0 and install the command with `npm install --global @jvorndran/fbs-cli`. For occasional use, run `npx @jvorndran/fbs-cli <arguments>` instead.
-2. Configure `CFBD_API_KEY` manually in the environment or in `.env` in the current directory. As a convenience, the user can run `fbs auth` from that directory to create or update the same `.env` file at a masked prompt. The command preserves other entries, makes no CFBD request, and does not validate the key.
+2. Configure `CFBD_API_KEY` manually in the environment or in `.env` in the current directory. As a convenience, the user can run `fbs auth` from that directory. The command validates the entered key with exactly one `GET /info` request, then creates or updates the same `.env` file while preserving other entries. A failed validation leaves `.env` unchanged.
 3. Never place the key in a command argument, log, issue, or agent prompt. `.env` is plaintext and must remain ignored by Git.
 4. Respect credential precedence: `CFBD_API_KEY` already set in the environment, then `CFBD_API_KEY` in the current directory's `.env`. There is no global or operating-system-specific credential store.
 5. From this repository, replace `fbs` with `bun run src/cli.ts` when needed; Bun 1.3+ is a development tool and is not required by npm users.
@@ -239,7 +239,7 @@ For `missing_api_key`, direct the user to set `CFBD_API_KEY` manually or run `fb
 ## Respect scope
 
 - Treat betting fields, lines, and ATS records as historical read-only data.
-- Treat `fbs auth` as the only local-write and interactive operation; it updates `.env` in the current directory and does not call CFBD.
+- Treat `fbs auth` as the only local-write and interactive operation; it makes one read-only `/info` validation request and updates `.env` only after success.
 - Do not expect custom pagination, caching, raw output, format switches, file export, or endpoint writes.
 - Do not treat a tier-denied endpoint as an empty successful result.
 - Do not infer predictions, rankings, schemes, or opinions from the transformer itself.

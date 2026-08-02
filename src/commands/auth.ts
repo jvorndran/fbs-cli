@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 
 import type { AuthService } from "../auth/service";
+import { asCliError } from "../errors";
 import { renderYamlDocument } from "../output/yaml";
 import type { CommandRuntime } from "../runtime";
 
@@ -11,23 +12,27 @@ export function registerAuthCommand(
 ): void {
   program
     .command("auth")
-    .description("Create or update .env with a CFBD API key")
+    .description("Validate a CFBD API key and save it to .env")
     .addHelpText(
       "after",
-      "\nPaste the key at the hidden prompt. The command updates .env in the current directory and makes no CFBD request.\n\nExample:\n  fbs auth\n",
+      "\nPaste the key at the hidden prompt. The command validates it with one GET /info request, then updates .env in the current directory.\n\nExample:\n  fbs auth\n",
     )
     .action(async () => {
-      const result = await auth.saveCredential();
-      runtime.io.stdout(
-        renderYamlDocument(
-          {
-            command: "auth",
-            status: "saved",
-            envFile: result.environmentFile,
-          },
-          ["command", "status", "env_file"],
-        ),
-      );
+      try {
+        const result = await auth.saveCredential();
+        runtime.io.stdout(
+          renderYamlDocument(
+            {
+              command: "auth",
+              status: "saved",
+              envFile: result.environmentFile,
+            },
+            ["command", "status", "env_file"],
+          ),
+        );
+      } catch (error) {
+        throw asCliError(error).withContext("auth");
+      }
     })
     .allowExcessArguments(false);
 }
