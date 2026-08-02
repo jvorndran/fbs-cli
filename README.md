@@ -15,7 +15,7 @@ The CLI does not provide writes, custom pagination, caching, file export, raw JS
 - [Node.js](https://nodejs.org/) >=22.12.0
 - A CollegeFootballData API key
 
-The published npm package is `fbs-cli`, and it installs the `fbs` command on Windows, macOS, and Linux. [Bun](https://bun.sh/) 1.3 or newer is required only when developing, testing, or building the repository.
+The published npm package is `@jvorndran/fbs-cli`, and it installs the `fbs` command on Windows, macOS, and Linux. [Bun](https://bun.sh/) 1.3 or newer is required only when developing, testing, or building the repository.
 
 The generated API client is pinned exactly to `cfbd` 5.21.0. Upgrade it intentionally and re-run the query-builder, transformer, type, CLI, and route-coverage suites when its generated types change.
 
@@ -24,13 +24,13 @@ The generated API client is pinned exactly to `cfbd` 5.21.0. Upgrade it intentio
 Install the CLI globally from npm:
 
 ```bash
-npm install --global fbs-cli
+npm install --global @jvorndran/fbs-cli
 ```
 
 This makes `fbs` available from your shell. You can also run a command without installing the package globally:
 
 ```bash
-npx fbs-cli --help
+npx --package=@jvorndran/fbs-cli fbs --help
 ```
 
 Create a `.env` file in the directory where you run the CLI, then add your key:
@@ -62,7 +62,7 @@ fbs games --year 2026 --team "Florida State"
 Or use npm without a global install:
 
 ```bash
-npx fbs-cli games --year 2026 --team "Florida State"
+npx --package=@jvorndran/fbs-cli fbs games --year 2026 --team "Florida State"
 ```
 
 When developing from this repository, install the locked dependencies and run the executable Node entry through Bun:

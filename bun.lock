@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "fbs-cli",
+      "name": "@jvorndran/fbs-cli",
       "dependencies": {
         "cfbd": "5.21.0",
         "commander": "15.0.0",

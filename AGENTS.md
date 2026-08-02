@@ -2,7 +2,7 @@
 
 ## Product contract
 
-This repository implements `fbs`, an agent-first, read-only Node.js and TypeScript CLI over the CollegeFootballData REST API. It is published to npm as `fbs-cli`. Keep the integration thin:
+This repository implements `fbs`, an agent-first, read-only Node.js and TypeScript CLI over the CollegeFootballData REST API. It is published to npm as `@jvorndran/fbs-cli`. Keep the integration thin:
 
 ```text
 Commander options -> pure query builder -> Zod validation -> cfbd client -> endpoint transformer -> YAML
@@ -16,7 +16,7 @@ The product scope explicitly excludes writes, MCP, databases, caches, RAG, custo
 
 - Installed runtime: Node.js >=22.12.0
 - Development package manager, test runner, bundler, and compiler: Bun 1.3+
-- npm package: `fbs-cli`; installed command: `fbs`
+- npm package: `@jvorndran/fbs-cli`; installed command: `fbs`
 - Language: strict TypeScript
 - CLI: Commander
 - API client: official `cfbd` package, pinned exactly to 5.21.0

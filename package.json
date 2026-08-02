@@ -1,5 +1,5 @@
 {
-  "name": "fbs-cli",
+  "name": "@jvorndran/fbs-cli",
   "version": "0.1.0",
   "description": "Agent-first, read-only CLI for the CollegeFootballData API",
   "keywords": [

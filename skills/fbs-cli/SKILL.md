@@ -9,7 +9,7 @@ Query CFBD through endpoint-shaped commands, then perform analysis on the return
 
 ## Prepare
 
-1. Use Node.js >=22.12.0. Prefer the `fbs` executable installed with `npm install --global fbs-cli`; use `npx fbs-cli` when a global install is not appropriate.
+1. Use Node.js >=22.12.0. Prefer the `fbs` executable installed with `npm install --global @jvorndran/fbs-cli`; use `npx --package=@jvorndran/fbs-cli fbs` when a global install is not appropriate.
 2. From this repository, replace `fbs` with `bun run src/cli.ts` when needed; Bun 1.3+ is a development tool and is not required by npm users.
 3. Require `CFBD_API_KEY` in the environment or an optional `.env` in the current working directory. An existing environment value takes precedence. Never request, echo, log, or expose the key.
 4. Run `fbs --help` for top-level families and `fbs <command path> --help` for the exact accepted flags, enum choices, rules, and examples.
