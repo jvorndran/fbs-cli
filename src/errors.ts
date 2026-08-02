@@ -53,8 +53,69 @@ export class MissingApiKeyError extends CliError {
     super({
       code: "missing_api_key",
       message: "CFBD_API_KEY is required.",
-      hint: "Set CFBD_API_KEY in your environment or .env file.",
+      hint: "Run fbs auth, set CFBD_API_KEY, or add it to a .env file.",
       exitCode: 2,
+    });
+  }
+}
+
+export class AuthInputRequiredError extends CliError {
+  constructor() {
+    super({
+      code: "auth_input_required",
+      message: "No CFBD API key was provided.",
+      command: "auth",
+      hint: "Paste a CFBD API key when prompted or pipe one key to stdin.",
+      exitCode: 2,
+    });
+  }
+}
+
+export class InvalidAuthKeyError extends CliError {
+  constructor() {
+    super({
+      code: "auth_invalid_key",
+      message: "The CFBD API key has an invalid format.",
+      command: "auth",
+      hint: "Provide one nonblank API key without spaces or line breaks.",
+      exitCode: 2,
+    });
+  }
+}
+
+export class AuthCancelledError extends CliError {
+  constructor() {
+    super({
+      code: "auth_cancelled",
+      message: "Authentication was cancelled.",
+      command: "auth",
+      hint: "Run fbs auth again when you are ready.",
+      exitCode: 2,
+    });
+  }
+}
+
+export class CredentialWriteError extends CliError {
+  constructor(cause?: unknown) {
+    super({
+      code: "credential_write_failed",
+      message: "The CFBD API key could not be saved.",
+      command: "auth",
+      hint: "Check permissions for the user configuration folder and try again.",
+      exitCode: 1,
+      cause,
+    });
+  }
+}
+
+export class CredentialReadError extends CliError {
+  constructor(cause?: unknown) {
+    super({
+      code: "credential_read_failed",
+      message: "Saved CFBD credentials could not be read.",
+      hint: "Run fbs auth to replace the saved credential or check its file permissions.",
+      exitCode: 1,
+      cause,
     });
   }
 }

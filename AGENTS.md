@@ -10,7 +10,7 @@ Commander options -> pure query builder -> Zod validation -> cfbd client -> endp
 
 Commands mirror CFBD endpoint paths and flags mirror CFBD query parameters. Do not introduce domain-specific aliases when the provider term is already clear.
 
-The product scope explicitly excludes writes, MCP, databases, caches, RAG, custom pagination, output-format switches, file export, model execution, interactive prompts, spinners, and decorative terminal UI. Betting fields, provider lines, and ATS records are supported as historical read-only data.
+The product scope explicitly excludes endpoint writes, MCP, databases, caches, RAG, custom pagination, output-format switches, file export, model execution, spinners, and decorative terminal UI. `fbs auth` is the sole local-write and interactive-prompt exception: it collects a key at a masked prompt and saves it in the user's configuration folder. No other command may prompt or write locally. Betting fields, provider lines, and ATS records are supported as historical read-only data.
 
 ## Toolchain
 
@@ -51,6 +51,8 @@ Do not run live tests without explicit authorization and a user-provided `CFBD_A
 ## Command surface
 
 The pinned `cfbd` 5.21.0 client exposes 71 GET routes. Keep all 71 endpoint commands stable.
+
+`fbs auth` is a local credential-setup command, not a CFBD endpoint and not part of the 71-route count.
 
 Executable endpoint commands, grouped by domain:
 
@@ -111,23 +113,38 @@ Use these generated-client enum domains unless an intentional `cfbd` upgrade cha
 
 ## Authentication and side effects
 
-Read only `CFBD_API_KEY`. The executable entry may load an optional `.env` from the current working directory, but it must not overwrite an environment value that is already set. Configure the client once with `Authorization: Bearer <key>`. API commands must fail before a network request when the key is absent. The missing-key document is:
+Resolve `CFBD_API_KEY` in this order: an existing environment value, an optional `.env` in the current working directory, then the saved per-user credential. Never overwrite a higher-precedence source. Configure the client once with `Authorization: Bearer <key>`.
+
+`fbs auth` must read the key from a masked TTY prompt or from stdin when piped, save it as plaintext in `CFBD_API_KEY=<key>` form, and emit only the saved status and path. It must not accept the key as a command argument, echo it, call CFBD, or claim to validate it. Re-running the command atomically replaces the saved credential.
+
+Use these credential locations:
+
+- Windows: `%LOCALAPPDATA%\fbs-cli\credentials.env`
+- macOS: `~/Library/Application Support/fbs-cli/credentials.env`
+- Linux: `${XDG_CONFIG_HOME:-~/.config}/fbs-cli/credentials.env`
+
+On macOS and Linux, create the configuration directory with mode `0700` and the credential file with mode `0600` on a best-effort basis. On Windows, rely on the user's LocalAppData ACLs. Never commit, log, echo, or otherwise expose a saved or supplied key.
+
+API commands must fail before a network request when no credential source is available. The missing-key document is:
 
 ```yaml
 error:
   code: missing_api_key
   message: CFBD_API_KEY is required.
-  hint: Set CFBD_API_KEY in your environment or .env file.
+  hint: Run fbs auth, set CFBD_API_KEY, or add it to a .env file.
 ```
 
-All endpoint operations are read-only, but live calls consume CFBD quota. Keep fixtures and mocked adapters as the default development path.
+All CFBD endpoint operations are read-only, but live calls consume CFBD quota. Saving a credential is the only supported local side effect. Keep fixtures and mocked adapters as the default development path.
 
 ## Code boundaries
 
 - `src/index.ts`: expose the importable Commander root and register first-level command groups without executing the process.
-- `src/cli.ts`: executable Node entry; load the optional working-directory `.env`, invoke the CLI, and set the process exit code.
+- `src/cli.ts`: executable Node entry; resolve environment, working-directory `.env`, and saved credentials in precedence order, invoke the CLI, and set the process exit code.
+- `src/commands/auth.ts`: register the local `auth` command and emit its key-safe YAML result.
+- `src/auth/service.ts`: collect masked input and orchestrate credential saving without provider calls.
+- `src/auth/credentials.ts`: normalize keys, resolve platform paths, atomically save credentials, enforce best-effort permissions, and load the saved fallback.
 - `src/commands/*.ts`: explicit `registerX(program)` functions; keep endpoint actions small.
-- `src/cfbd/client.ts`: key loading and one-time client configuration.
+- `src/cfbd/client.ts`: one-time provider client configuration from the resolved key.
 - `src/cfbd/execute.ts`: response extraction and provider-error translation.
 - `src/cfbd/query-builders.ts`: pure option-to-query mapping only.
 - `src/transformers/*.ts`: endpoint-specific reshaping without provider calls.
@@ -171,6 +188,16 @@ count: 0
 games: []
 ```
 
+The local `auth` command is the only success-envelope exception:
+
+```yaml
+command: auth
+status: saved
+credentials_file: /user/config/fbs-cli/credentials.env
+```
+
+When `auth` runs interactively, its masked prompt is the sole permitted prose on stderr; an interactive cancellation or invalid key therefore places the prompt before the YAML error. Piped `auth` input emits no prompt and retains the YAML-only stream contract for agents and scripts.
+
 `query` includes only supplied fields, `count` is the top-level record count, and the final key is endpoint-specific. Emit no prose, logs, banners, spinners, colors, anchors, or aliases. End output with exactly one newline.
 
 Failures write one YAML document to stderr and exit nonzero:
@@ -191,6 +218,8 @@ Use stable machine-actionable codes, preserve useful provider messages, and add 
 ## Testing expectations
 
 For every command, cover exact option-to-query mapping and conditional validation. Transformer fixtures should prove snake_case conversion, null removal, ID preservation, nested grouping/flattening, clock formatting, and unchanged numerical precision. CLI tests should use a mocked API layer and assert YAML parsing, stream separation, exit codes, nested command parsing, and complete help options.
+
+For `auth`, cover platform-specific paths, credential precedence, input normalization, hidden interactive input, atomic replacement, best-effort permissions, corrupt or unreadable files, missing-key fallback, key redaction, and the guarantee that saving makes no CFBD call. Distribution smoke tests must exercise `auth` only against an isolated temporary configuration directory.
 
 When changing behavior:
 

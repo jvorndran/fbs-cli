@@ -581,14 +581,14 @@
         <section class="section" id="quick-start" aria-labelledby="quick-start-title">
           <div class="section-heading">
             <h2 id="quick-start-title">Up and running in three steps.</h2>
-            <p>Install the cross-platform npm package, add your key, then make a narrow first query.</p>
+            <p>Install the cross-platform npm package, save your key, then make a focused first query.</p>
           </div>
 
           <div class="steps">
             <article class="card">
               <span class="step-number">01</span>
               <h3>Install the CLI</h3>
-              <p>Use Node.js &gt;=22.12.0 on Windows, macOS, or Linux. You can also run it directly with <code>npx --package=@jvorndran/fbs-cli fbs</code>.</p>
+              <p>Use Node.js &gt;=22.12.0 on Windows, macOS, or Linux. For occasional use, run it directly with <code>npx @jvorndran/fbs-cli</code>.</p>
               <div class="code-row">
                 <code>npm install --global @jvorndran/fbs-cli</code>
                 <button class="copy-button" type="button" data-copy="npm install --global @jvorndran/fbs-cli">Copy</button>
@@ -598,10 +598,10 @@
             <article class="card">
               <span class="step-number">02</span>
               <h3>Configure access</h3>
-              <p>Set your CollegeFootballData key in the environment or a local <code>.env</code> file; existing environment values take precedence.</p>
+              <p>Paste your CollegeFootballData key at a masked prompt. It is saved for your user account without making an API request or validating the key.</p>
               <div class="code-row">
-                <code>CFBD_API_KEY=your_key_here</code>
-                <button class="copy-button" type="button" data-copy="CFBD_API_KEY=your_key_here">Copy</button>
+                <code>fbs auth</code>
+                <button class="copy-button" type="button" data-copy="fbs auth">Copy</button>
               </div>
             </article>
 

@@ -1,45 +1,71 @@
 # FBS CLI
 
-`fbs` is an agent-first, read-only command-line interface for the [CollegeFootballData](https://collegefootballdata.com/) REST API. Command paths mirror CFBD routes, flags mirror CFBD query parameters, and every successful response is deterministic YAML.
+`fbs` puts the [CollegeFootballData](https://collegefootballdata.com/) API in your terminal. Search teams and players, inspect games and play-by-play, compare ratings and recruiting, or retrieve historical lines and ATS records across all 71 CFBD GET endpoints. Results are clean YAML that works well in a terminal, script, or agent workflow.
 
-The pinned `cfbd` 5.21.0 client exposes 71 GET routes, and this CLI implements all 71. Betting-related data is historical and read-only: `fbs lines` retrieves provider lines and `fbs teams ats` retrieves team against-the-spread records.
+## Quick start
 
-```text
-caller -> fbs command -> cfbd TypeScript client -> CFBD API -> transformer -> YAML
-```
+You need [Node.js](https://nodejs.org/) >=22.12.0 and a CollegeFootballData API key.
 
-The CLI does not provide writes, custom pagination, caching, file export, raw JSON, interactive prompts, or an MCP server.
-
-## Requirements
-
-- [Node.js](https://nodejs.org/) >=22.12.0
-- A CollegeFootballData API key
-
-The published npm package is `@jvorndran/fbs-cli`, and it installs the `fbs` command on Windows, macOS, and Linux. [Bun](https://bun.sh/) 1.3 or newer is required only when developing, testing, or building the repository.
-
-The generated API client is pinned exactly to `cfbd` 5.21.0. Upgrade it intentionally and re-run the query-builder, transformer, type, CLI, and route-coverage suites when its generated types change.
-
-## Install and configure
-
-Install the CLI globally from npm:
+### 1. Install the CLI
 
 ```bash
 npm install --global @jvorndran/fbs-cli
 ```
 
-This makes `fbs` available from your shell. You can also run a command without installing the package globally:
+This adds the `fbs` command on Windows, macOS, and Linux.
+
+### 2. Save your API key
 
 ```bash
-npx --package=@jvorndran/fbs-cli fbs --help
+fbs auth
 ```
 
-Create a `.env` file in the directory where you run the CLI, then add your key:
+Paste your CollegeFootballData API key at the masked prompt. The command saves it for your user account, but does not make an API request or validate that the key is active. Your first data command will report any authentication problem returned by CFBD.
+
+### 3. Run a command
+
+```bash
+fbs --help
+fbs games --year 2026 --team "Florida State"
+```
+
+Quote team and player names that contain spaces. Use `fbs <command path> --help` to see the flags accepted by any command.
+
+### Run without installing
+
+For occasional use, `npx` can infer the package's `fbs` executable:
+
+```bash
+npx @jvorndran/fbs-cli --help
+npx @jvorndran/fbs-cli auth
+npx @jvorndran/fbs-cli games --year 2026 --team "Florida State"
+```
+
+## Credentials
+
+The key saved by `fbs auth` is plaintext in a per-user `credentials.env` file:
+
+| Platform | Location |
+|---|---|
+| Windows | `%LOCALAPPDATA%\fbs-cli\credentials.env` |
+| macOS | `~/Library/Application Support/fbs-cli/credentials.env` |
+| Linux | `${XDG_CONFIG_HOME:-~/.config}/fbs-cli/credentials.env` |
+
+Run `fbs auth` again to replace the saved key. To remove it, delete only the `credentials.env` file shown for your platform.
+
+On macOS and Linux, the CLI applies `0700` directory and `0600` file permissions on a best-effort basis. On Windows, the file uses the access controls of your LocalAppData folder. Anyone who can read the file can read the key, so do not copy it into a repository, issue, log, or agent prompt.
+
+You can override the saved key for a shell or project. Credentials are checked in this order:
+
+1. `CFBD_API_KEY` already set in the environment
+2. `CFBD_API_KEY` in a `.env` file in the current directory
+3. The per-user file written by `fbs auth`
+
+For example, a project-specific `.env` can contain:
 
 ```env
 CFBD_API_KEY=your_key_here
 ```
-
-The CLI optionally loads `.env` from the current working directory. An existing environment value takes precedence and is never overwritten by the file. The key is sent as a Bearer token and is never included in normal output or errors. Do not commit `.env` or paste the key into commands, logs, issues, or agent prompts.
 
 An API command without a key fails before making a request:
 
@@ -47,30 +73,7 @@ An API command without a key fails before making a request:
 error:
   code: missing_api_key
   message: CFBD_API_KEY is required.
-  hint: Set CFBD_API_KEY in your environment or .env file.
-```
-
-## Run the CLI
-
-Run the globally installed command from Windows, macOS, or Linux:
-
-```bash
-fbs --help
-fbs games --year 2026 --team "Florida State"
-```
-
-Or use npm without a global install:
-
-```bash
-npx --package=@jvorndran/fbs-cli fbs games --year 2026 --team "Florida State"
-```
-
-When developing from this repository, install the locked dependencies and run the executable Node entry through Bun:
-
-```bash
-bun install --frozen-lockfile
-bun run src/cli.ts --help
-bun run dev -- games --year 2026 --team "Florida State"
+  hint: Run fbs auth, set CFBD_API_KEY, or add it to a .env file.
 ```
 
 ## Command reference
@@ -264,9 +267,9 @@ fbs scoreboard --conference ACC
 
 Keep queries narrow to reduce latency, response size, and quota use. Check `fbs info usage` when availability is uncertain. Perform interpretation after retrieval; transformers organize provider data without creating predictions or opinions.
 
-## YAML contract
+## Output
 
-Success writes one YAML document to stdout and nothing to stderr:
+Each successful command writes one YAML document to stdout. It identifies the command, CFBD endpoint, supplied query, result count, and endpoint-specific collection:
 
 ```yaml
 command: games
@@ -284,21 +287,9 @@ games:
     matchup: Alabama at Florida State
 ```
 
-Contract rules:
+Keys are snake_case, unavailable values are omitted, and provider IDs and numeric precision are preserved. The final collection key matches the result key in the command tables above.
 
-- `command` is the command path without the leading `fbs`.
-- `endpoint` is the CFBD REST route.
-- `query` includes only supplied fields.
-- `count` is the number of top-level records.
-- The final key is the endpoint-specific result key shown in the command tables.
-- Output keys are snake_case; `null` and `undefined` are omitted.
-- `0`, `false`, meaningful empty strings, meaningful empty arrays, provider IDs, and numeric precision are preserved.
-- Team stat arrays become maps; player and play-stat nesting becomes explicit rows where appropriate; advanced dimensions remain nested.
-- Historical lines preserve game context and provider-level pricing; ATS results preserve wins, losses, pushes, and average cover margin without creating betting advice.
-- There is no format switch, surrounding prose, banner, spinner, logging, color, YAML anchor, or alias.
-- Output ends with exactly one newline.
-
-Failures write one YAML document to stderr, leave stdout empty, and exit nonzero:
+Failures write YAML to stderr and exit with a nonzero status, making them straightforward to handle from scripts and agents:
 
 ```yaml
 error:
@@ -311,34 +302,20 @@ error:
   hint: Supply --year or query a game with --id.
 ```
 
-Errors never include a stack trace, authorization header, or API key by default. Useful provider messages are preserved, and hints appear only for deterministic corrections.
+Errors do not include the API key, authorization header, or a stack trace.
 
-## Develop, test, and build
+## Development
+
+[Bun](https://bun.sh/) 1.3+ is used for development; npm users only need Node.js.
 
 ```bash
-# Run from source
+bun install --frozen-lockfile
 bun run src/cli.ts --help
-
-# Run through the development script
 bun run dev -- games --year 2026 --team "Florida State"
-
-# Type-check strict TypeScript
 bun run typecheck
-
-# Run the default offline/mocked suite
 bun test
-
-# Build the cross-platform Node.js npm entry
 bun run build:npm
-
-# Optionally compile a current-platform standalone executable
 bun run build:native
 ```
 
-Default tests must not call the live CFBD API. Live smoke tests are separate, consume quota, and require both explicit authorization and the opt-in flag:
-
-```bash
-CFBD_API_KEY=... CFBD_LIVE_TESTS=1 bun test tests/live
-```
-
-In PowerShell, set process-local variables instead. Never run the live suite merely because `CFBD_API_KEY` happens to exist. `build:npm` emits `dist/fbs.js`, which is the npm package entry and runs on Node.js >=22.12.0 across supported operating systems. The npm package allowlist publishes only that JavaScript entry. `build:native` optionally emits `dist/fbs` or the current-platform equivalent such as `dist/fbs.exe`.
+The default test suite is offline. Live smoke tests are opt-in, consume CFBD quota, and should only be run with explicit authorization.

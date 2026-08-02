@@ -104,7 +104,7 @@ describe("error YAML and configuration", () => {
         "error:",
         "  code: missing_api_key",
         "  message: CFBD_API_KEY is required.",
-        "  hint: Set CFBD_API_KEY in your environment or .env file.",
+        "  hint: Run fbs auth, set CFBD_API_KEY, or add it to a .env file.",
         "",
       ].join("\n"),
     );

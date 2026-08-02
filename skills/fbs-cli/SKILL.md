@@ -1,6 +1,6 @@
 ---
 name: fbs-cli
-description: Use the local read-only FBS CLI to research CollegeFootballData across teams, rosters, schedules, games, box scores, drives, plays, player and team statistics, historical betting lines and ATS records, PPA, win probability, WEPA, ratings, rankings, recruiting, transfers, returning production, playoffs, draft history, coaches, venues, weather, live data, and account usage. Trigger for college-football data retrieval, command or filter selection, multi-endpoint research flows, YAML parsing, and CLI error recovery.
+description: Use the FBS CLI to configure a CollegeFootballData API key and research teams, rosters, schedules, games, box scores, drives, plays, player and team statistics, historical betting lines and ATS records, PPA, win probability, WEPA, ratings, rankings, recruiting, transfers, returning production, playoffs, draft history, coaches, venues, weather, live data, and account usage. Trigger for FBS CLI setup, college-football data retrieval, command or filter selection, multi-endpoint research flows, YAML parsing, and CLI error recovery.
 ---
 
 # Use the FBS CLI
@@ -9,11 +9,13 @@ Query CFBD through endpoint-shaped commands, then perform analysis on the return
 
 ## Prepare
 
-1. Use Node.js >=22.12.0. Prefer the `fbs` executable installed with `npm install --global @jvorndran/fbs-cli`; use `npx --package=@jvorndran/fbs-cli fbs` when a global install is not appropriate.
-2. From this repository, replace `fbs` with `bun run src/cli.ts` when needed; Bun 1.3+ is a development tool and is not required by npm users.
-3. Require `CFBD_API_KEY` in the environment or an optional `.env` in the current working directory. An existing environment value takes precedence. Never request, echo, log, or expose the key.
-4. Run `fbs --help` for top-level families and `fbs <command path> --help` for the exact accepted flags, enum choices, rules, and examples.
-5. Quote multiword values, scope live queries narrowly because each call consumes CFBD quota, and prefer returned provider IDs for follow-up game, player, coach, and play queries.
+1. Use Node.js >=22.12.0 and install the command with `npm install --global @jvorndran/fbs-cli`. For occasional use, run `npx @jvorndran/fbs-cli <arguments>` instead.
+2. Ask the user to run `fbs auth` in their terminal when no credential is configured. Let the command collect the key at its masked prompt; never place the key in an argument, log, issue, or agent prompt. Explain that `auth` saves the key but makes no CFBD request and does not validate it.
+3. Respect credential precedence: `CFBD_API_KEY` in the environment, then `CFBD_API_KEY` in the current directory's `.env`, then the per-user credential written by `fbs auth`.
+4. Treat the saved credential as plaintext. Its location is `%LOCALAPPDATA%\fbs-cli\credentials.env` on Windows, `~/Library/Application Support/fbs-cli/credentials.env` on macOS, and `${XDG_CONFIG_HOME:-~/.config}/fbs-cli/credentials.env` on Linux. The CLI applies `0700` directory and `0600` file permissions on macOS and Linux on a best-effort basis; Windows uses LocalAppData access controls.
+5. From this repository, replace `fbs` with `bun run src/cli.ts` when needed; Bun 1.3+ is a development tool and is not required by npm users.
+6. Run `fbs --help` for top-level families and `fbs <command path> --help` for the exact accepted flags, enum choices, rules, and examples.
+7. Quote multiword values, scope live queries narrowly because each call consumes CFBD quota, and prefer returned provider IDs for follow-up game, player, coach, and play queries.
 
 ## Choose an endpoint command
 
@@ -232,10 +234,13 @@ error:
 
 Correct deterministic filters from `hint` when present. Preserve validation, authorization, tier, and rate failures in the final account. Do not repeatedly retry broad requests.
 
+For `missing_api_key`, direct the user to run `fbs auth`, set `CFBD_API_KEY`, or add it to the current directory's `.env`. Never ask the user to paste the key into the conversation.
+
 ## Respect scope
 
 - Treat betting fields, lines, and ATS records as historical read-only data.
-- Do not expect custom pagination, caching, raw output, format switches, file export, or writes.
+- Treat `fbs auth` as the only local-write and interactive operation; it stores the user's credential and does not call CFBD.
+- Do not expect custom pagination, caching, raw output, format switches, file export, or endpoint writes.
 - Do not treat a tier-denied endpoint as an empty successful result.
 - Do not infer predictions, rankings, schemes, or opinions from the transformer itself.
 - Do not run the live smoke-test suite during research.

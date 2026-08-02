@@ -1,3 +1,4 @@
+import type { AuthService } from "./auth/service";
 import type { Environment } from "./config";
 import { getApiKey } from "./config";
 import type { CfbdApi } from "./cfbd/api";
@@ -12,6 +13,7 @@ export interface CliIo {
 
 export interface RuntimeOptions {
   api?: CfbdApi;
+  auth?: AuthService;
   environment?: Environment;
   io?: Partial<CliIo>;
 }

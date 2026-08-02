@@ -15,9 +15,12 @@ function normalizeOutput(value: unknown): unknown {
   return removeNullishDeep(snakeCaseDeep(value));
 }
 
-export function renderAgentYaml(envelope: AgentYamlEnvelope): string {
-  const normalized = normalizeOutput(envelope) as Record<string, unknown>;
-  const ordered = orderObject(normalized, ["command", "endpoint", "query", "count"]);
+export function renderYamlDocument(
+  value: Record<string, unknown>,
+  leadingKeys: readonly string[] = [],
+): string {
+  const normalized = normalizeOutput(value) as Record<string, unknown>;
+  const ordered = orderObject(normalized, leadingKeys);
   const rendered = stringify(ordered, {
     aliasDuplicateObjects: false,
     lineWidth: 0,
@@ -25,6 +28,10 @@ export function renderAgentYaml(envelope: AgentYamlEnvelope): string {
   }).trimEnd();
 
   return `${rendered}\n`;
+}
+
+export function renderAgentYaml(envelope: AgentYamlEnvelope): string {
+  return renderYamlDocument(envelope, ["command", "endpoint", "query", "count"]);
 }
 
 export function printAgentYaml(

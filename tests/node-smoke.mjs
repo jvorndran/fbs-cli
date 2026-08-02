@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,6 +25,7 @@ function runCli(args, options = {}) {
     cwd: options.cwd ?? workspace,
     encoding: "utf8",
     env: options.env ?? process.env,
+    input: options.input,
     windowsHide: true,
   });
 }
@@ -44,6 +52,10 @@ try {
   const cleanEnvironment = { ...process.env };
   delete cleanEnvironment.CFBD_API_KEY;
   delete cleanEnvironment.NODE_OPTIONS;
+  cleanEnvironment.HOME = temporaryRoot;
+  cleanEnvironment.USERPROFILE = temporaryRoot;
+  cleanEnvironment.LOCALAPPDATA = join(temporaryRoot, "config");
+  cleanEnvironment.XDG_CONFIG_HOME = join(temporaryRoot, "config");
 
   const missingKey = runCli(["games", "--year", "2026"], {
     cwd: temporaryRoot,
@@ -55,9 +67,50 @@ try {
     error: {
       code: "missing_api_key",
       message: "CFBD_API_KEY is required.",
-      hint: "Set CFBD_API_KEY in your environment or .env file.",
+      hint: "Run fbs auth, set CFBD_API_KEY, or add it to a .env file.",
     },
   });
+
+  const sentinel = "node-smoke-auth-key";
+  const poisonedConfigRoot = join(temporaryRoot, "project-controlled-config");
+  writeFileSync(
+    join(temporaryRoot, ".env"),
+    `LOCALAPPDATA=${poisonedConfigRoot.replaceAll("\\", "/")}\nXDG_CONFIG_HOME=${poisonedConfigRoot.replaceAll("\\", "/")}\n`,
+    "utf8",
+  );
+  const authEnvironment = { ...cleanEnvironment };
+  delete authEnvironment.LOCALAPPDATA;
+  delete authEnvironment.XDG_CONFIG_HOME;
+  const auth = runCli(["auth"], {
+    cwd: temporaryRoot,
+    env: authEnvironment,
+    input: `${sentinel}\n`,
+  });
+  assert.equal(auth.status, 0, auth.stderr);
+  assert.equal(auth.stderr, "");
+  assert.doesNotMatch(`${auth.stdout}${auth.stderr}`, new RegExp(sentinel, "u"));
+  const authOutput = parse(auth.stdout);
+  assert.equal(authOutput.command, "auth");
+  assert.equal(authOutput.status, "saved");
+  const expectedCredentialFile =
+    process.platform === "win32"
+      ? join(temporaryRoot, "AppData", "Local", "fbs-cli", "credentials.env")
+      : process.platform === "darwin"
+        ? join(
+            temporaryRoot,
+            "Library",
+            "Application Support",
+            "fbs-cli",
+            "credentials.env",
+          )
+        : join(temporaryRoot, ".config", "fbs-cli", "credentials.env");
+  assert.equal(authOutput.credentials_file, expectedCredentialFile);
+  assert.ok(!authOutput.credentials_file.startsWith(poisonedConfigRoot));
+  assert.equal(
+    readFileSync(authOutput.credentials_file, "utf8"),
+    `CFBD_API_KEY=${sentinel}\n`,
+  );
+  unlinkSync(join(temporaryRoot, ".env"));
 
   mkdirSync(join(temporaryRoot, ".env"));
   const invalidEnvironmentFile = runCli(["--help"], {

@@ -1,5 +1,8 @@
 import { Command, CommanderError } from "commander";
 
+import type { AuthService } from "./auth/service";
+import { createAuthService } from "./auth/service";
+import { registerAuthCommand } from "./commands/auth";
 import { registerCoachesCommand } from "./commands/coaches";
 import { registerDraftCommand } from "./commands/draft";
 import { registerDrivesCommand } from "./commands/drives";
@@ -26,11 +29,11 @@ import { renderErrorYaml } from "./output/error";
 import type { CommandRuntime, RuntimeOptions } from "./runtime";
 import { createCommandRuntime } from "./runtime";
 
-function buildProgram(runtime: CommandRuntime): Command {
+function buildProgram(runtime: CommandRuntime, auth: AuthService): Command {
   const program = new Command()
     .name("fbs")
-    .description("Agent-first, read-only CollegeFootballData CLI")
-    .version("0.1.0")
+    .description("Explore CollegeFootballData with clean YAML output")
+    .version("0.2.0")
     .helpOption("-h, --help", "Display help for a command")
     .showHelpAfterError(false)
     .showSuggestionAfterError(false)
@@ -42,6 +45,7 @@ function buildProgram(runtime: CommandRuntime): Command {
       outputError: () => undefined,
     });
 
+  registerAuthCommand(program, runtime, auth);
   registerTeamsCommand(program, runtime);
   registerGamesCommand(program, runtime);
   registerRosterCommand(program, runtime);
@@ -67,7 +71,7 @@ function buildProgram(runtime: CommandRuntime): Command {
   program
     .addHelpText(
       "after",
-      "\nExamples:\n  fbs games --year 2026 --team \"Florida State\"\n  fbs plays --year 2026 --week 1 --offense \"Florida State\"\n  fbs info usage --api cfb --days 7\n",
+      "\nExamples:\n  fbs auth\n  fbs games --year 2026 --team \"Florida State\"\n  fbs plays --year 2026 --week 1 --offense \"Florida State\"\n  fbs info usage --api cfb --days 7\n",
     )
     .action(() => {
       program.outputHelp();
@@ -78,7 +82,10 @@ function buildProgram(runtime: CommandRuntime): Command {
 }
 
 export function createProgram(options: RuntimeOptions = {}): Command {
-  return buildProgram(createCommandRuntime(options));
+  return buildProgram(
+    createCommandRuntime(options),
+    options.auth ?? createAuthService(),
+  );
 }
 
 function commanderError(error: CommanderError): CliError {
@@ -95,7 +102,7 @@ export async function runCli(
   options: RuntimeOptions = {},
 ): Promise<number> {
   const runtime = createCommandRuntime(options);
-  const program = buildProgram(runtime);
+  const program = buildProgram(runtime, options.auth ?? createAuthService());
 
   try {
     await program.parseAsync([...argv], { from: "user" });
