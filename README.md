@@ -28,7 +28,7 @@ Or let the CLI create or update that file for you:
 fbs auth
 ```
 
-Paste your CollegeFootballData API key at the masked prompt. `fbs auth` makes one authenticated `GET /info` request to verify the key, then writes `CFBD_API_KEY` to `.env` in the current directory. It preserves other entries and replaces an existing key instead of adding a duplicate. If validation fails, `.env` is not changed.
+When run interactively, `fbs auth` first explains the validation and save steps, then asks for your CollegeFootballData API key at a masked prompt. It makes one authenticated `GET /info` request to verify the key, then writes `CFBD_API_KEY` to `.env` in the current directory. It preserves other entries and replaces an existing key instead of adding a duplicate. If validation fails, `.env` is not changed.
 
 ### 3. Run a command
 

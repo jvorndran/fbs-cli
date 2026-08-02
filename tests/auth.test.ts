@@ -133,7 +133,7 @@ describe("credential input", () => {
     ).rejects.toMatchObject({ code: "auth_invalid_key" });
   });
 
-  test("masks TTY input and restores raw mode after success and cancellation", async () => {
+  test("explains and masks TTY input while restoring raw mode", async () => {
     class TtyInput extends PassThrough {
       readonly isTTY = true;
       isRaw = false;
@@ -184,7 +184,12 @@ describe("credential input", () => {
 
     expect(await successfulRead).toBe("secret-key");
     expect(successfulInput.rawModes).toEqual([true, false]);
-    expect(renderedPrompt).toBe("CFBD API key: \n");
+    expect(renderedPrompt).toBe(
+      "This will validate your key with one CFBD GET /info request.\n" +
+        "If valid, it will save the key to .env in the current directory.\n" +
+        "Your key will stay hidden while you type.\n\n" +
+        "CFBD API key: \n",
+    );
     expect(renderedPrompt).not.toContain("secret-key");
 
     const cancelledInput = new TtyInput();

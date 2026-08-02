@@ -28,6 +28,12 @@ export type AuthApiKeyValidator = (apiKey: string) => Promise<void>;
 
 type PipedInput = AsyncIterable<string | Uint8Array>;
 
+const AUTH_INTERACTIVE_PROMPT =
+  "This will validate your key with one CFBD GET /info request.\n" +
+  "If valid, it will save the key to .env in the current directory.\n" +
+  "Your key will stay hidden while you type.\n\n" +
+  "CFBD API key: ";
+
 export async function readPipedAuthApiKey(input: PipedInput): Promise<string> {
   let value = "";
   for await (const chunk of input) {
@@ -123,7 +129,7 @@ function readMaskedAuthApiKey(
       }
     }
 
-    output.write("CFBD API key: ");
+    output.write(AUTH_INTERACTIVE_PROMPT);
     emitKeypressEvents(input);
     input.on("keypress", onKeypress);
     input.once("end", onEnd);

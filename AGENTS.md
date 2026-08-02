@@ -115,7 +115,7 @@ Use these generated-client enum domains unless an intentional `cfbd` upgrade cha
 
 Resolve `CFBD_API_KEY` from an existing environment value, then an optional `.env` in the current working directory. Never overwrite an environment value with `.env`. Configure the client once with `Authorization: Bearer <key>`.
 
-`fbs auth` must read the key from a masked TTY prompt or from stdin when piped, validate that exact candidate with one authenticated `GET /info` request, then create or update `.env` in the current working directory with `CFBD_API_KEY=<key>`. Preserve unrelated `.env` entries, replace an existing key instead of adding duplicates, and create the file when it is missing. Validation must happen before writing so any provider or transport failure leaves `.env` unchanged. It must not accept the key as a command argument or echo it.
+`fbs auth` must read the key from a masked TTY prompt or from stdin when piped, validate that exact candidate with one authenticated `GET /info` request, then create or update `.env` in the current working directory with `CFBD_API_KEY=<key>`. Before the interactive prompt, explain the validation request, conditional local save, and hidden input. Preserve unrelated `.env` entries, replace an existing key instead of adding duplicates, and create the file when it is missing. Validation must happen before writing so any provider or transport failure leaves `.env` unchanged. It must not accept the key as a command argument or echo it.
 
 Do not add global credential folders, operating-system-specific path selection, or another credential fallback. `.env` is plaintext and must remain ignored by Git. Never commit, log, echo, or otherwise expose a saved or supplied key.
 
@@ -192,7 +192,7 @@ env_file: /project/.env
 
 This success document means `/info` accepted the entered key and `.env` was updated. Validation consumes one CFBD API request. Authentication, network, quota, and server failures use the normal structured error codes and do not modify `.env`.
 
-When `auth` runs interactively, its masked prompt is the sole permitted prose on stderr; an interactive cancellation or invalid key therefore places the prompt before the YAML error. Piped `auth` input emits no prompt and retains the YAML-only stream contract for agents and scripts.
+When `auth` runs interactively, its brief explanation and masked prompt are the sole permitted prose on stderr; an interactive cancellation or invalid key therefore places them before the YAML error. Piped `auth` input emits no explanation or prompt and retains the YAML-only stream contract for agents and scripts.
 
 `query` includes only supplied fields, `count` is the top-level record count, and the final key is endpoint-specific. Emit no prose, logs, banners, spinners, colors, anchors, or aliases. End output with exactly one newline.
 
@@ -215,7 +215,7 @@ Use stable machine-actionable codes, preserve useful provider messages, and add 
 
 For every command, cover exact option-to-query mapping and conditional validation. Transformer fixtures should prove snake_case conversion, null removal, ID preservation, nested grouping/flattening, clock formatting, and unchanged numerical precision. CLI tests should use a mocked API layer and assert YAML parsing, stream separation, exit codes, nested command parsing, and complete help options.
 
-For `auth`, cover missing-file creation, preservation of unrelated `.env` entries, replacement without duplicate keys, input normalization, hidden interactive input, file failures, key redaction, exactly one `/info` validation request, and no write when validation fails. Distribution smoke tests must exercise `auth` only inside an isolated temporary working directory with a mocked fetch; the default suite must never call live CFBD.
+For `auth`, cover missing-file creation, preservation of unrelated `.env` entries, replacement without duplicate keys, input normalization, the interactive explanation and hidden input, silent piped input, file failures, key redaction, exactly one `/info` validation request, and no write when validation fails. Distribution smoke tests must exercise `auth` only inside an isolated temporary working directory with a mocked fetch; the default suite must never call live CFBD.
 
 When changing behavior:
 
