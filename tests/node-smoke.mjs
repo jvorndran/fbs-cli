@@ -4,6 +4,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   unlinkSync,
   writeFileSync,
@@ -89,9 +90,11 @@ assert.equal(version.status, 0, version.stderr);
 assert.equal(version.stderr, "");
 assert.equal(version.stdout.trim(), packageJson.version);
 
-const temporaryRoot = mkdtempSync(join(tmpdir(), "fbs-cli-node-smoke-"));
+const temporaryRoot = realpathSync(
+  mkdtempSync(join(tmpdir(), "fbs-cli-node-smoke-")),
+);
 const resolvedTemporaryRoot = resolve(temporaryRoot);
-const resolvedSystemTemp = resolve(tmpdir());
+const resolvedSystemTemp = realpathSync(tmpdir());
 assert.ok(
   resolvedTemporaryRoot.startsWith(`${resolvedSystemTemp}${sep}`),
   "Refusing to use a temporary directory outside the system temp folder.",

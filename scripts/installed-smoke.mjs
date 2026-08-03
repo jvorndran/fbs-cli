@@ -6,6 +6,7 @@ import {
   mkdtempSync,
   readFileSync,
   readdirSync,
+  realpathSync,
   rmSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -38,9 +39,11 @@ function findTarball(directory) {
   return tarballs[0];
 }
 
-const temporaryRoot = mkdtempSync(join(tmpdir(), "fbs-installed-smoke-"));
+const temporaryRoot = realpathSync(
+  mkdtempSync(join(tmpdir(), "fbs-installed-smoke-")),
+);
 const resolvedTemporaryRoot = resolve(temporaryRoot);
-const resolvedSystemTemp = resolve(tmpdir());
+const resolvedSystemTemp = realpathSync(tmpdir());
 assert.ok(
   resolvedTemporaryRoot.startsWith(`${resolvedSystemTemp}${sep}`),
   "Refusing to use a temporary directory outside the system temp folder.",
