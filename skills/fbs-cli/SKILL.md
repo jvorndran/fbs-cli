@@ -9,13 +9,16 @@ Query CFBD through endpoint-shaped commands, then perform analysis on the return
 
 ## Prepare
 
-1. Use Node.js >=22.12.0 and install the command with `npm install --global @jvorndran/fbs-cli`. For occasional use, run `npx @jvorndran/fbs-cli <arguments>` instead.
-2. Configure `CFBD_API_KEY` manually in the environment or in `.env` in the current directory. As a convenience, the user can run `fbs auth` from that directory. In an interactive terminal, the command explains what it will validate and save before showing the masked prompt. It validates the entered key with exactly one `GET /info` request, then creates or updates the same `.env` file while preserving other entries. A failed validation leaves `.env` unchanged; piped use emits no explanation or prompt.
+1. Use Node.js >=22.12.0 and install the command with `npm install --global @jvorndran/fbs-cli`. For occasional interactive use, run `npx --yes @jvorndran/fbs-cli@latest <arguments>` instead. npm or npx may emit its own installation notices on stderr, so install first when strict CLI stream parsing matters.
+2. Request a key at <https://collegefootballdata.com/key>. Configure `CFBD_API_KEY` manually in the environment or in `.env` in the current directory. As a convenience, the user can run `fbs auth` from that directory. In an interactive terminal, the command explains what it will validate and save before showing the masked prompt. It validates the entered key with exactly one `GET /info` request, then creates or updates the same `.env` file while preserving other entries. A failed validation leaves `.env` unchanged; piped use emits no explanation or prompt.
 3. Never place the key in a command argument, log, issue, or agent prompt. `.env` is plaintext and must remain ignored by Git.
 4. Respect credential precedence: `CFBD_API_KEY` already set in the environment, then `CFBD_API_KEY` in the current directory's `.env`. There is no global or operating-system-specific credential store.
 5. From this repository, replace `fbs` with `bun run src/cli.ts` when needed; Bun 1.3+ is a development tool and is not required by npm users.
 6. Run `fbs --help` for top-level families and `fbs <command path> --help` for the exact accepted flags, enum choices, rules, and examples.
 7. Quote multiword values, scope live queries narrowly because each call consumes CFBD quota, and prefer returned provider IDs for follow-up game, player, coach, and play queries.
+8. The npm package includes this guide at `skills/fbs-cli/SKILL.md`, but package installation does not automatically activate it in an agent host. Use the host's normal skill installation or linking mechanism.
+9. After `fbs auth`, inspect `active_source`. It is `env_file` when the saved file will be used and `environment` when an existing process variable still wins; surface the accompanying precedence warning instead of claiming the new file is active.
+10. Correct credential errors by code: replace or unset the process value for environment-sourced `invalid_api_key`, rerun auth for an invalid saved key, fix permissions for `env_file_read_failed`, fix syntax for `env_file_invalid`, and replace a symlink or non-regular file for `unsafe_env_file`.
 
 ## Choose an endpoint command
 
@@ -156,6 +159,10 @@ Use these shared enum domains:
 
 Treat kebab-case flags as direct mappings to CFBD fields: `--game-id` maps to `gameId`, `--player-id` to `playerId`, `--season-type` to `seasonType`, and so on. Do not invent aliases. Bare switches such as `--exclude-garbage-time`, `--latest`, and `--final` are boolean true.
 
+Put filters after the complete leaf path. A leaf inherits an explicitly supplied ancestor flag only when it exposes the same flag, and a duplicate leaf-position flag wins. If an ancestor flag is unsupported by the chosen leaf, expect exit 2 with `cli_parse_error`; correct it from `fbs <full command path> --help`. Never work around this error by guessing an alias.
+
+Trimmed free-text filters are the request values. Whitespace-only text is `invalid_query` and must not be retried unchanged.
+
 ## Run research flows
 
 ### Inspect one game
@@ -234,6 +241,12 @@ error:
 
 Correct deterministic filters from `hint` when present. Preserve validation, authorization, tier, and rate failures in the final account. Do not repeatedly retry broad requests.
 
+Interpret exit `0` as success/help/version/quiet stdout `EPIPE`, exit `2` as a locally correctable invocation, query, or credential configuration failure, and exit `1` as a provider, network, filesystem, or unexpected runtime failure.
+
+For games, treat `status` as the two-value presentation `completed` or `not_completed` and inspect the preserved `completed` boolean. Do not relabel `not_completed` as scheduled or live because CFBD does not provide that distinction in the field; use `fbs scoreboard` for richer current game status. Drive `start` and `end` contexts contain both display `score` and numeric `offense_score`/`defense_score`.
+
+Treat `network_timeout` as a 30-second timeout with no automatic retry; retry deliberately and narrow a broad query when possible. A `cfbd_invalid_response` from `games teams` means stat categories collided after normalization, not that the result was empty. A downstream pipe closing stdout early may end quietly with success; do not infer missing data solely from that `EPIPE` behavior.
+
 For `missing_api_key`, direct the user to set `CFBD_API_KEY` manually or run `fbs auth` to create `.env` in the current directory. Never ask the user to paste the key into the conversation.
 
 ## Respect scope
@@ -244,3 +257,12 @@ For `missing_api_key`, direct the user to set `CFBD_API_KEY` manually or run `fb
 - Do not treat a tier-denied endpoint as an empty successful result.
 - Do not infer predictions, rankings, schemes, or opinions from the transformer itself.
 - Do not run the live smoke-test suite during research.
+
+## Respect the version 1 contract
+
+- Treat command paths, documented flags, endpoint result keys, YAML envelopes, stderr/stdout separation, and credential precedence as stable throughout `1.x`.
+- Accept additive fields, optional flags, enum values, read-only routes, and deterministic hints in minor releases; parse YAML and ignore unknown keys.
+- Do not depend on textual YAML key order or on provider tier availability.
+- Report a removed or renamed command, flag, result key, or stable error code as a compatibility defect. See `docs/compatibility.md` in the repository for the complete policy.
+
+FBS CLI is an independent community project built on CollegeFootballData and its official `cfbd` client. It is not affiliated with or endorsed by CollegeFootballData or Rad Sports Analytics.

@@ -42,8 +42,12 @@ import type {
   GetWeatherResponse,
 } from "cfbd";
 
-import { configureCfbdClient } from "./client";
-import { executeCfbd } from "./execute";
+import { normalizeConfiguredApiKey } from "../auth/api-key";
+import {
+  createConfiguredCfbdClient,
+  type CreateCfbdClientOptions,
+} from "./client";
+import { createCfbdApiContext } from "./context";
 import {
   createAnalyticsCfbdApi,
   type AnalyticsCfbdApi,
@@ -78,38 +82,71 @@ export interface CfbdApi
   weather(query: QueryOf<GetWeatherData>): Promise<GetWeatherResponse>;
 }
 
-export function createCfbdApi(apiKey: string): CfbdApi {
-  configureCfbdClient(apiKey);
+export type CreateCfbdApiOptions = CreateCfbdClientOptions;
+
+export function createCfbdApi(
+  apiKey: string,
+  options: CreateCfbdApiOptions = {},
+): CfbdApi {
+  const validatedApiKey = normalizeConfiguredApiKey(apiKey, "environment");
+  const client = createConfiguredCfbdClient(validatedApiKey, options);
+  const context = createCfbdApiContext(client, validatedApiKey);
 
   return {
-    ...createReferenceCfbdApi(),
-    ...createStatisticsCfbdApi(),
-    ...createAnalyticsCfbdApi(),
+    ...createReferenceCfbdApi(context),
+    ...createStatisticsCfbdApi(context),
+    ...createAnalyticsCfbdApi(context),
     fbsTeams: (query) =>
-      executeCfbd<GetFbsTeamsResponse>(() => getFbsTeams({ query })),
+      context.execute<GetFbsTeamsResponse>(() =>
+        getFbsTeams({ query, client: context.client }),
+      ),
     games: (query) =>
-      executeCfbd<GetGamesResponse>(() => getGames({ query })),
+      context.execute<GetGamesResponse>(() =>
+        getGames({ query, client: context.client }),
+      ),
     roster: (query) =>
-      executeCfbd<GetRosterResponse>(() => getRoster({ query })),
+      context.execute<GetRosterResponse>(() =>
+        getRoster({ query, client: context.client }),
+      ),
     usage: (query) =>
-      executeCfbd<GetUsageResponse>(() => getUsage({ query })),
+      context.execute<GetUsageResponse>(() =>
+        getUsage({ query, client: context.client }),
+      ),
     gameTeamStats: (query) =>
-      executeCfbd<GetGameTeamStatsResponse>(() => getGameTeamStats({ query })),
+      context.execute<GetGameTeamStatsResponse>(() =>
+        getGameTeamStats({ query, client: context.client }),
+      ),
     gamePlayerStats: (query) =>
-      executeCfbd<GetGamePlayerStatsResponse>(() => getGamePlayerStats({ query })),
+      context.execute<GetGamePlayerStatsResponse>(() =>
+        getGamePlayerStats({ query, client: context.client }),
+      ),
     drives: (query) =>
-      executeCfbd<GetDrivesResponse>(() => getDrives({ query })),
+      context.execute<GetDrivesResponse>(() =>
+        getDrives({ query, client: context.client }),
+      ),
     plays: (query) =>
-      executeCfbd<GetPlaysResponse>(() => getPlays({ query })),
+      context.execute<GetPlaysResponse>(() =>
+        getPlays({ query, client: context.client }),
+      ),
     playStats: (query) =>
-      executeCfbd<GetPlayStatsResponse>(() => getPlayStats({ query })),
+      context.execute<GetPlayStatsResponse>(() =>
+        getPlayStats({ query, client: context.client }),
+      ),
     advancedGameStats: (query) =>
-      executeCfbd<GetAdvancedGameStatsResponse>(() => getAdvancedGameStats({ query })),
+      context.execute<GetAdvancedGameStatsResponse>(() =>
+        getAdvancedGameStats({ query, client: context.client }),
+      ),
     playerUsage: (query) =>
-      executeCfbd<GetPlayerUsageResponse>(() => getPlayerUsage({ query })),
+      context.execute<GetPlayerUsageResponse>(() =>
+        getPlayerUsage({ query, client: context.client }),
+      ),
     advancedSeasonStats: (query) =>
-      executeCfbd<GetAdvancedSeasonStatsResponse>(() => getAdvancedSeasonStats({ query })),
+      context.execute<GetAdvancedSeasonStatsResponse>(() =>
+        getAdvancedSeasonStats({ query, client: context.client }),
+      ),
     weather: (query) =>
-      executeCfbd<GetWeatherResponse>(() => getWeather({ query })),
+      context.execute<GetWeatherResponse>(() =>
+        getWeather({ query, client: context.client }),
+      ),
   };
 }

@@ -15,11 +15,11 @@ The product scope explicitly excludes endpoint writes, MCP, databases, caches, R
 ## Toolchain
 
 - Installed runtime: Node.js >=22.12.0
-- Development package manager, test runner, bundler, and compiler: Bun 1.3+
+- Development package manager, test runner, bundler, and compiler: Bun 1.3.14
 - npm package: `@jvorndran/fbs-cli`; installed command: `fbs`
 - Language: strict TypeScript
 - CLI: Commander
-- API client: official `cfbd` package, pinned exactly to 5.21.0
+- API client: official `cfbd` package, pinned exactly to 5.21.0, with `@hey-api/client-fetch` pinned exactly to 0.6.0 for private-client construction
 - Runtime validation: Zod
 - Serialization: `yaml`
 - Tests: `bun:test`
@@ -38,12 +38,16 @@ bun run build:npm
 bun run build:native
 ```
 
-`build:npm` emits the cross-platform Node entry at `dist/fbs.js`, and the npm package allowlist publishes only that file. `build:native` is optional and compiles a standalone executable for the current platform.
+`build:npm` emits the cross-platform Node entry at `dist/fbs.js`. It bundles `cfbd` and `@hey-api/client-fetch` so the generated client cannot produce a deprecated transitive install warning, while `commander`, `yaml`, and `zod` remain normal runtime dependencies. The npm allowlist also publishes the README, MIT license, third-party notices, and version-matched agent skill. `build:native` is optional and compiles a standalone executable for the current platform.
+
+Keep `env = false` in `bunfig.toml`. Native builds must pass `--no-compile-autoload-dotenv` and `--no-compile-autoload-bunfig`; credential loading is owned by the documented Node entrypoint instead of Bun runtime autoloading. Default and coverage tests preload the network-denial helper and set `CFBD_LIVE_TESTS=0` so an ambient environment value cannot unlock live requests.
+
+`cfbd` and `@hey-api/client-fetch` are exact development dependencies because their code is bundled into the npm artifact. `commander`, `yaml`, and `zod` are exact runtime dependencies. Keep `LICENSE`, `THIRD_PARTY_NOTICES.md`, and `skills/fbs-cli/SKILL.md` in the pack allowlist and verify it with `bun run test:pack`.
 
 The default test suite must remain offline. Live smoke tests are opt-in only:
 
 ```bash
-CFBD_LIVE_TESTS=1 bun test tests/live
+bun run test:live
 ```
 
 Do not run live tests without explicit authorization and a user-provided `CFBD_API_KEY`. Never commit, log, echo, or otherwise expose that key.
@@ -222,7 +226,7 @@ When changing behavior:
 1. Update or add offline tests first.
 2. Run `bun run typecheck` and `bun test`.
 3. Run `bun run build:npm` for distribution changes; also run `bun run build:native` when changing the optional native distribution.
-4. Run `CFBD_LIVE_TESTS=1 bun test tests/live` only when explicitly authorized and keyed.
+4. Run `bun run test:live` only when explicitly authorized and keyed.
 5. Keep `README.md` and `skills/fbs-cli/SKILL.md` synchronized with command/query changes.
 
 Do not weaken a contract merely to make a snapshot pass. Inspect the generated provider type and fixture, then make the smallest intentional change.

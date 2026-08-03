@@ -5,9 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Get started with FBS CLI, an agent-first interface covering all 71 CollegeFootballData GET routes."
+      content="FBS CLI is an unofficial, read-only interface covering all 71 CollegeFootballData GET routes with deterministic YAML output."
     />
-    <title>FBS CLI — Welcome</title>
+    <link rel="canonical" href="https://jvorndran.github.io/fbs-cli/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="FBS CLI" />
+    <meta property="og:title" content="FBS CLI — CollegeFootballData in your terminal" />
+    <meta
+      property="og:description"
+      content="Query all 71 CollegeFootballData GET routes from a read-only CLI with deterministic YAML output."
+    />
+    <meta property="og:url" content="https://jvorndran.github.io/fbs-cli/" />
+    <meta
+      property="og:image"
+      content="https://jvorndran.github.io/fbs-cli/assets/social-preview.png"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta
+      property="og:image:alt"
+      content="FBS CLI: all 71 CollegeFootballData GET routes in a read-only terminal interface"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="FBS CLI — CollegeFootballData in your terminal" />
+    <meta
+      name="twitter:description"
+      content="Query all 71 CollegeFootballData GET routes from a read-only CLI with deterministic YAML output."
+    />
+    <meta
+      name="twitter:image"
+      content="https://jvorndran.github.io/fbs-cli/assets/social-preview.png"
+    />
+    <meta
+      name="twitter:image:alt"
+      content="FBS CLI: all 71 CollegeFootballData GET routes in a read-only terminal interface"
+    />
+    <meta name="theme-color" content="#07101f" />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <title>FBS CLI — CollegeFootballData in your terminal</title>
     <style>
       :root {
         color-scheme: dark;
@@ -536,22 +571,24 @@
           <a href="#quick-start">Quick start</a>
           <a href="#commands">Commands</a>
           <a href="#output">Output</a>
+          <a href="https://github.com/jvorndran/fbs-cli">GitHub</a>
         </nav>
       </header>
 
       <main id="main">
         <section class="hero" id="top" aria-labelledby="hero-title">
           <div>
-            <p class="eyebrow">71 read-only routes, agent-ready</p>
+            <p class="eyebrow">Unofficial · 71 read-only routes · agent-ready</p>
             <h1 id="hero-title">The shortest path from <span>question</span> to kickoff data.</h1>
             <p class="lede">
-              FBS CLI is a read-only command line interface for CollegeFootballData. It covers
-              all 71 GET routes in the pinned client, including historical lines and team ATS
-              records, and returns every result as clean YAML.
+              FBS CLI is an independent command line interface for CollegeFootballData. It
+              covers all 71 GET routes in the pinned <code>cfbd</code> 5.21.0 client, including
+              historical lines and team ATS records, and returns every result as clean YAML.
             </p>
             <div class="actions">
               <a class="button button-primary" href="#quick-start">Start in three steps</a>
-              <a class="button button-secondary" href="README.md">Read the full guide</a>
+              <a class="button button-secondary" href="https://github.com/jvorndran/fbs-cli">View and star on GitHub</a>
+              <a class="button button-secondary" href="https://www.npmjs.com/package/@jvorndran/fbs-cli">Open npm</a>
             </div>
           </div>
 
@@ -562,18 +599,19 @@
               <span class="terminal-dot"></span>
               <span class="terminal-title">fbs — terminal</span>
             </div>
-            <pre><span class="prompt">$</span> <span class="command">fbs games --year 2026 --team "Florida State"</span>
+            <pre><span class="prompt">$</span> <span class="command">fbs games --year 2024 --week 1 --team "Florida State"</span>
 
 <span class="key">command:</span> games
 <span class="key">endpoint:</span> /games
 <span class="key">query:</span>
-  <span class="key">year:</span> 2026
+  <span class="key">year:</span> 2024
+  <span class="key">week:</span> 1
   <span class="key">team:</span> Florida State
 <span class="key">count:</span> 1
 <span class="key">games:</span>
-  - <span class="key">id:</span> 401752731
+  - <span class="key">season:</span> 2024
     <span class="key">week:</span> 1
-    <span class="key">matchup:</span> Alabama at Florida State
+    <span class="key">matchup:</span> Boston College at Florida State
     <span class="key">status:</span> completed</pre>
           </div>
         </section>
@@ -598,7 +636,7 @@
             <article class="card">
               <span class="step-number">02</span>
               <h3>Configure access</h3>
-              <p>Add <code>CFBD_API_KEY</code> to <code>.env</code> yourself, or run this command. In an interactive terminal, it explains the validation and save steps before asking for the key at a masked prompt.</p>
+              <p><a href="https://collegefootballdata.com/key">Request a free CFBD key</a>, then run this command. It explains the validation and project-local save before asking for the key at a masked prompt.</p>
               <div class="code-row">
                 <code>fbs auth</code>
                 <button class="copy-button" type="button" data-copy="fbs auth">Copy</button>
@@ -664,7 +702,7 @@
               <h2 id="output-title">One quiet, predictable YAML document.</h2>
               <p>
                 Successful requests write only structured YAML to stdout. Errors use the same
-                approach on stderr, with stable codes and useful hints.
+                approach on stderr, with stable codes and useful hints. The structural example is abridged.
               </p>
               <ul class="check-list">
                 <li>Snake-case keys</li>
@@ -691,8 +729,8 @@
       </main>
 
       <footer>
-        <span>FBS CLI · Node.js + TypeScript + CollegeFootballData</span>
-        <span>71/71 GET routes · Read-only historical betting data · YAML-only</span>
+        <span>FBS CLI · MIT licensed · Independent community project</span>
+        <span><a href="https://github.com/jvorndran/fbs-cli">Source and documentation</a> · <a href="https://collegefootballdata.com/">CollegeFootballData</a></span>
       </footer>
     </div>
 

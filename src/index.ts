@@ -1,7 +1,10 @@
 import { Command, CommanderError } from "commander";
 
+import packageJson from "../package.json" with { type: "json" };
+
 import type { AuthService } from "./auth/service";
 import { createAuthService } from "./auth/service";
+import { getEnvironmentFilePath } from "./auth/env-file";
 import { registerAuthCommand } from "./commands/auth";
 import { registerCoachesCommand } from "./commands/coaches";
 import { registerDraftCommand } from "./commands/draft";
@@ -33,7 +36,7 @@ function buildProgram(runtime: CommandRuntime, auth: AuthService): Command {
   const program = new Command()
     .name("fbs")
     .description("Explore CollegeFootballData with clean YAML output")
-    .version("0.2.1")
+    .version(packageJson.version)
     .helpOption("-h, --help", "Display help for a command")
     .showHelpAfterError(false)
     .showSuggestionAfterError(false)
@@ -81,10 +84,24 @@ function buildProgram(runtime: CommandRuntime, auth: AuthService): Command {
   return program;
 }
 
+function resolveAuthService(options: RuntimeOptions): AuthService {
+  if (options.auth !== undefined) return options.auth;
+
+  const environmentFile =
+    options.environmentFile ??
+    (options.workingDirectory === undefined
+      ? undefined
+      : getEnvironmentFilePath(options.workingDirectory));
+  return createAuthService({
+    environment: options.environment ?? process.env,
+    ...(environmentFile === undefined ? {} : { environmentFile }),
+  });
+}
+
 export function createProgram(options: RuntimeOptions = {}): Command {
   return buildProgram(
     createCommandRuntime(options),
-    options.auth ?? createAuthService(),
+    resolveAuthService(options),
   );
 }
 
@@ -102,7 +119,7 @@ export async function runCli(
   options: RuntimeOptions = {},
 ): Promise<number> {
   const runtime = createCommandRuntime(options);
-  const program = buildProgram(runtime, options.auth ?? createAuthService());
+  const program = buildProgram(runtime, resolveAuthService(options));
 
   try {
     await program.parseAsync([...argv], { from: "user" });

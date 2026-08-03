@@ -26,8 +26,10 @@ export function registerAuthCommand(
               command: "auth",
               status: "saved",
               envFile: result.environmentFile,
+              activeSource: result.activeSource ?? "env_file",
+              warning: result.warning,
             },
-            ["command", "status", "env_file"],
+            ["command", "status", "env_file", "active_source", "warning"],
           ),
         );
       } catch (error) {

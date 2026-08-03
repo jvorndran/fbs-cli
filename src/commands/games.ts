@@ -32,6 +32,7 @@ import {
   addPlayoffOptions,
   addSeasonTypeOption,
   parseInteger,
+  suppliedLeafOptions,
   suppliedOptions,
 } from "./options";
 import { asQueryRecord, withCommandContext } from "./shared";
@@ -54,7 +55,7 @@ function registerGameTeamsCommand(games: Command, runtime: CommandRuntime): void
       "\nQuery by --id, or use --year with at least one of --week, --team, or --conference.\n\nExamples:\n  fbs games teams --id 401752731\n  fbs games teams --year 2026 --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<GameTeamStatsQuery>>(command);
+      const options = suppliedLeafOptions<Partial<GameTeamStatsQuery>>(command);
       const rawQuery = buildGameTeamStatsQuery(options);
 
       await withCommandContext("games teams", rawQuery, async () => {
@@ -91,7 +92,7 @@ function registerGamePlayersCommand(games: Command, runtime: CommandRuntime): vo
       "\nQuery by --id, or use --year with at least one of --week, --team, or --conference.\n\nExamples:\n  fbs games players --id 401752731\n  fbs games players --year 2026 --team \"Florida State\" --category passing\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<GamePlayerStatsQuery>>(command);
+      const options = suppliedLeafOptions<Partial<GamePlayerStatsQuery>>(command);
       const rawQuery = buildGamePlayerStatsQuery(options);
 
       await withCommandContext("games players", rawQuery, async () => {
@@ -127,7 +128,7 @@ function registerGameWeatherCommand(games: Command, runtime: CommandRuntime): vo
       "\n--year is required unless --game-id is supplied. This endpoint may require an eligible CFBD subscription tier.\n\nExamples:\n  fbs games weather --game-id 401752731\n  fbs games weather --year 2026 --team \"Florida State\" --week 1\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<WeatherQuery>>(command);
+      const options = suppliedLeafOptions<Partial<WeatherQuery>>(command);
       const rawQuery = buildWeatherQuery(options);
 
       await withCommandContext("games weather", rawQuery, async () => {
@@ -171,7 +172,7 @@ function registerGameMediaCommand(games: Command, runtime: CommandRuntime): void
       "\n--year is required.\n\nExamples:\n  fbs games media --year 2026\n  fbs games media --year 2026 --week 1 --team \"Florida State\" --media-type tv\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<MediaQuery>>(command);
+      const options = suppliedLeafOptions<Partial<MediaQuery>>(command);
       const rawQuery = buildMediaQuery(options);
 
       await withCommandContext("games media", rawQuery, async () => {
@@ -207,7 +208,7 @@ export function registerGamesCommand(program: Command, runtime: CommandRuntime):
   games
     .addHelpText(
       "after",
-      "\n--year is required unless --id is supplied. --round requires --competition cfp.\n\nExamples:\n  fbs games --year 2026 --team \"Florida State\"\n  fbs games --id 401752731\n  fbs games --year 2026 --competition cfp --round semifinal\n",
+      "\n--year is required unless --id is supplied. --round requires --competition cfp. Use fbs scoreboard for richer current game status.\n\nExamples:\n  fbs games --year 2026 --team \"Florida State\"\n  fbs games --id 401752731\n  fbs games --year 2026 --competition cfp --round semifinal\n",
     )
     .action(async (_options: unknown, command: Command) => {
       const options = suppliedOptions<Partial<GamesQuery>>(command);

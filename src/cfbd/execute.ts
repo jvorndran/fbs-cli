@@ -1,9 +1,14 @@
 import { CfbdRequestError, redactSensitive } from "../errors";
+import { CfbdTimeoutError } from "./client";
 
-interface RequestResult<T> {
+export interface RequestResult<T> {
   data: T | undefined;
   error: unknown;
   response: Response;
+}
+
+export interface ExecuteCfbdOptions {
+  sensitiveValues?: readonly string[];
 }
 
 function errorCodeForStatus(status: number): string {
@@ -16,13 +21,17 @@ function errorCodeForStatus(status: number): string {
   return "cfbd_request_failed";
 }
 
-function extractMessage(error: unknown, response: Response): string {
+function extractMessage(
+  error: unknown,
+  response: Response,
+  sensitiveValues: readonly string[],
+): string {
   if (typeof error === "string" && error.length > 0) {
-    return redactSensitive(error);
+    return redactSensitive(error, sensitiveValues);
   }
 
   if (error instanceof Error && error.message.length > 0) {
-    return redactSensitive(error.message);
+    return redactSensitive(error.message, sensitiveValues);
   }
 
   if (error !== null && typeof error === "object") {
@@ -30,7 +39,7 @@ function extractMessage(error: unknown, response: Response): string {
     for (const key of ["message", "error", "detail", "title"] as const) {
       const value = candidate[key];
       if (typeof value === "string" && value.length > 0) {
-        return redactSensitive(value);
+        return redactSensitive(value, sensitiveValues);
       }
     }
   }
@@ -57,22 +66,39 @@ function hintForStatus(status: number, message: string): string | undefined {
   return undefined;
 }
 
-export async function executeCfbd<T>(request: () => Promise<RequestResult<T>>): Promise<T> {
+export async function executeCfbd<T>(
+  request: () => Promise<RequestResult<T>>,
+  options: ExecuteCfbdOptions = {},
+): Promise<T> {
+  const sensitiveValues = options.sensitiveValues ?? [];
   let result: RequestResult<T>;
   try {
     result = await request();
   } catch (error) {
+    if (error instanceof CfbdTimeoutError) {
+      throw new CfbdRequestError({
+        code: "network_timeout",
+        message: error.message,
+        hint: "Try again; narrow large queries when possible.",
+        cause: error,
+      });
+    }
+
     const message = error instanceof Error ? error.message : "The CFBD request could not be sent.";
     throw new CfbdRequestError({
       code: "network_error",
-      message: redactSensitive(message),
+      message: redactSensitive(message, sensitiveValues),
       hint: "Check network connectivity and try again.",
       cause: error,
     });
   }
 
   if (result.error !== undefined || result.data === undefined || !result.response.ok) {
-    const message = extractMessage(result.error, result.response);
+    const message = extractMessage(
+      result.error,
+      result.response,
+      sensitiveValues,
+    );
     const hint = hintForStatus(result.response.status, message);
     throw new CfbdRequestError({
       code: errorCodeForStatus(result.response.status),

@@ -1,4 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { parse } from "yaml";
 
 const workspace = `${import.meta.dir}/..`;
@@ -9,9 +12,12 @@ interface ProcessResult {
   stderr: string;
 }
 
-async function spawnBun(args: readonly string[]): Promise<ProcessResult> {
+async function spawnBun(
+  args: readonly string[],
+  options: { cwd?: string } = {},
+): Promise<ProcessResult> {
   const child = Bun.spawn([process.execPath, ...args], {
-    cwd: workspace,
+    cwd: options.cwd ?? workspace,
     env: {
       ...process.env,
       CFBD_API_KEY: "",
@@ -68,22 +74,31 @@ describe("real entrypoint process wiring without network", () => {
   });
 
   test("missing key reaches the entrypoint, writes YAML to stderr, and exits two", async () => {
-    const result = await spawnBun([
-      "run",
-      "src/cli.ts",
-      "games",
-      "--year",
-      "2026",
-    ]);
+    const workingDirectory = await mkdtemp(join(tmpdir(), "fbs-cli-missing-key-"));
 
-    expect(result.exitCode).toBe(2);
-    expect(result.stdout).toBe("");
-    expect(parse(result.stderr)).toEqual({
-      error: {
-        code: "missing_api_key",
-        message: "CFBD_API_KEY is required.",
-        hint: "Set CFBD_API_KEY or run fbs auth to create .env in the current directory.",
-      },
-    });
+    try {
+      const result = await spawnBun(
+        [
+          "run",
+          `${workspace}/src/cli.ts`,
+          "games",
+          "--year",
+          "2026",
+        ],
+        { cwd: workingDirectory },
+      );
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(parse(result.stderr)).toEqual({
+        error: {
+          code: "missing_api_key",
+          message: "CFBD_API_KEY is required.",
+          hint: "Set CFBD_API_KEY or run fbs auth to create .env in the current directory.",
+        },
+      });
+    } finally {
+      await rm(workingDirectory, { recursive: true, force: true });
+    }
   });
 });

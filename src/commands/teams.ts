@@ -24,7 +24,11 @@ import {
   transformTeamAts,
 } from "../transformers/reference-endpoints.ts";
 import { transformTeams } from "../transformers/teams.ts";
-import { parseInteger, suppliedOptions } from "./options";
+import {
+  parseInteger,
+  suppliedLeafOptions,
+  suppliedOptions,
+} from "./options";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 export function registerTeamsCommand(program: Command, runtime: CommandRuntime): void {
@@ -60,7 +64,7 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
     .option("--year <number>", "Season year", parseInteger)
     .addHelpText("after", "\nExample:\n  fbs teams fbs --year 2026\n")
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<FbsTeamsQuery>>(command);
+      const options = suppliedLeafOptions<Partial<FbsTeamsQuery>>(command);
       const rawQuery = buildFbsTeamsQuery(options);
 
       await withCommandContext("teams fbs", rawQuery, async () => {
@@ -90,7 +94,7 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
       "\nExample:\n  fbs teams matchup --team1 \"Florida State\" --team2 Miami --min-year 2000\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<MatchupQuery>>(command);
+      const options = suppliedLeafOptions<Partial<MatchupQuery>>(command);
       const rawQuery = buildMatchupQuery(options);
 
       await withCommandContext("teams matchup", rawQuery, async () => {
@@ -119,10 +123,7 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
       "\nHistorical, read-only data.\n\nExample:\n  fbs teams ats --year 2024 --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = {
-        ...suppliedOptions<Partial<TeamAtsQuery>>(teams),
-        ...suppliedOptions<Partial<TeamAtsQuery>>(command),
-      };
+      const options = suppliedLeafOptions<Partial<TeamAtsQuery>>(command);
       const rawQuery = buildTeamAtsQuery(options);
 
       await withCommandContext("teams ats", rawQuery, async () => {

@@ -1,0 +1,59 @@
+name: Publish npm package
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-publish-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Verify and publish
+    if: github.event.release.prerelease == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm
+    env:
+      CFBD_LIVE_TESTS: "0"
+      FBS_PACK_OUTPUT_DIR: package-artifact
+    steps:
+      - name: Check out the release tag
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set up Node.js for trusted publishing
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "24.x"
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install a trusted-publishing npm CLI
+        run: npm install --global npm@11.6.4
+
+      - name: Install pinned dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify release tag
+        run: bun run check:release-tag -- "${{ github.event.release.tag_name }}"
+
+      - name: Build and verify the exact artifact
+        run: bun run check:release
+
+      - name: Install-smoke the exact artifact
+        run: node scripts/installed-smoke.mjs package-artifact
+
+      - name: Publish through npm trusted publishing
+        run: npm publish package-artifact/*.tgz --provenance --access public

@@ -45,7 +45,7 @@ import type {
   GetTeamRecruitingRankingsResponse,
 } from "cfbd";
 
-import { executeCfbd } from "./execute";
+import type { CfbdApiContext } from "./context";
 import type {
   CoachProfileQuery,
   CoachSeasonsQuery,
@@ -98,52 +98,96 @@ export interface AnalyticsCfbdApi {
  * Build methods after the shared CFBD client has been configured by the central
  * API factory. Keeping configuration in one place prevents accidental key churn.
  */
-export function createAnalyticsCfbdApi(): AnalyticsCfbdApi {
+export function createAnalyticsCfbdApi(
+  context: CfbdApiContext,
+): AnalyticsCfbdApi {
   return {
     wepaTeamSeason: (query) =>
-      executeCfbd<GetAdjustedTeamSeasonStatsResponse>(() =>
-        getAdjustedTeamSeasonStats({ query }),
+      context.execute<GetAdjustedTeamSeasonStatsResponse>(() =>
+        getAdjustedTeamSeasonStats({ query, client: context.client }),
       ),
     wepaPassing: (query) =>
-      executeCfbd<GetAdjustedPlayerPassingStatsResponse>(() =>
-        getAdjustedPlayerPassingStats({ query }),
+      context.execute<GetAdjustedPlayerPassingStatsResponse>(() =>
+        getAdjustedPlayerPassingStats({ query, client: context.client }),
       ),
     wepaRushing: (query) =>
-      executeCfbd<GetAdjustedPlayerRushingStatsResponse>(() =>
-        getAdjustedPlayerRushingStats({ query }),
+      context.execute<GetAdjustedPlayerRushingStatsResponse>(() =>
+        getAdjustedPlayerRushingStats({ query, client: context.client }),
       ),
     wepaKicking: (query) =>
-      executeCfbd<GetKickerPaarResponse>(() => getKickerPaar({ query })),
+      context.execute<GetKickerPaarResponse>(() =>
+        getKickerPaar({ query, client: context.client }),
+      ),
     recruitingPlayers: (query) =>
-      executeCfbd<GetRecruitsResponse>(() => getRecruits({ query })),
+      context.execute<GetRecruitsResponse>(() =>
+        getRecruits({ query, client: context.client }),
+      ),
     recruitingTeams: (query) =>
-      executeCfbd<GetTeamRecruitingRankingsResponse>(() =>
-        getTeamRecruitingRankings({ query }),
+      context.execute<GetTeamRecruitingRankingsResponse>(() =>
+        getTeamRecruitingRankings({ query, client: context.client }),
       ),
     recruitingGroups: (query) =>
-      executeCfbd<GetAggregatedTeamRecruitingRatingsResponse>(() =>
-        getAggregatedTeamRecruitingRatings({ query }),
+      context.execute<GetAggregatedTeamRecruitingRatingsResponse>(() =>
+        getAggregatedTeamRecruitingRatings({
+          query,
+          client: context.client,
+        }),
       ),
-    spRatings: (query) => executeCfbd<GetSpResponse>(() => getSp({ query })),
+    spRatings: (query) =>
+      context.execute<GetSpResponse>(() =>
+        getSp({ query, client: context.client }),
+      ),
     conferenceSpRatings: (query) =>
-      executeCfbd<GetConferenceSpResponse>(() => getConferenceSp({ query })),
-    srsRatings: (query) => executeCfbd<GetSrsResponse>(() => getSrs({ query })),
+      context.execute<GetConferenceSpResponse>(() =>
+        getConferenceSp({ query, client: context.client }),
+      ),
+    srsRatings: (query) =>
+      context.execute<GetSrsResponse>(() =>
+        getSrs({ query, client: context.client }),
+      ),
     expandedSrsRatings: (query) =>
-      executeCfbd<GetExpandedSrsResponse>(() => getExpandedSrs({ query })),
-    eloRatings: (query) => executeCfbd<GetEloResponse>(() => getElo({ query })),
-    fpiRatings: (query) => executeCfbd<GetFpiResponse>(() => getFpi({ query })),
-    rankings: (query) => executeCfbd<GetRankingsResponse>(() => getRankings({ query })),
-    draftTeams: () => executeCfbd<GetDraftTeamsResponse>(() => getDraftTeams()),
+      context.execute<GetExpandedSrsResponse>(() =>
+        getExpandedSrs({ query, client: context.client }),
+      ),
+    eloRatings: (query) =>
+      context.execute<GetEloResponse>(() =>
+        getElo({ query, client: context.client }),
+      ),
+    fpiRatings: (query) =>
+      context.execute<GetFpiResponse>(() =>
+        getFpi({ query, client: context.client }),
+      ),
+    rankings: (query) =>
+      context.execute<GetRankingsResponse>(() =>
+        getRankings({ query, client: context.client }),
+      ),
+    draftTeams: () =>
+      context.execute<GetDraftTeamsResponse>(() =>
+        getDraftTeams({ client: context.client }),
+      ),
     draftPositions: () =>
-      executeCfbd<GetDraftPositionsResponse>(() => getDraftPositions()),
+      context.execute<GetDraftPositionsResponse>(() =>
+        getDraftPositions({ client: context.client }),
+      ),
     draftPicks: (query) =>
-      executeCfbd<GetDraftPicksResponse>(() => getDraftPicks({ query })),
-    coaches: (query) => executeCfbd<GetCoachesResponse>(() => getCoaches({ query })),
+      context.execute<GetDraftPicksResponse>(() =>
+        getDraftPicks({ query, client: context.client }),
+      ),
+    coaches: (query) =>
+      context.execute<GetCoachesResponse>(() =>
+        getCoaches({ query, client: context.client }),
+      ),
     coachProfile: (query) =>
-      executeCfbd<GetCoachProfileResponse>(() => getCoachProfile({ query })),
+      context.execute<GetCoachProfileResponse>(() =>
+        getCoachProfile({ query, client: context.client }),
+      ),
     coachSeasons: (query) =>
-      executeCfbd<GetCoachSeasonsResponse>(() => getCoachSeasons({ query })),
+      context.execute<GetCoachSeasonsResponse>(() =>
+        getCoachSeasons({ query, client: context.client }),
+      ),
     coachTenures: (query) =>
-      executeCfbd<GetCoachTenuresResponse>(() => getCoachTenures({ query })),
+      context.execute<GetCoachTenuresResponse>(() =>
+        getCoachTenures({ query, client: context.client }),
+      ),
   };
 }

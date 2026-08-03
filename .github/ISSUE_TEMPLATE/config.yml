@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private security report
+    url: https://github.com/jvorndran/fbs-cli/security/advisories/new
+    about: Report vulnerabilities privately and never include an API key.
+  - name: CollegeFootballData support
+    url: https://collegefootballdata.com/
+    about: Use provider support for account, quota, tier, or upstream data questions.

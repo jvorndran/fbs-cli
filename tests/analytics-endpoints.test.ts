@@ -320,6 +320,23 @@ describe("analytics and history query validation", () => {
     expect(validateCoachTenuresQuery({})).toEqual({});
   });
 
+  test("trims free-text filters and rejects whitespace-only values", () => {
+    expect(
+      validateCoachesQuery({
+        firstName: " Bobby ",
+        lastName: " Bowden ",
+        team: " Florida State ",
+      }),
+    ).toEqual({
+      firstName: "Bobby",
+      lastName: "Bowden",
+      team: "Florida State",
+    });
+    expect(() =>
+      validateConferenceSpRatingsQuery({ conference: "   " }),
+    ).toThrow("must not be blank");
+  });
+
   test("requires year or team for provider-conditional endpoints", () => {
     const validators = [
       validateRecruitingPlayersQuery,

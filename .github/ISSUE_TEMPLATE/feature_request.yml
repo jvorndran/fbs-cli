@@ -1,0 +1,37 @@
+name: Feature request
+description: Propose a focused improvement within the read-only CLI scope.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or agent workflow is difficult today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed improvement
+      description: Prefer CFBD endpoint and provider terminology over aliases.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: The proposal is read-only and does not add provider writes.
+          required: true
+        - label: The proposal does not require a database, cache, model, spinner, or hidden analysis.
+          required: true
+        - label: I have not included a CFBD key or other credential.
+          required: true

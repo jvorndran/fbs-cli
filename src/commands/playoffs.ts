@@ -19,7 +19,7 @@ import {
   transformCfpParticipants,
   transformCfpPlayoff,
 } from "../transformers/reference-endpoints.ts";
-import { parseInteger, suppliedOptions } from "./options";
+import { parseInteger, suppliedLeafOptions, suppliedOptions } from "./options";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 export function registerPlayoffsCommand(
@@ -60,7 +60,7 @@ export function registerPlayoffsCommand(
       "\nExample:\n  fbs playoffs cfp participants --year 2025\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<CfpParticipantsQuery>>(command);
+      const options = suppliedLeafOptions<Partial<CfpParticipantsQuery>>(command);
       const rawQuery = buildCfpParticipantsQuery(options);
 
       await withCommandContext("playoffs cfp participants", rawQuery, async () => {
@@ -93,7 +93,7 @@ export function registerPlayoffsCommand(
       "\nExamples:\n  fbs playoffs cfp games --year 2025\n  fbs playoffs cfp games --year 2025 --round semifinal\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<CfpGamesQuery>>(command);
+      const options = suppliedLeafOptions<Partial<CfpGamesQuery>>(command);
       const rawQuery = buildCfpGamesQuery(options);
 
       await withCommandContext("playoffs cfp games", rawQuery, async () => {

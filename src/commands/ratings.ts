@@ -35,6 +35,7 @@ import {
   addClassificationOption,
   addSeasonTypeOption,
   parseInteger,
+  suppliedLeafOptions,
   suppliedOptions,
 } from "./options";
 import { asQueryRecord, withCommandContext } from "./shared";
@@ -52,7 +53,7 @@ function registerConferenceSp(sp: Command, runtime: CommandRuntime): void {
       "\nAll filters are optional.\n\nExamples:\n  fbs ratings sp conferences --year 2025\n  fbs ratings sp conferences --conference ACC --classification fbs\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<ConferenceSpRatingsQuery>>(command);
+      const options = suppliedLeafOptions<Partial<ConferenceSpRatingsQuery>>(command);
       const rawQuery = buildConferenceSpRatingsQuery(options);
       await withCommandContext("ratings sp conferences", rawQuery, async () => {
         const query = validateConferenceSpRatingsQuery(rawQuery);
@@ -113,7 +114,7 @@ function registerExpandedSrs(srs: Command, runtime: CommandRuntime): void {
       "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs ratings srs expanded --year 2025\n  fbs ratings srs expanded --team \"Florida State\" --classification fbs\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<ExpandedSrsRatingsQuery>>(command);
+      const options = suppliedLeafOptions<Partial<ExpandedSrsRatingsQuery>>(command);
       const rawQuery = buildExpandedSrsRatingsQuery(options);
       await withCommandContext("ratings srs expanded", rawQuery, async () => {
         const query = validateExpandedSrsRatingsQuery(rawQuery);

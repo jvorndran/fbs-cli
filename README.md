@@ -1,10 +1,40 @@
 # FBS CLI
 
-`fbs` puts the [CollegeFootballData](https://collegefootballdata.com/) API in your terminal. Search teams and players, inspect games and play-by-play, compare ratings and recruiting, or retrieve historical lines and ATS records across all 71 CFBD GET endpoints. Results are clean YAML that works well in a terminal, script, or agent workflow.
+[![npm version](https://img.shields.io/npm/v/%40jvorndran%2Ffbs-cli)](https://www.npmjs.com/package/@jvorndran/fbs-cli)
+[![CI](https://github.com/jvorndran/fbs-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/jvorndran/fbs-cli/actions/workflows/ci.yml)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22.12-43853d)](https://nodejs.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+`fbs` is an unofficial, read-only command-line interface for the [CollegeFootballData](https://collegefootballdata.com/) API. It exposes all 71 GET routes from the pinned official `cfbd` 5.21.0 TypeScript client as predictable commands and returns deterministic YAML for terminals, scripts, and agent workflows.
+
+```bash
+$ fbs games --year 2024 --week 1 --team "Florida State"
+command: games
+endpoint: /games
+query:
+  year: 2024
+  week: 1
+  team: Florida State
+count: 1
+games:
+  - season: 2024
+    week: 1
+    status: completed
+    matchup: Boston College at Florida State
+```
+
+The response above is abridged. The real command preserves provider IDs, timestamps, scores, nested details, and numeric precision.
+
+Why use it:
+
+- Endpoint-shaped commands and provider terminology: no hidden aliases or generated analysis.
+- Read-only access to schedules, teams, players, plays, metrics, recruiting, ratings, draft history, historical lines, and every other CFBD GET route.
+- One YAML document on stdout for success and one machine-actionable YAML error on stderr for failure.
+- No database, cache, pagination layer, file export, model execution, or decorative terminal UI.
 
 ## Quick start
 
-You need [Node.js](https://nodejs.org/) >=22.12.0 and a CollegeFootballData API key.
+You need [Node.js](https://nodejs.org/) >=22.12.0 and a [free CFBD API key](https://collegefootballdata.com/key).
 
 ### 1. Install the CLI
 
@@ -16,19 +46,19 @@ This adds the `fbs` command on Windows, macOS, and Linux.
 
 ### 2. Configure your API key
 
-You can create a `.env` file manually in the directory where you will run `fbs`:
-
-```env
-CFBD_API_KEY=your_key_here
-```
-
-Or let the CLI create or update that file for you:
+Run the local credential setup from the directory where you will use `fbs`:
 
 ```bash
 fbs auth
 ```
 
 When run interactively, `fbs auth` first explains the validation and save steps, then asks for your CollegeFootballData API key at a masked prompt. It makes one authenticated `GET /info` request to verify the key, then writes `CFBD_API_KEY` to `.env` in the current directory. It preserves other entries and replaces an existing key instead of adding a duplicate. If validation fails, `.env` is not changed.
+
+For manual or ephemeral setup, set `CFBD_API_KEY` in the shell environment or create this project-local file yourself:
+
+```env
+CFBD_API_KEY=your_key_here
+```
 
 ### 3. Run a command
 
@@ -41,17 +71,19 @@ Quote team and player names that contain spaces. Use `fbs <command path> --help`
 
 ### Run without installing
 
-For occasional use, `npx` can infer the package's `fbs` executable:
+For occasional interactive use, `npx` can infer the package's `fbs` executable:
 
 ```bash
-npx @jvorndran/fbs-cli --help
-npx @jvorndran/fbs-cli auth
-npx @jvorndran/fbs-cli games --year 2026 --team "Florida State"
+npx --yes @jvorndran/fbs-cli@latest --help
+npx --yes @jvorndran/fbs-cli@latest auth
+npx --yes @jvorndran/fbs-cli@latest games --year 2026 --team "Florida State"
 ```
+
+`npx` itself may print installation notices on stderr before `fbs` starts. Install the package first when a script or agent requires the CLI's strict stdout/stderr contract.
 
 ## API key setup
 
-`fbs` checks `CFBD_API_KEY` already set in your shell first, then `.env` in the current directory. `fbs auth` validates the entered key with one `/info` request before creating or updating that local `.env` file. The request consumes one CFBD API call. The CLI does not use a global credential folder or operating-system-specific storage.
+`fbs` checks `CFBD_API_KEY` already set in your shell first, then `.env` in the current directory. `fbs auth` validates the entered key with one `/info` request before creating or updating that local `.env` file. The request consumes one CFBD API call. The CLI does not use a global credential folder or operating-system-specific storage. Request a key at [collegefootballdata.com/key](https://collegefootballdata.com/key).
 
 Run `fbs auth` from each directory where you want a separate `.env`, or create the file manually. Manual setup skips the immediate validation request; the next data command will report any authentication problem. Because `.env` contains the key as plaintext, add it to `.gitignore` and never commit it or paste the key into commands, issues, logs, or agent prompts.
 
@@ -63,6 +95,29 @@ error:
   message: CFBD_API_KEY is required.
   hint: Set CFBD_API_KEY or run fbs auth to create .env in the current directory.
 ```
+
+Successful `auth` output reports which credential source will actually win on the next endpoint command:
+
+```yaml
+command: auth
+status: saved
+env_file: /project/.env
+active_source: env_file
+```
+
+If `CFBD_API_KEY` is already nonblank in the process environment, `active_source` is `environment` and the result warns that the environment still takes precedence over the newly saved `.env`. Unset or replace that environment value when the saved key should become active.
+
+Credential failures identify the corrective source: `invalid_api_key` tells you whether to replace the environment value or rerun `fbs auth` for `.env`; `env_file_read_failed` points to permissions; `env_file_invalid` points to syntax; and `unsafe_env_file` rejects a symlink or non-regular `.env` file.
+
+## Agent use
+
+The versioned agent guide at [`skills/fbs-cli/SKILL.md`](skills/fbs-cli/SKILL.md) covers command selection, multi-endpoint research flows, YAML parsing, deterministic error recovery, credential safety, and the CLI's read-only boundaries. It is included in the npm package so an installed artifact and its guide stay on the same release.
+
+Installing the npm package does not automatically activate the guide in an agent host. Link or install that file using the host's normal skill mechanism. Never put a CFBD key in an agent prompt; configure it through the environment or the local masked `fbs auth` flow.
+
+## Stability
+
+Version 1 follows semantic versioning. Command paths, documented flags, result keys, structured envelopes, exit behavior, credential precedence, and the read-only side-effect boundary are public compatibility contracts. Minor releases may add provider routes, optional flags, accepted enum values, fields, or hints. See the complete [v1 compatibility policy](https://github.com/jvorndran/fbs-cli/blob/main/docs/compatibility.md).
 
 ## Command reference
 
@@ -192,6 +247,14 @@ The tables below list every executable endpoint command. All shown flags are acc
 
 Kebab-case flags map directly to the corresponding CFBD camelCase query fields, such as `--game-id` -> `gameId`, `--player-id` -> `playerId`, `--season-type` -> `seasonType`, and `--exclude-garbage-time` -> `excludeGarbageTime`. Do not invent aliases.
 
+### Nested command parsing
+
+Put endpoint filters after the complete command path, for example `fbs games teams --year 2026 --week 1`. A leaf inherits an explicitly supplied ancestor flag only when the leaf exposes that same flag. If the flag is supplied again after the full leaf path, the leaf value wins.
+
+An ancestor flag unsupported by the selected leaf fails before any request with exit code 2 and `error.code: cli_parse_error`. The hint points to the exact leaf help and asks you to place filters after the full command path. This applies to executable parents with nested actions such as `teams`, `games`, `plays`, `stats season`, `stats player success`, `metrics wp`, `ratings sp`, `ratings srs`, `playoffs cfp`, and `coaches`.
+
+All free-text query values are trimmed before validation and before the provider request. A whitespace-only name, conference, provider, category, search term, or other text filter is an `invalid_query` failure and makes no request.
+
 ## Research flows
 
 ### Discover a game and inspect it
@@ -263,19 +326,21 @@ Each successful command writes one YAML document to stdout. It identifies the co
 command: games
 endpoint: /games
 query:
-  year: 2026
+  year: 2024
+  week: 1
   team: Florida State
 count: 1
 games:
-  - id: 401752731
-    season: 2026
+  - season: 2024
     week: 1
     season_type: regular
     status: completed
-    matchup: Alabama at Florida State
+    matchup: Boston College at Florida State
 ```
 
-Keys are snake_case, unavailable values are omitted, and provider IDs and numeric precision are preserved. The final collection key matches the result key in the command tables above.
+This historical response is abridged. Keys are snake_case, unavailable values are omitted, and provider IDs and numeric precision are preserved. The final collection key matches the result key in the command tables above.
+
+For `/games`, the raw `completed` boolean is preserved and the presentation `status` is exactly `completed` or `not_completed`. A false provider value cannot reliably distinguish a scheduled game from one in progress; use `fbs scoreboard` for richer current game status. For `/drives`, each `start` and `end` keeps the display `score: "O-D"` and also exposes numeric `offense_score` and `defense_score` fields.
 
 Failures write YAML to stderr and exit with a nonzero status, making them straightforward to handle from scripts and agents:
 
@@ -291,6 +356,14 @@ error:
 ```
 
 Errors do not include the API key, authorization header, or a stack trace.
+Exit code `0` means success, help/version output, or a quiet stdout `EPIPE`.
+Exit code `2` identifies a locally correctable invocation, query, or credential
+configuration error. Exit code `1` covers provider, network, filesystem, and
+unexpected runtime failures.
+
+Provider calls time out after 30 seconds without an automatic retry. That failure uses `network_timeout` and suggests trying again or narrowing a large query. If `/games/teams` categories would collide after snake-case normalization, the CLI emits `cfbd_invalid_response` instead of silently overwriting a stat; retry later or report the incompatible provider response shape.
+
+When output is piped to a consumer that exits early, stdout `EPIPE` is treated as a quiet successful termination. Other stdout failures are not suppressed, and stderr behavior is unchanged.
 
 ## Development
 
@@ -302,8 +375,29 @@ bun run src/cli.ts --help
 bun run dev -- games --year 2026 --team "Florida State"
 bun run typecheck
 bun test
+bun run test:coverage
+bun run check:docs
 bun run build:npm
+bun run test:node
+bun run test:pack
 bun run build:native
 ```
 
-The default test suite is offline. Live smoke tests are opt-in, consume CFBD quota, and should only be run with explicit authorization.
+The default test suite, documentation contract check, and packed-artifact smoke are offline. Live smoke tests are opt-in, consume CFBD quota, and should only be run with explicit authorization and a user-supplied key. See [CONTRIBUTING.md](https://github.com/jvorndran/fbs-cli/blob/main/CONTRIBUTING.md) for the development workflow and [docs/releasing.md](https://github.com/jvorndran/fbs-cli/blob/main/docs/releasing.md) for the maintainer-only release process.
+
+## Project and support
+
+- Report reproducible bugs through [GitHub Issues](https://github.com/jvorndran/fbs-cli/issues). Redact keys and authorization data.
+- Report security problems privately as described in [SECURITY.md](https://github.com/jvorndran/fbs-cli/blob/main/SECURITY.md).
+- Review compatibility guarantees in [docs/compatibility.md](https://github.com/jvorndran/fbs-cli/blob/main/docs/compatibility.md).
+- See release history in [CHANGELOG.md](https://github.com/jvorndran/fbs-cli/blob/main/CHANGELOG.md).
+
+## Acknowledgments
+
+FBS CLI is an independent community project built on the [CollegeFootballData API](https://collegefootballdata.com/) and its official [`cfbd` TypeScript client](https://github.com/CFBD/cfbd-typescript). It is not affiliated with or endorsed by CollegeFootballData or Rad Sports Analytics. Data availability, quotas, and subscription tiers are controlled by the provider.
+
+Bundled dependency licenses are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## License
+
+FBS CLI is available under the [MIT License](LICENSE).

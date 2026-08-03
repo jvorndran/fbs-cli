@@ -1,55 +1,34 @@
-import { readFile, writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { randomUUID } from "node:crypto";
+import {
+  lstat,
+  open,
+  readFile,
+  rename,
+  unlink,
+  type FileHandle,
+} from "node:fs/promises";
+import { basename, dirname, resolve } from "node:path";
 
 import {
-  AuthInputRequiredError,
+  API_KEY_MAX_LENGTH,
+  normalizeAuthApiKey,
+} from "./api-key";
+import {
   EnvironmentFileUpdateError,
-  InvalidAuthKeyError,
+  UnsafeEnvironmentFileError,
 } from "../errors";
 
-export const AUTH_KEY_MAX_LENGTH = 4096;
+export { API_KEY_MAX_LENGTH, normalizeAuthApiKey } from "./api-key";
 
-const bearerSafeApiKey = /^[A-Za-z0-9._~+/=-]+$/u;
 const apiKeyAssignment = /^[\t ]*(?:export[\t ]+)?CFBD_API_KEY[\t ]*=/u;
 
 export interface SaveCredentialOptions {
   environmentFile?: string;
+  renameFile?: (source: string, destination: string) => Promise<void>;
 }
 
 export interface SavedCredential {
   environmentFile: string;
-}
-
-function removeOneLineTerminator(value: string): string {
-  if (value.endsWith("\r\n")) return value.slice(0, -2);
-  if (value.endsWith("\n") || value.endsWith("\r")) {
-    return value.slice(0, -1);
-  }
-  return value;
-}
-
-export function normalizeAuthApiKey(value: string): string {
-  if (value.length > AUTH_KEY_MAX_LENGTH + 2) {
-    throw new InvalidAuthKeyError();
-  }
-
-  const normalized = removeOneLineTerminator(value).replace(
-    /^[\t ]+|[\t ]+$/gu,
-    "",
-  );
-
-  if (normalized.length === 0) {
-    throw new AuthInputRequiredError();
-  }
-
-  if (
-    normalized.length > AUTH_KEY_MAX_LENGTH ||
-    !bearerSafeApiKey.test(normalized)
-  ) {
-    throw new InvalidAuthKeyError();
-  }
-
-  return normalized;
 }
 
 export function getEnvironmentFilePath(
@@ -59,10 +38,13 @@ export function getEnvironmentFilePath(
 }
 
 export function updateEnvironmentFile(content: string, apiKey: string): string {
-  const lineEnding = content.includes("\r\n") ? "\r\n" : "\n";
-  const normalizedContent = content.replace(/\r\n|\r/gu, "\n");
+  const hasByteOrderMark = content.startsWith("\uFEFF");
+  const contentWithoutMark = hasByteOrderMark ? content.slice(1) : content;
+  const lineEnding = contentWithoutMark.match(/\r\n|\n|\r/u)?.[0] ?? "\n";
+  const normalizedContent = contentWithoutMark.replace(/\r\n|\r/gu, "\n");
   const hadFinalLineEnding = /\n$/u.test(normalizedContent);
-  const lines = content.length === 0 ? [] : normalizedContent.split("\n");
+  const lines =
+    contentWithoutMark.length === 0 ? [] : normalizedContent.split("\n");
   if (hadFinalLineEnding) lines.pop();
 
   const assignment = `CFBD_API_KEY=${apiKey}`;
@@ -79,7 +61,8 @@ export function updateEnvironmentFile(content: string, apiKey: string): string {
   }
 
   if (!replaced) updatedLines.push(assignment);
-  return `${updatedLines.join(lineEnding)}${lineEnding}`;
+  const updated = `${updatedLines.join(lineEnding)}${lineEnding}`;
+  return hasByteOrderMark ? `\uFEFF${updated}` : updated;
 }
 
 function isMissingFile(error: unknown): boolean {
@@ -91,29 +74,87 @@ function isMissingFile(error: unknown): boolean {
   );
 }
 
+async function readEnvironmentFile(environmentFile: string): Promise<string> {
+  let metadata;
+  try {
+    metadata = await lstat(environmentFile);
+  } catch (error) {
+    if (isMissingFile(error)) return "";
+    throw new EnvironmentFileUpdateError(error);
+  }
+
+  if (metadata.isSymbolicLink() || !metadata.isFile()) {
+    throw new UnsafeEnvironmentFileError();
+  }
+
+  try {
+    return await readFile(environmentFile, "utf8");
+  } catch (error) {
+    throw new EnvironmentFileUpdateError(error);
+  }
+}
+
+async function closeQuietly(handle: FileHandle | undefined): Promise<void> {
+  if (handle === undefined) return;
+  try {
+    await handle.close();
+  } catch {
+    // Preserve the primary write failure.
+  }
+}
+
+async function unlinkQuietly(path: string): Promise<void> {
+  try {
+    await unlink(path);
+  } catch (error) {
+    if (!isMissingFile(error)) {
+      // Preserve the primary write failure.
+    }
+  }
+}
+
+async function writeEnvironmentFileAtomically(
+  environmentFile: string,
+  content: string,
+  renameFile: (source: string, destination: string) => Promise<void> = rename,
+): Promise<void> {
+  const temporaryFile = resolve(
+    dirname(environmentFile),
+    `.${basename(environmentFile)}.${process.pid}.${randomUUID()}.tmp`,
+  );
+  let handle: FileHandle | undefined;
+  let renamed = false;
+
+  try {
+    handle = await open(temporaryFile, "wx", 0o600);
+    await handle.writeFile(content, "utf8");
+    await handle.sync();
+    await handle.close();
+    handle = undefined;
+    await renameFile(temporaryFile, environmentFile);
+    renamed = true;
+  } catch (error) {
+    throw new EnvironmentFileUpdateError(error);
+  } finally {
+    await closeQuietly(handle);
+    if (!renamed) await unlinkQuietly(temporaryFile);
+  }
+}
+
 export async function saveCredential(
   apiKeyInput: string,
   options: SaveCredentialOptions = {},
 ): Promise<SavedCredential> {
   const apiKey = normalizeAuthApiKey(apiKeyInput);
-  const environmentFile =
-    options.environmentFile ?? getEnvironmentFilePath();
-
-  let content = "";
-  try {
-    content = await readFile(environmentFile, "utf8");
-  } catch (error) {
-    if (!isMissingFile(error)) throw new EnvironmentFileUpdateError(error);
-  }
-
-  try {
-    await writeFile(environmentFile, updateEnvironmentFile(content, apiKey), {
-      encoding: "utf8",
-      mode: 0o600,
-    });
-  } catch (error) {
-    throw new EnvironmentFileUpdateError(error);
-  }
+  const environmentFile = resolve(
+    options.environmentFile ?? getEnvironmentFilePath(),
+  );
+  const content = await readEnvironmentFile(environmentFile);
+  await writeEnvironmentFileAtomically(
+    environmentFile,
+    updateEnvironmentFile(content, apiKey),
+    options.renameFile,
+  );
 
   return { environmentFile };
 }

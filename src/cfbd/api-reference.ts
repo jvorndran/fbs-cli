@@ -55,7 +55,7 @@ import type {
   GetVenuesResponse,
 } from "cfbd";
 
-import { executeCfbd } from "./execute";
+import type { CfbdApiContext } from "./context";
 
 type QueryOf<T extends { query?: unknown }> = NonNullable<T["query"]>;
 
@@ -91,43 +91,85 @@ export function asReferenceCfbdApi(api: object): ReferenceCfbdApi {
   return api as ReferenceCfbdApi;
 }
 
-export function createReferenceCfbdApi(): ReferenceCfbdApi {
+export function createReferenceCfbdApi(
+  context: CfbdApiContext,
+): ReferenceCfbdApi {
   return {
-    teams: (query) => executeCfbd<GetTeamsResponse>(() => getTeams({ query })),
+    teams: (query) =>
+      context.execute<GetTeamsResponse>(() =>
+        getTeams({ query, client: context.client }),
+      ),
     matchup: (query) =>
-      executeCfbd<GetMatchupResponse>(() => getMatchup({ query })),
+      context.execute<GetMatchupResponse>(() =>
+        getMatchup({ query, client: context.client }),
+      ),
     conferences: () =>
-      executeCfbd<GetConferencesResponse>(() => getConferences()),
+      context.execute<GetConferencesResponse>(() =>
+        getConferences({ client: context.client }),
+      ),
     talent: (query) =>
-      executeCfbd<GetTalentResponse>(() => getTalent({ query })),
-    venues: () => executeCfbd<GetVenuesResponse>(() => getVenues()),
+      context.execute<GetTalentResponse>(() =>
+        getTalent({ query, client: context.client }),
+      ),
+    venues: () =>
+      context.execute<GetVenuesResponse>(() =>
+        getVenues({ client: context.client }),
+      ),
     playTypes: () =>
-      executeCfbd<GetPlayTypesResponse>(() => getPlayTypes()),
+      context.execute<GetPlayTypesResponse>(() =>
+        getPlayTypes({ client: context.client }),
+      ),
     playStatTypes: () =>
-      executeCfbd<GetPlayStatTypesResponse>(() => getPlayStatTypes()),
+      context.execute<GetPlayStatTypesResponse>(() =>
+        getPlayStatTypes({ client: context.client }),
+      ),
     cfpPlayoff: (query) =>
-      executeCfbd<GetCfpPlayoffResponse>(() => getCfpPlayoff({ query })),
+      context.execute<GetCfpPlayoffResponse>(() =>
+        getCfpPlayoff({ query, client: context.client }),
+      ),
     cfpParticipants: (query) =>
-      executeCfbd<GetCfpParticipantsResponse>(() => getCfpParticipants({ query })),
+      context.execute<GetCfpParticipantsResponse>(() =>
+        getCfpParticipants({ query, client: context.client }),
+      ),
     cfpGames: (query) =>
-      executeCfbd<GetCfpGamesResponse>(() => getCfpGames({ query })),
+      context.execute<GetCfpGamesResponse>(() =>
+        getCfpGames({ query, client: context.client }),
+      ),
     media: (query) =>
-      executeCfbd<GetMediaResponse>(() => getMedia({ query })),
+      context.execute<GetMediaResponse>(() =>
+        getMedia({ query, client: context.client }),
+      ),
     livePlays: (query) =>
-      executeCfbd<GetLivePlaysResponse>(() => getLivePlays({ query })),
+      context.execute<GetLivePlaysResponse>(() =>
+        getLivePlays({ query, client: context.client }),
+      ),
     lines: (query) =>
-      executeCfbd<GetLinesResponse>(() => getLines({ query })),
+      context.execute<GetLinesResponse>(() =>
+        getLines({ query, client: context.client }),
+      ),
     teamAts: (query) =>
-      executeCfbd<GetTeamsAtsResponse>(() => getTeamsAts({ query })),
+      context.execute<GetTeamsAtsResponse>(() =>
+        getTeamsAts({ query, client: context.client }),
+      ),
     userInfo: () =>
-      executeCfbd<GetUserInfoResponse>(() => getUserInfo()),
+      context.execute<GetUserInfoResponse>(() =>
+        getUserInfo({ client: context.client }),
+      ),
     records: (query) =>
-      executeCfbd<GetRecordsResponse>(() => getRecords({ query })),
+      context.execute<GetRecordsResponse>(() =>
+        getRecords({ query, client: context.client }),
+      ),
     calendar: (query) =>
-      executeCfbd<GetCalendarResponse>(() => getCalendar({ query })),
+      context.execute<GetCalendarResponse>(() =>
+        getCalendar({ query, client: context.client }),
+      ),
     scoreboard: (query) =>
-      executeCfbd<GetScoreboardResponse>(() => getScoreboard({ query })),
+      context.execute<GetScoreboardResponse>(() =>
+        getScoreboard({ query, client: context.client }),
+      ),
     advancedBoxScore: (query) =>
-      executeCfbd<GetAdvancedBoxScoreResponse>(() => getAdvancedBoxScore({ query })),
+      context.execute<GetAdvancedBoxScoreResponse>(() =>
+        getAdvancedBoxScore({ query, client: context.client }),
+      ),
   };
 }

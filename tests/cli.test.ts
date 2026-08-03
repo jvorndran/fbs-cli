@@ -539,6 +539,128 @@ describe("offline CLI routing", () => {
     expect(parse(nested.stdout).command).toBe("plays stats");
   });
 
+  test.each([
+    {
+      label: "teams fbs",
+      argv: ["teams", "--year", "2026", "fbs"],
+      method: "fbsTeams",
+      query: { year: 2026 },
+    },
+    {
+      label: "teams ats",
+      argv: ["teams", "--year", "2024", "--conference", "ACC", "ats", "--team", "Florida State"],
+      method: "teamAts",
+      query: { conference: "ACC", team: "Florida State", year: 2024 },
+    },
+    {
+      label: "games teams",
+      argv: ["games", "--year", "2026", "teams", "--week", "1"],
+      method: "gameTeamStats",
+      query: { week: 1, year: 2026 },
+    },
+    {
+      label: "games players",
+      argv: ["games", "--year", "2026", "players", "--team", "Florida State"],
+      method: "gamePlayerStats",
+      query: { team: "Florida State", year: 2026 },
+    },
+    {
+      label: "games weather",
+      argv: ["games", "--year", "2026", "--team", "Florida State", "weather", "--week", "1"],
+      method: "weather",
+      query: { team: "Florida State", week: 1, year: 2026 },
+    },
+    {
+      label: "games media",
+      argv: ["games", "--year", "2026", "media", "--media-type", "tv"],
+      method: "media",
+      query: { mediaType: "tv", year: 2026 },
+    },
+    {
+      label: "plays stats",
+      argv: ["plays", "--year", "2026", "--week", "1", "stats", "--athlete-id", "4433971"],
+      method: "playStats",
+      query: { athleteId: 4433971, week: 1, year: 2026 },
+    },
+    {
+      label: "stats season advanced",
+      argv: ["stats", "season", "--year", "2026", "--start-week", "1", "advanced", "--end-week", "6"],
+      method: "advancedSeasonStats",
+      query: { endWeek: 6, startWeek: 1, year: 2026 },
+    },
+    {
+      label: "stats player success game",
+      argv: ["stats", "player", "success", "--year", "2026", "--team", "Florida State", "--threshold", "10", "--exclude-garbage-time", "game", "--week", "1"],
+      method: "playerGameSuccessRates",
+      query: {
+        excludeGarbageTime: true,
+        team: "Florida State",
+        threshold: 10,
+        week: 1,
+        year: 2026,
+      },
+    },
+    {
+      label: "ratings sp conferences",
+      argv: ["ratings", "sp", "--year", "2025", "conferences", "--conference", "ACC"],
+      method: "conferenceSpRatings",
+      query: { conference: "ACC", year: 2025 },
+    },
+    {
+      label: "ratings srs expanded",
+      argv: ["ratings", "srs", "--team", "Florida State", "--conference", "ACC", "expanded", "--classification", "fbs"],
+      method: "expandedSrsRatings",
+      query: { classification: "fbs", conference: "ACC", team: "Florida State" },
+    },
+    {
+      label: "playoffs cfp participants",
+      argv: ["playoffs", "cfp", "--year", "2025", "participants"],
+      method: "cfpParticipants",
+      query: { year: 2025 },
+    },
+    {
+      label: "playoffs cfp games",
+      argv: ["playoffs", "cfp", "--year", "2025", "games", "--round", "semifinal"],
+      method: "cfpGames",
+      query: { round: "semifinal", year: 2025 },
+    },
+    {
+      label: "coaches seasons",
+      argv: ["coaches", "--team", "Florida State", "--min-year", "1976", "seasons", "--max-year", "2009"],
+      method: "coachSeasons",
+      query: { maxYear: 2009, minYear: 1976, team: "Florida State" },
+    },
+    {
+      label: "coaches tenures",
+      argv: ["coaches", "--team", "Florida State", "--year", "2025", "tenures", "--active", "true"],
+      method: "coachTenures",
+      query: { active: true, team: "Florida State", year: 2025 },
+    },
+  ])("$label inherits supported parent options", async ({ argv, method, query }) => {
+    const result = await invokeWithMock(argv);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.calls).toEqual([{ method, query }]);
+  });
+
+  test("an explicitly supplied leaf option wins over the same parent option", async () => {
+    const result = await invokeWithMock([
+      "games",
+      "--year",
+      "2025",
+      "teams",
+      "--year",
+      "2026",
+      "--week",
+      "1",
+    ]);
+
+    expect(result.calls).toEqual([
+      { method: "gameTeamStats", query: { week: 1, year: 2026 } },
+    ]);
+  });
+
   test("omits an optional boolean when its flag is not supplied", async () => {
     const result = await invokeWithMock([
       "stats",
@@ -561,6 +683,7 @@ describe("offline CLI failures", () => {
     let stderr = "";
     const exitCode = await runCli(["games", "--year", "2026"], {
       environment: {},
+      environmentFile: `${import.meta.dir}/fixtures/.missing-api-key-env`,
       io: {
         stdout: (value) => {
           stdout += value;
@@ -597,6 +720,45 @@ describe("offline CLI failures", () => {
         hint: "Supply --year or query a game with --id.",
       },
     });
+  });
+
+  test("trims free-text flags before calling the API", async () => {
+    const result = await invokeWithMock([
+      "games",
+      "--year",
+      "2026",
+      "--team",
+      "  Florida State  ",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.calls).toEqual([
+      { method: "games", query: { team: "Florida State", year: 2026 } },
+    ]);
+    expect(parse(result.stdout).query).toEqual({
+      team: "Florida State",
+      year: 2026,
+    });
+  });
+
+  test("rejects whitespace-only free-text flags before calling the API", async () => {
+    const result = await invokeWithMock([
+      "player",
+      "search",
+      "--search-term",
+      "   ",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stdout).toBe("");
+    expect(result.calls).toEqual([]);
+    expect(parse(result.stderr)).toMatchObject({
+      error: {
+        code: "invalid_query",
+        command: "player search",
+      },
+    });
+    expect(parse(result.stderr).error.message).toContain("must not be blank");
   });
 
   test("historical betting routes enforce their conditional year filters", async () => {
@@ -644,6 +806,38 @@ describe("offline CLI failures", () => {
     });
     expect(parse(result.stderr).error.message).toContain("Expected an integer");
     expect(result.stderr).not.toContain("Usage:");
+  });
+
+  test.each([
+    ["teams fbs", ["teams", "--conference", "ACC", "fbs"]],
+    ["teams matchup", ["teams", "--year", "2026", "matchup", "--team1", "Florida State", "--team2", "Miami"]],
+    ["games teams", ["games", "--home", "Florida State", "teams", "--year", "2026", "--week", "1"]],
+    ["games players", ["games", "--away", "Miami", "players", "--year", "2026", "--week", "1"]],
+    ["games weather", ["games", "--id", "401752731", "weather", "--year", "2026"]],
+    ["games media", ["games", "--competition", "cfp", "media", "--year", "2026"]],
+    ["plays stats", ["plays", "--offense", "Florida State", "stats"]],
+    ["plays types", ["plays", "--year", "2026", "types"]],
+    ["plays stats types", ["plays", "stats", "--game-id", "401752731", "types"]],
+    ["stats season advanced", ["stats", "season", "--conference", "ACC", "advanced", "--year", "2026"]],
+    ["stats player success game", ["stats", "player", "success", "--start-week", "1", "game", "--year", "2026", "--week", "1"]],
+    ["metrics wp pregame", ["metrics", "wp", "--game-id", "401752731", "pregame"]],
+    ["ratings sp conferences", ["ratings", "sp", "--team", "Florida State", "conferences"]],
+    ["coaches profile", ["coaches", "--team", "Florida State", "profile", "--coach-id", "123"]],
+    ["coaches seasons", ["coaches", "--first-name", "Bobby", "seasons"]],
+    ["coaches tenures", ["coaches", "--max-year", "2009", "tenures"]],
+  ])("rejects an unsupported parent option for %s", async (command, argv) => {
+    const result = await invokeWithMock(argv);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stdout).toBe("");
+    expect(result.calls).toEqual([]);
+    expect(parse(result.stderr)).toMatchObject({
+      error: {
+        code: "cli_parse_error",
+        command,
+      },
+    });
+    expect(parse(result.stderr).error.message).toContain("is not supported");
   });
 
   test("provider/tier errors preserve context, keep stdout empty, and redact keys", async () => {

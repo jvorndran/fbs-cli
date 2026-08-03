@@ -372,6 +372,23 @@ describe("statistics/player/PPA/metrics required filters", () => {
     expect(operation).toThrow(message);
   });
 
+  test("trims free-text filters and rejects blank required text", () => {
+    expect(
+      validatePlayerSearchQuery({
+        searchTerm: " Travis ",
+        team: " Florida State ",
+        position: " QB ",
+      }),
+    ).toEqual({
+      searchTerm: "Travis",
+      team: "Florida State",
+      position: "QB",
+    });
+    expect(() => validatePlayerSearchQuery({ searchTerm: "   " })).toThrow(
+      "must not be blank",
+    );
+  });
+
   test("predicted points enforces the football down domain", () => {
     expect(() => validatePredictedPointsQuery({ down: 5, distance: 10 })).toThrow(
       "down: Too big",

@@ -22,8 +22,7 @@ import type {
   Venue,
 } from "cfbd";
 
-import { createReferenceCfbdApi } from "../src/cfbd/api-reference.ts";
-import type { CfbdApi } from "../src/cfbd/api.ts";
+import { createCfbdApi, type CfbdApi } from "../src/cfbd/api.ts";
 import {
   buildAdvancedBoxScoreQuery,
   buildCalendarQuery,
@@ -246,7 +245,28 @@ describe("reference command registrations", () => {
 
 describe("reference endpoint adapter", () => {
   test("exposes the complete reference slice without making a request", () => {
-    expect(Object.keys(createReferenceCfbdApi())).toEqual([
+    const api = createCfbdApi("offline-reference-adapter-test");
+    expect(Object.keys(api).filter((key) => [
+      "teams",
+      "matchup",
+      "conferences",
+      "talent",
+      "venues",
+      "playTypes",
+      "playStatTypes",
+      "cfpPlayoff",
+      "cfpParticipants",
+      "cfpGames",
+      "media",
+      "livePlays",
+      "lines",
+      "teamAts",
+      "userInfo",
+      "records",
+      "calendar",
+      "scoreboard",
+      "advancedBoxScore",
+    ].includes(key))).toEqual([
       "teams",
       "matchup",
       "conferences",
@@ -385,6 +405,21 @@ describe("reference endpoint query builders", () => {
     expect(validateCalendarQuery({ year: 2026 })).toEqual({ year: 2026 });
     expect(validateScoreboardQuery({})).toEqual({});
     expect(validateAdvancedBoxScoreQuery({ id: 1 })).toEqual({ id: 1 });
+  });
+
+  test("trims free-text filters and rejects whitespace-only values", () => {
+    expect(
+      validateMatchupQuery({
+        team1: " Florida State ",
+        team2: " Miami ",
+      }),
+    ).toEqual({ team1: "Florida State", team2: "Miami" });
+    expect(
+      validateLinesQuery({ year: 2024, provider: " consensus " }),
+    ).toEqual({ year: 2024, provider: "consensus" });
+    expect(() => validateTeamsQuery({ conference: "   " })).toThrow(
+      "must not be blank",
+    );
   });
 
   test("enforce conditional and required filters with Zod-backed validation", () => {

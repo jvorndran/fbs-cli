@@ -55,7 +55,7 @@ import type {
   SearchPlayersResponse,
 } from "cfbd";
 
-import { executeCfbd } from "./execute";
+import type { CfbdApiContext } from "./context";
 
 type QueryOf<T extends { query?: unknown }> = NonNullable<T["query"]>;
 
@@ -113,63 +113,84 @@ export interface StatisticsCfbdApi {
  * Build the adapter fragment that the root CFBD API factory spreads into its
  * single configured client. Client authentication remains owned by api.ts.
  */
-export function createStatisticsCfbdApi(): StatisticsCfbdApi {
+export function createStatisticsCfbdApi(
+  context: CfbdApiContext,
+): StatisticsCfbdApi {
   return {
     playerSeasonStats: (query) =>
-      executeCfbd<GetPlayerSeasonStatsResponse>(() => getPlayerSeasonStats({ query })),
+      context.execute<GetPlayerSeasonStatsResponse>(() =>
+        getPlayerSeasonStats({ query, client: context.client }),
+      ),
     playerSeasonSuccessRates: (query) =>
-      executeCfbd<GetPlayerSeasonSuccessRatesResponse>(() =>
-        getPlayerSeasonSuccessRates({ query }),
+      context.execute<GetPlayerSeasonSuccessRatesResponse>(() =>
+        getPlayerSeasonSuccessRates({ query, client: context.client }),
       ),
     playerGameSuccessRates: (query) =>
-      executeCfbd<GetPlayerGameSuccessRatesResponse>(() =>
-        getPlayerGameSuccessRates({ query }),
+      context.execute<GetPlayerGameSuccessRatesResponse>(() =>
+        getPlayerGameSuccessRates({ query, client: context.client }),
       ),
     teamSeasonStats: (query) =>
-      executeCfbd<GetTeamStatsResponse>(() => getTeamStats({ query })),
+      context.execute<GetTeamStatsResponse>(() =>
+        getTeamStats({ query, client: context.client }),
+      ),
     statCategories: () =>
-      executeCfbd<GetCategoriesResponse>(() => getCategories()),
+      context.execute<GetCategoriesResponse>(() =>
+        getCategories({ client: context.client }),
+      ),
     gameHavocStats: (query) =>
-      executeCfbd<GetGameHavocStatsResponse>(() => getGameHavocStats({ query })),
+      context.execute<GetGameHavocStatsResponse>(() =>
+        getGameHavocStats({ query, client: context.client }),
+      ),
     playerSearch: (query) =>
-      executeCfbd<SearchPlayersResponse>(() => searchPlayers({ query })),
+      context.execute<SearchPlayersResponse>(() =>
+        searchPlayers({ query, client: context.client }),
+      ),
     playerSeasonOverview: (query) =>
-      executeCfbd<GetPlayerSeasonOverviewResponse>(() =>
-        getPlayerSeasonOverview({ query }),
+      context.execute<GetPlayerSeasonOverviewResponse>(() =>
+        getPlayerSeasonOverview({ query, client: context.client }),
       ),
     returningProduction: (query) =>
-      executeCfbd<GetReturningProductionResponse>(() =>
-        getReturningProduction({ query }),
+      context.execute<GetReturningProductionResponse>(() =>
+        getReturningProduction({ query, client: context.client }),
       ),
     transferPortal: (query) =>
-      executeCfbd<GetTransferPortalResponse>(() => getTransferPortal({ query })),
+      context.execute<GetTransferPortalResponse>(() =>
+        getTransferPortal({ query, client: context.client }),
+      ),
     predictedPoints: (query) =>
-      executeCfbd<GetPredictedPointsResponse>(() => getPredictedPoints({ query })),
+      context.execute<GetPredictedPointsResponse>(() =>
+        getPredictedPoints({ query, client: context.client }),
+      ),
     teamPpa: (query) =>
-      executeCfbd<GetPredictedPointsAddedByTeamResponse>(() =>
-        getPredictedPointsAddedByTeam({ query }),
+      context.execute<GetPredictedPointsAddedByTeamResponse>(() =>
+        getPredictedPointsAddedByTeam({ query, client: context.client }),
       ),
     gamePpa: (query) =>
-      executeCfbd<GetPredictedPointsAddedByGameResponse>(() =>
-        getPredictedPointsAddedByGame({ query }),
+      context.execute<GetPredictedPointsAddedByGameResponse>(() =>
+        getPredictedPointsAddedByGame({ query, client: context.client }),
       ),
     playerGamePpa: (query) =>
-      executeCfbd<GetPredictedPointsAddedByPlayerGameResponse>(() =>
-        getPredictedPointsAddedByPlayerGame({ query }),
+      context.execute<GetPredictedPointsAddedByPlayerGameResponse>(() =>
+        getPredictedPointsAddedByPlayerGame({ query, client: context.client }),
       ),
     playerSeasonPpa: (query) =>
-      executeCfbd<GetPredictedPointsAddedByPlayerSeasonResponse>(() =>
-        getPredictedPointsAddedByPlayerSeason({ query }),
+      context.execute<GetPredictedPointsAddedByPlayerSeasonResponse>(() =>
+        getPredictedPointsAddedByPlayerSeason({
+          query,
+          client: context.client,
+        }),
       ),
     winProbability: (query) =>
-      executeCfbd<GetWinProbabilityResponse>(() => getWinProbability({ query })),
+      context.execute<GetWinProbabilityResponse>(() =>
+        getWinProbability({ query, client: context.client }),
+      ),
     pregameWinProbabilities: (query) =>
-      executeCfbd<GetPregameWinProbabilitiesResponse>(() =>
-        getPregameWinProbabilities({ query }),
+      context.execute<GetPregameWinProbabilitiesResponse>(() =>
+        getPregameWinProbabilities({ query, client: context.client }),
       ),
     fieldGoalExpectedPoints: () =>
-      executeCfbd<GetFieldGoalExpectedPointsResponse>(() =>
-        getFieldGoalExpectedPoints(),
+      context.execute<GetFieldGoalExpectedPointsResponse>(() =>
+        getFieldGoalExpectedPoints({ client: context.client }),
       ),
   };
 }

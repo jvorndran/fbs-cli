@@ -60,6 +60,57 @@ export class MissingApiKeyError extends CliError {
   }
 }
 
+export type CredentialSource = "environment" | "env_file";
+
+export class InvalidConfiguredApiKeyError extends CliError {
+  constructor(source: CredentialSource) {
+    super({
+      code: "invalid_api_key",
+      message: "CFBD_API_KEY has an invalid format.",
+      hint:
+        source === "environment"
+          ? "Replace or unset CFBD_API_KEY in the environment."
+          : "Run fbs auth to replace CFBD_API_KEY in .env.",
+      exitCode: 2,
+    });
+  }
+}
+
+export class EnvironmentFileReadError extends CliError {
+  constructor(cause?: unknown) {
+    super({
+      code: "env_file_read_failed",
+      message: "The .env file could not be read.",
+      hint: "Check permissions for .env in the current directory and try again.",
+      exitCode: 1,
+      cause,
+    });
+  }
+}
+
+export class InvalidEnvironmentFileError extends CliError {
+  constructor(cause?: unknown) {
+    super({
+      code: "env_file_invalid",
+      message: "The .env file could not be parsed.",
+      hint: "Fix the .env syntax in the current directory and try again.",
+      exitCode: 2,
+      cause,
+    });
+  }
+}
+
+export class UnsafeEnvironmentFileError extends CliError {
+  constructor() {
+    super({
+      code: "unsafe_env_file",
+      message: ".env must be a regular file and must not be a symbolic link.",
+      hint: "Replace .env with a regular file in the current directory.",
+      exitCode: 2,
+    });
+  }
+}
+
 export class AuthInputRequiredError extends CliError {
   constructor() {
     super({
@@ -136,22 +187,59 @@ export function fromZodError(error: ZodError): QueryValidationError {
   return new QueryValidationError(`${field}${issue.message}`);
 }
 
-export function redactSensitive(value: string): string {
-  return value
+export function redactSensitive(
+  value: string,
+  sensitiveValues: readonly string[] = [],
+): string {
+  let redacted = value;
+  for (const sensitiveValue of sensitiveValues) {
+    if (sensitiveValue.length === 0) continue;
+    redacted = redacted.split(sensitiveValue).join("[REDACTED]");
+  }
+
+  return redacted
     .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]")
     .replace(/CFBD_API_KEY\s*=\s*\S+/gi, "CFBD_API_KEY=[REDACTED]")
     .replace(/Authorization\s*:\s*[^,}\r\n]+/gi, "Authorization: [REDACTED]");
 }
 
-export function asCliError(error: unknown): CliError {
+function redactCliError(
+  error: CliError,
+  sensitiveValues: readonly string[],
+): CliError {
+  if (sensitiveValues.length === 0) return error;
+
+  const message = redactSensitive(error.message, sensitiveValues);
+  const hint =
+    error.hint === undefined
+      ? undefined
+      : redactSensitive(error.hint, sensitiveValues);
+  if (message === error.message && hint === error.hint) return error;
+
+  return new CliError({
+    code: error.code,
+    message,
+    ...(error.status === undefined ? {} : { status: error.status }),
+    ...(error.command === undefined ? {} : { command: error.command }),
+    ...(error.query === undefined ? {} : { query: error.query }),
+    ...(hint === undefined ? {} : { hint }),
+    exitCode: error.exitCode,
+    cause: error.cause,
+  });
+}
+
+export function asCliError(
+  error: unknown,
+  sensitiveValues: readonly string[] = [],
+): CliError {
   if (error instanceof CliError) {
-    return error;
+    return redactCliError(error, sensitiveValues);
   }
 
   const message = error instanceof Error ? error.message : "An unexpected error occurred.";
   return new CliError({
     code: "unexpected_error",
-    message: redactSensitive(message),
+    message: redactSensitive(message, sensitiveValues),
     exitCode: 1,
     cause: error,
   });

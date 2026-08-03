@@ -1,22 +1,33 @@
 import type { GameTeamStats, GameTeamStatsTeamStat } from "cfbd";
 
+import { CliError } from "../errors";
 import {
   compactObject,
   parseStatValue,
   toSnakeCase,
   type AgentObject,
-  type AgentValue,
 } from "./common.ts";
 
 export function transformStatPairs(
   stats: readonly GameTeamStatsTeamStat[],
 ): AgentObject {
-  const pairs: Array<[string, AgentValue]> = stats.map(({ category, stat }) => [
-    toSnakeCase(category),
-    parseStatValue(stat),
-  ]);
+  const transformed: AgentObject = {};
 
-  return Object.fromEntries(pairs) as AgentObject;
+  for (const { category, stat } of stats) {
+    const key = toSnakeCase(category);
+
+    if (Object.hasOwn(transformed, key)) {
+      throw new CliError({
+        code: "cfbd_invalid_response",
+        message: `CFBD returned duplicate team stat category '${key}' after normalization.`,
+        hint: "Retry later or report the incompatible CFBD response shape.",
+      });
+    }
+
+    transformed[key] = parseStatValue(stat);
+  }
+
+  return transformed;
 }
 
 export function transformTeamGameStats(

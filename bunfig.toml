@@ -1,0 +1,8 @@
+env = false
+
+[test]
+preload = ["./tests/helpers/deny-network.ts"]
+coverageReporter = ["text", "lcov"]
+coverageDir = "coverage"
+coverageThreshold = 0.9
+coverageSkipTestFiles = true

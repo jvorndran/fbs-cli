@@ -23,7 +23,7 @@ import {
   transformCoachTenures,
 } from "../transformers/analytics-coaches";
 import { asAnalyticsApi } from "./analytics-shared";
-import { parseInteger, suppliedOptions } from "./options";
+import { parseInteger, suppliedLeafOptions, suppliedOptions } from "./options";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 function parseBoolean(value: string): boolean {
@@ -43,7 +43,7 @@ function registerProfile(coaches: Command, runtime: CommandRuntime): void {
       "\n--coach-id is required.\n\nExample:\n  fbs coaches profile --coach-id 123\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<CoachProfileQuery>>(command);
+      const options = suppliedLeafOptions<Partial<CoachProfileQuery>>(command);
       const rawQuery = buildCoachProfileQuery(options);
       await withCommandContext("coaches profile", rawQuery, async () => {
         const query = validateCoachProfileQuery(rawQuery);
@@ -75,7 +75,7 @@ function registerSeasons(coaches: Command, runtime: CommandRuntime): void {
       "\nAll filters are optional. --min-year must not exceed --max-year.\n\nExamples:\n  fbs coaches seasons --coach-id 123\n  fbs coaches seasons --team \"Florida State\" --year 2025\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<CoachSeasonsQuery>>(command);
+      const options = suppliedLeafOptions<Partial<CoachSeasonsQuery>>(command);
       const rawQuery = buildCoachSeasonsQuery(options);
       await withCommandContext("coaches seasons", rawQuery, async () => {
         const query = validateCoachSeasonsQuery(rawQuery);
@@ -106,7 +106,7 @@ function registerTenures(coaches: Command, runtime: CommandRuntime): void {
       "\nAll filters are optional. --active accepts true or false.\n\nExamples:\n  fbs coaches tenures --active true\n  fbs coaches tenures --team \"Florida State\" --year 2025\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<CoachTenuresQuery>>(command);
+      const options = suppliedLeafOptions<Partial<CoachTenuresQuery>>(command);
       const rawQuery = buildCoachTenuresQuery(options);
       await withCommandContext("coaches tenures", rawQuery, async () => {
         const query = validateCoachTenuresQuery(rawQuery);

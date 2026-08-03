@@ -6,6 +6,7 @@ import type {
   Game,
   GamePlayerStats,
   GameTeamStats,
+  GameTeamStatsTeamStat,
   GameWeather,
   Play,
   PlayerUsage,
@@ -33,7 +34,10 @@ import { transformPlayerGameStats } from "../src/transformers/player-game-stats.
 import { transformPlayerUsage } from "../src/transformers/player-usage.ts";
 import { transformPlays } from "../src/transformers/plays.ts";
 import { transformRoster } from "../src/transformers/roster.ts";
-import { transformTeamGameStats } from "../src/transformers/team-game-stats.ts";
+import {
+  transformStatPairs,
+  transformTeamGameStats,
+} from "../src/transformers/team-game-stats.ts";
 import { transformTeams } from "../src/transformers/teams.ts";
 import { transformUsage } from "../src/transformers/usage.ts";
 import { transformWeather } from "../src/transformers/weather.ts";
@@ -126,6 +130,7 @@ describe("endpoint transformers", () => {
 
     expect(completed).toMatchObject({
       id: 401752731,
+      completed: true,
       status: "completed",
       matchup: "Alabama at Florida State",
       start_time_tbd: false,
@@ -147,7 +152,8 @@ describe("endpoint transformers", () => {
     expect(completed).not.toHaveProperty("notes");
     expect(scheduled).toMatchObject({
       id: 401752732,
-      status: "scheduled",
+      completed: false,
+      status: "not_completed",
       home: { id: 52, team: "Florida State" },
       away: { id: 2390, team: "Miami" },
       notes: "Kickoff time pending",
@@ -205,6 +211,21 @@ describe("endpoint transformers", () => {
     });
   });
 
+  test("team game stats reject normalized category collisions", () => {
+    const stats = [
+      { category: "Total Yards", stat: "412" },
+      { category: "total_yards", stat: "399" },
+    ] as GameTeamStatsTeamStat[];
+
+    expect(() => transformStatPairs(stats)).toThrow(
+      expect.objectContaining({
+        code: "cfbd_invalid_response",
+        message:
+          "CFBD returned duplicate team stat category 'total_yards' after normalization.",
+      }),
+    );
+  });
+
   test("player game stats flatten every athlete stat into explicit rows", async () => {
     const fixture = await loadFixture<GamePlayerStats[]>("player-game-stats");
     const rows = transformPlayerGameStats(fixture);
@@ -241,11 +262,15 @@ describe("endpoint transformers", () => {
         clock: "15:00",
         yard_line: 25,
         yards_to_goal: 75,
+        offense_score: 0,
+        defense_score: 0,
         score: "0-0",
       },
       end: {
         clock: "10:42",
         yards_to_goal: 0,
+        offense_score: 7,
+        defense_score: 0,
         score: "7-0",
       },
       elapsed: "04:18",

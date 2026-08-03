@@ -43,7 +43,7 @@ export type NoQuery = Record<string, never>;
 
 const positiveInteger = z.number().int().positive();
 const nonNegativeInteger = z.number().int().nonnegative();
-const nonEmptyString = z.string().trim().min(1);
+const nonEmptyString = z.string().trim().min(1, "must not be blank");
 const classification = z.enum(["fbs", "fcs", "ii", "iii"]);
 const seasonType = z.enum([
   "regular",

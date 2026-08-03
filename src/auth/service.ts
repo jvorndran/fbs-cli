@@ -4,21 +4,32 @@ import {
   AuthCancelledError,
   AuthInputRequiredError,
   InvalidAuthKeyError,
+  asCliError,
 } from "../errors";
+import type { Environment } from "../config";
 import { createCfbdApi } from "../cfbd/api";
 import {
-  AUTH_KEY_MAX_LENGTH,
-  normalizeAuthApiKey,
   saveCredential,
   type SavedCredential,
 } from "./env-file";
+import {
+  API_KEY_MAX_LENGTH,
+  isBlankApiKey,
+  normalizeAuthApiKey,
+} from "./api-key";
+
+export interface AuthCredentialResult extends SavedCredential {
+  activeSource?: "environment" | "env_file";
+  warning?: string;
+}
 
 export interface AuthService {
-  saveCredential(): Promise<SavedCredential>;
+  saveCredential(): Promise<AuthCredentialResult>;
 }
 
 export interface CreateAuthServiceOptions {
   environmentFile?: string;
+  environment?: Environment;
   input?: NodeJS.ReadStream;
   output?: NodeJS.WriteStream;
   validateApiKey?: AuthApiKeyValidator;
@@ -39,7 +50,7 @@ export async function readPipedAuthApiKey(input: PipedInput): Promise<string> {
   for await (const chunk of input) {
     const text =
       typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8");
-    if (value.length + text.length > AUTH_KEY_MAX_LENGTH + 2) {
+    if (value.length + text.length > API_KEY_MAX_LENGTH + 2) {
       throw new InvalidAuthKeyError();
     }
     value += text;
@@ -94,7 +105,7 @@ function readMaskedAuthApiKey(
       finish(() => reject(new AuthInputRequiredError()));
     };
 
-    function onKeypress(character: string, key: Key): void {
+    function onKeypress(character: string | undefined, key: Key): void {
       if (key.ctrl && key.name === "c") {
         finish(() => reject(new AuthCancelledError()));
         return;
@@ -117,13 +128,14 @@ function readMaskedAuthApiKey(
       }
 
       if (
+        typeof character === "string" &&
         character.length > 0 &&
         !key.ctrl &&
         !key.meta &&
         !/[\u0000-\u001f\u007f]/u.test(character)
       ) {
         value += character;
-        if (value.length > AUTH_KEY_MAX_LENGTH) {
+        if (value.length > API_KEY_MAX_LENGTH) {
           finish(() => reject(new InvalidAuthKeyError()));
         }
       }
@@ -168,16 +180,37 @@ export function createAuthService(
   const input = options.input ?? process.stdin;
   const output = options.output ?? process.stderr;
   const validateApiKey = options.validateApiKey ?? validateApiKeyWithUserInfo;
+  const environment = options.environment ?? process.env;
 
   return {
-    async saveCredential(): Promise<SavedCredential> {
+    async saveCredential(): Promise<AuthCredentialResult> {
       const apiKey = await readAuthApiKey(input, output);
-      await validateApiKey(apiKey);
-      return saveCredential(apiKey, {
-        ...(options.environmentFile === undefined
-          ? {}
-          : { environmentFile: options.environmentFile }),
-      });
+      try {
+        await validateApiKey(apiKey);
+      } catch (error) {
+        throw asCliError(error, [apiKey]);
+      }
+
+      let saved: SavedCredential;
+      try {
+        saved = await saveCredential(apiKey, {
+          ...(options.environmentFile === undefined
+            ? {}
+            : { environmentFile: options.environmentFile }),
+        });
+      } catch (error) {
+        throw asCliError(error, [apiKey]).withContext("auth");
+      }
+      if (!isBlankApiKey(environment.CFBD_API_KEY)) {
+        return {
+          ...saved,
+          activeSource: "environment",
+          warning:
+            "CFBD_API_KEY is set in the process environment and takes precedence over the saved .env file.",
+        };
+      }
+
+      return { ...saved, activeSource: "env_file" };
     },
   };
 }

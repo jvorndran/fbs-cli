@@ -351,6 +351,22 @@ describe("query validation", () => {
     expect(validatePlayStatsQuery({})).toEqual({});
   });
 
+  test("trims free-text filters and rejects whitespace-only values", () => {
+    expect(
+      validateGamesQuery({
+        year: 2026,
+        team: "  Florida State  ",
+        conference: " ACC ",
+      }),
+    ).toMatchObject({ team: "Florida State", conference: "ACC" });
+    expect(
+      validateAdvancedGameStatsQuery({ team: " Florida State " }),
+    ).toEqual({ team: "Florida State" });
+    expect(() => validateRosterQuery({ team: "   " })).toThrow(
+      QueryValidationError,
+    );
+  });
+
   test("games requires year unless id is supplied", () => {
     expect(validateGamesQuery({ id: 401752731 })).toEqual({ id: 401752731 });
     expect(validateGamesQuery({ year: 2026 })).toEqual({ year: 2026 });

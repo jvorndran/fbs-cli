@@ -44,6 +44,7 @@ import {
   addClassificationOption,
   addSeasonTypeOption,
   parseInteger,
+  suppliedLeafOptions,
   suppliedOptions,
 } from "./options";
 import { asQueryRecord, withCommandContext } from "./shared";
@@ -143,7 +144,7 @@ function registerAdvancedSeasonStats(season: Command, runtime: CommandRuntime): 
       "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs stats season advanced --year 2026 --team \"Florida State\"\n  fbs stats season advanced --year 2026 --start-week 1 --end-week 6 --exclude-garbage-time\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<AdvancedSeasonStatsQuery>>(command, [
+      const options = suppliedLeafOptions<Partial<AdvancedSeasonStatsQuery>>(command, [
         "excludeGarbageTime",
       ]);
       const rawQuery = buildAdvancedSeasonStatsQuery(options);
@@ -258,17 +259,9 @@ function registerStatsPlayerGameSuccess(
       "\n--year and at least one of --week, --team, or --player-id are required.\n\nExamples:\n  fbs stats player success game --year 2026 --week 1\n  fbs stats player success game --year 2026 --player-id 4433971\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const booleanOptions = ["excludeGarbageTime"] as const;
-      const parentOptions = command.parent === null
-        ? {}
-        : suppliedOptions<Partial<PlayerGameSuccessQuery>>(
-            command.parent,
-            booleanOptions,
-          );
-      const options = {
-        ...parentOptions,
-        ...suppliedOptions<Partial<PlayerGameSuccessQuery>>(command, booleanOptions),
-      };
+      const options = suppliedLeafOptions<Partial<PlayerGameSuccessQuery>>(command, [
+        "excludeGarbageTime",
+      ]);
       const rawQuery = buildPlayerGameSuccessQuery(options);
 
       await withCommandContext("stats player success game", rawQuery, async () => {

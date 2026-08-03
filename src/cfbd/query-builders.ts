@@ -37,6 +37,7 @@ export type WeatherQuery = QueryOf<GetWeatherData>;
 
 const positiveInteger = z.number().int().positive();
 const nonNegativeInteger = z.number().int().nonnegative();
+const nonEmptyString = z.string().trim().min(1, "must not be blank");
 const classification = z.enum(["fbs", "fcs", "ii", "iii"]);
 const seasonType = z.enum([
   "regular",
@@ -55,17 +56,17 @@ const gamesSchema = z.object({
   year: positiveInteger.optional(),
   week: nonNegativeInteger.optional(),
   seasonType: seasonType.optional(),
-  team: z.string().min(1).optional(),
-  home: z.string().min(1).optional(),
-  away: z.string().min(1).optional(),
-  conference: z.string().min(1).optional(),
+  team: nonEmptyString.optional(),
+  home: nonEmptyString.optional(),
+  away: nonEmptyString.optional(),
+  conference: nonEmptyString.optional(),
   classification: classification.optional(),
   competition: competition.optional(),
   round: playoffRound.optional(),
 });
 const rosterSchema = z.object({
   year: positiveInteger.optional(),
-  team: z.string().min(1).optional(),
+  team: nonEmptyString.optional(),
   classification: classification.optional(),
 });
 const usageSchema = z.object({
@@ -77,28 +78,28 @@ const gameTeamStatsSchema = z.object({
   id: positiveInteger.optional(),
   year: positiveInteger.optional(),
   week: nonNegativeInteger.optional(),
-  team: z.string().min(1).optional(),
-  conference: z.string().min(1).optional(),
+  team: nonEmptyString.optional(),
+  conference: nonEmptyString.optional(),
   seasonType: seasonType.optional(),
   classification: classification.optional(),
 });
 const gamePlayerStatsSchema = gameTeamStatsSchema.extend({
-  category: z.string().min(1).optional(),
+  category: nonEmptyString.optional(),
 });
 const drivesSchema = z.object({
   year: positiveInteger.optional(),
   week: nonNegativeInteger.optional(),
   seasonType: seasonType.optional(),
-  team: z.string().min(1).optional(),
-  offense: z.string().min(1).optional(),
-  defense: z.string().min(1).optional(),
-  conference: z.string().min(1).optional(),
-  offenseConference: z.string().min(1).optional(),
-  defenseConference: z.string().min(1).optional(),
+  team: nonEmptyString.optional(),
+  offense: nonEmptyString.optional(),
+  defense: nonEmptyString.optional(),
+  conference: nonEmptyString.optional(),
+  offenseConference: nonEmptyString.optional(),
+  defenseConference: nonEmptyString.optional(),
   classification: classification.optional(),
 });
 const playsSchema = drivesSchema.extend({
-  playType: z.string().min(1).optional(),
+  playType: nonEmptyString.optional(),
 });
 const playStatsSchema = z.object({
   gameId: positiveInteger.optional(),
@@ -106,29 +107,29 @@ const playStatsSchema = z.object({
   statTypeId: positiveInteger.optional(),
   year: positiveInteger.optional(),
   week: nonNegativeInteger.optional(),
-  team: z.string().min(1).optional(),
-  conference: z.string().min(1).optional(),
+  team: nonEmptyString.optional(),
+  conference: nonEmptyString.optional(),
   seasonType: seasonType.optional(),
 });
 const advancedGameStatsSchema = z.object({
   year: positiveInteger.optional(),
-  team: z.string().min(1).optional(),
+  team: nonEmptyString.optional(),
   week: nonNegativeInteger.optional(),
-  opponent: z.string().min(1).optional(),
+  opponent: nonEmptyString.optional(),
   seasonType: seasonType.optional(),
   excludeGarbageTime: z.boolean().optional(),
 });
 const playerUsageSchema = z.object({
   year: positiveInteger.optional(),
-  team: z.string().min(1).optional(),
-  conference: z.string().min(1).optional(),
+  team: nonEmptyString.optional(),
+  conference: nonEmptyString.optional(),
   playerId: positiveInteger.optional(),
-  position: z.string().min(1).optional(),
+  position: nonEmptyString.optional(),
   excludeGarbageTime: z.boolean().optional(),
 });
 const advancedSeasonStatsSchema = z.object({
   year: positiveInteger.optional(),
-  team: z.string().min(1).optional(),
+  team: nonEmptyString.optional(),
   startWeek: nonNegativeInteger.optional(),
   endWeek: nonNegativeInteger.optional(),
   classification: classification.optional(),
@@ -138,8 +139,8 @@ const weatherSchema = z.object({
   gameId: positiveInteger.optional(),
   year: positiveInteger.optional(),
   week: nonNegativeInteger.optional(),
-  team: z.string().min(1).optional(),
-  conference: z.string().min(1).optional(),
+  team: nonEmptyString.optional(),
+  conference: nonEmptyString.optional(),
   seasonType: seasonType.optional(),
   classification: classification.optional(),
 });

@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  stat,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
 import { PassThrough, Readable } from "node:stream";
@@ -59,12 +67,21 @@ describe("auth .env storage", () => {
     expect(updateEnvironmentFile("OTHER=value", "new-key")).toBe(
       "OTHER=value\nCFBD_API_KEY=new-key\n",
     );
+    expect(updateEnvironmentFile("OTHER=value\r", "new-key")).toBe(
+      "OTHER=value\rCFBD_API_KEY=new-key\r",
+    );
     expect(
       updateEnvironmentFile(
         "FIRST=one\nexport CFBD_API_KEY=old\nSECOND=two\nCFBD_API_KEY=duplicate\n",
         "new-key",
       ),
     ).toBe("FIRST=one\nCFBD_API_KEY=new-key\nSECOND=two\n");
+    expect(
+      updateEnvironmentFile(
+        "\uFEFFCFBD_API_KEY=old\r\nOTHER=value\r\n",
+        "new-key",
+      ),
+    ).toBe("\uFEFFCFBD_API_KEY=new-key\r\nOTHER=value\r\n");
   });
 
   test("writes the current directory .env and updates it on later runs", async () => {
@@ -75,6 +92,9 @@ describe("auth .env storage", () => {
     expect(await readFile(environmentFile, "utf8")).toBe(
       "CFBD_API_KEY=first-key\n",
     );
+    if (process.platform !== "win32") {
+      expect((await stat(environmentFile)).mode & 0o777).toBe(0o600);
+    }
 
     await writeFile(
       environmentFile,
@@ -111,6 +131,52 @@ describe("auth .env storage", () => {
         },
       });
     }
+  });
+
+  test("leaves the original untouched and removes its temporary file when rename fails", async () => {
+    const root = await createTemporaryDirectory();
+    const environmentFile = join(root, ".env");
+    const original = "OTHER=value\nCFBD_API_KEY=old-key\n";
+    await writeFile(environmentFile, original, "utf8");
+
+    await expect(
+      saveCredential("replacement-key", {
+        environmentFile,
+        renameFile: async () => {
+          throw new Error("simulated atomic rename failure");
+        },
+      }),
+    ).rejects.toMatchObject({ code: "env_file_update_failed" });
+
+    expect(await readFile(environmentFile, "utf8")).toBe(original);
+    expect(await readdir(root)).toEqual([".env"]);
+  });
+
+  test("rejects a symlink without changing its target", async () => {
+    const root = await createTemporaryDirectory();
+    const target = join(root, "credential-target");
+    const environmentFile = join(root, ".env");
+    const original = "OTHER=value\n";
+    await writeFile(target, original, "utf8");
+    try {
+      await symlink(target, environmentFile, "file");
+    } catch (error) {
+      if (
+        process.platform === "win32" &&
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "EPERM"
+      ) {
+        return;
+      }
+      throw error;
+    }
+
+    await expect(
+      saveCredential("never-write-this-key", { environmentFile }),
+    ).rejects.toMatchObject({ code: "unsafe_env_file" });
+    expect(await readFile(target, "utf8")).toBe(original);
   });
 });
 
@@ -165,6 +231,13 @@ describe("credential input", () => {
       successfulInput as unknown as NodeJS.ReadStream,
       successfulOutput as unknown as NodeJS.WriteStream,
     );
+    successfulInput.emit("keypress", undefined, {
+      ctrl: false,
+      meta: false,
+      name: "up",
+      sequence: "\u001b[A",
+      shift: false,
+    });
     for (const character of "secret-key") {
       successfulInput.emit("keypress", character, {
         ctrl: false,
@@ -255,7 +328,10 @@ describe("auth validation", () => {
       },
     });
 
-    expect(await auth.saveCredential()).toEqual({ environmentFile });
+    expect(await auth.saveCredential()).toEqual({
+      environmentFile,
+      activeSource: "env_file",
+    });
     expect(validatedKeys).toEqual(["validated-key"]);
     expect(await readFile(environmentFile, "utf8")).toBe(
       "CFBD_API_KEY=validated-key\n",
@@ -342,7 +418,54 @@ describe("auth command", () => {
       command: "auth",
       status: "saved",
       env_file: "/project/.env",
+      active_source: "env_file",
     });
+  });
+
+  test("reports when an existing environment key will override the saved file", async () => {
+    const root = await createTemporaryDirectory();
+    const environmentFile = join(root, ".env");
+    const auth = createAuthService({
+      environmentFile,
+      environment: { CFBD_API_KEY: "ambient-key" },
+      input: Readable.from(["saved-key\n"]) as NodeJS.ReadStream,
+      validateApiKey: async () => undefined,
+    });
+
+    expect(await auth.saveCredential()).toEqual({
+      environmentFile,
+      activeSource: "environment",
+      warning:
+        "CFBD_API_KEY is set in the process environment and takes precedence over the saved .env file.",
+    });
+  });
+
+  test("redacts the exact candidate from arbitrary validator failures", async () => {
+    const sentinel = "exact-validator-secret";
+    const auth = createAuthService({
+      environment: {},
+      input: Readable.from([`${sentinel}\n`]) as NodeJS.ReadStream,
+      validateApiKey: async () => {
+        throw new Error(`Rejected credential ${sentinel}`);
+      },
+    });
+    let stderr = "";
+
+    const exitCode = await runCli(["auth"], {
+      auth,
+      environment: {},
+      io: {
+        stderr: (value) => {
+          stderr += value;
+        },
+      },
+    });
+
+    expect(exitCode).toBe(1);
+    expect(stderr).not.toContain(sentinel);
+    expect(parse(stderr).error.message).toBe(
+      "Rejected credential [REDACTED]",
+    );
   });
 
   test("adds auth context to a validation failure without exposing a key", async () => {

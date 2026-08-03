@@ -16,7 +16,12 @@ import {
   transformPregameWinProbabilities,
   transformWinProbability,
 } from "../transformers/metrics.ts";
-import { addSeasonTypeOption, parseInteger, suppliedOptions } from "./options";
+import {
+  addSeasonTypeOption,
+  parseInteger,
+  suppliedLeafOptions,
+  suppliedOptions,
+} from "./options";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 function registerPregameWinProbabilities(
@@ -37,7 +42,7 @@ function registerPregameWinProbabilities(
       "\nAll filters are optional.\n\nExamples:\n  fbs metrics wp pregame\n  fbs metrics wp pregame --year 2026 --week 1 --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<PregameWinProbabilitiesQuery>>(command);
+      const options = suppliedLeafOptions<Partial<PregameWinProbabilitiesQuery>>(command);
       const rawQuery = buildPregameWinProbabilitiesQuery(options);
 
       await withCommandContext("metrics wp pregame", rawQuery, async () => {

@@ -10,6 +10,7 @@ import {
 } from "../cfbd/query-builders";
 import {
   buildNoQuery,
+  type NoQuery,
   validateNoQuery,
 } from "../cfbd/query-builders-reference";
 import { asReferenceCfbdApi } from "../cfbd/api-reference";
@@ -25,6 +26,7 @@ import {
   addClassificationOption,
   addSeasonTypeOption,
   parseInteger,
+  suppliedLeafOptions,
   suppliedOptions,
 } from "./options";
 import { asQueryRecord, withCommandContext } from "./shared";
@@ -48,7 +50,7 @@ function registerPlayStatsCommand(plays: Command, runtime: CommandRuntime): void
       "\nExamples:\n  fbs plays stats --game-id 401752731\n  fbs plays stats --year 2026 --week 1 --team \"Florida State\"\n  fbs plays stats --athlete-id 4433971 --stat-type-id 1\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<PlayStatsQuery>>(command);
+      const options = suppliedLeafOptions<Partial<PlayStatsQuery>>(command);
       const rawQuery = buildPlayStatsQuery(options);
 
       await withCommandContext("plays stats", rawQuery, async () => {
@@ -69,7 +71,8 @@ function registerPlayStatsCommand(plays: Command, runtime: CommandRuntime): void
     .command("types")
     .description("List player-play statistic types")
     .addHelpText("after", "\nExample:\n  fbs plays stats types\n")
-    .action(async () => {
+    .action(async (_options: unknown, command: Command) => {
+      suppliedLeafOptions<NoQuery>(command);
       const rawQuery = buildNoQuery();
 
       await withCommandContext("plays stats types", rawQuery, async () => {
@@ -93,7 +96,8 @@ function registerPlayTypesCommand(plays: Command, runtime: CommandRuntime): void
     .command("types")
     .description("List play types")
     .addHelpText("after", "\nExample:\n  fbs plays types\n")
-    .action(async () => {
+    .action(async (_options: unknown, command: Command) => {
+      suppliedLeafOptions<NoQuery>(command);
       const rawQuery = buildNoQuery();
 
       await withCommandContext("plays types", rawQuery, async () => {

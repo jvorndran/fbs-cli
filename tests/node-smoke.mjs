@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import {
   mkdirSync,
   mkdtempSync,
@@ -19,6 +19,9 @@ const cliPath = join(workspace, "dist", "fbs.js");
 const authFetchMockUrl = pathToFileURL(
   join(workspace, "tests", "node-auth-fetch-mock.mjs"),
 ).href;
+const epipeFetchMockUrl = pathToFileURL(
+  join(workspace, "tests", "node-epipe-fetch-mock.mjs"),
+).href;
 const packageJson = JSON.parse(
   readFileSync(join(workspace, "package.json"), "utf8"),
 );
@@ -31,6 +34,49 @@ function runCli(args, options = {}) {
     input: options.input,
     windowsHide: true,
   });
+}
+
+async function assertEarlyClosingConsumerExitsCleanly(cwd, environment) {
+  const child = spawn(
+    process.execPath,
+    [
+      "--import",
+      epipeFetchMockUrl,
+      cliPath,
+      "games",
+      "--year",
+      "2026",
+    ],
+    {
+      cwd,
+      env: environment,
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    },
+  );
+
+  let sawOutput = false;
+  let stderr = "";
+  child.stderr.setEncoding("utf8");
+  child.stderr.on("data", (chunk) => {
+    stderr += chunk;
+  });
+  child.stdout.once("data", () => {
+    sawOutput = true;
+    child.stdout.destroy();
+  });
+
+  const { code, signal } = await new Promise((resolveClose, rejectClose) => {
+    child.once("error", rejectClose);
+    child.once("close", (exitCode, exitSignal) => {
+      resolveClose({ code: exitCode, signal: exitSignal });
+    });
+  });
+
+  assert.equal(sawOutput, true, "EPIPE smoke did not receive stdout");
+  assert.equal(signal, null, `EPIPE smoke was terminated by ${signal}`);
+  assert.equal(code, 0, stderr);
+  assert.equal(stderr, "");
 }
 
 const help = runCli(["--help"]);
@@ -102,6 +148,13 @@ try {
   );
   assert.equal(readFileSync(authRequestLog, "utf8"), "GET /info\n");
 
+  const epipeKey = "node-smoke-epipe-key";
+  await assertEarlyClosingConsumerExitsCleanly(temporaryRoot, {
+    ...cleanEnvironment,
+    CFBD_API_KEY: epipeKey,
+    FBS_EPIPE_TEST_EXPECTED_KEY: epipeKey,
+  });
+
   const replacement = "node-smoke-replacement-key";
   const replacementEnvironment = {
     ...cleanEnvironment,
@@ -134,12 +187,9 @@ try {
     cwd: temporaryRoot,
     env: cleanEnvironment,
   });
-  assert.equal(invalidEnvironmentFile.status, 1, invalidEnvironmentFile.stderr);
-  assert.equal(invalidEnvironmentFile.stdout, "");
-  const environmentError = parse(invalidEnvironmentFile.stderr);
-  assert.equal(environmentError.error.code, "unexpected_error");
-  assert.equal(typeof environmentError.error.message, "string");
-  assert.doesNotMatch(invalidEnvironmentFile.stderr, /\n\s+at\s/u);
+  assert.equal(invalidEnvironmentFile.status, 0, invalidEnvironmentFile.stderr);
+  assert.equal(invalidEnvironmentFile.stderr, "");
+  assert.match(invalidEnvironmentFile.stdout, /^Usage: fbs/u);
 } finally {
   rmSync(temporaryRoot, { recursive: true, force: true });
 }
