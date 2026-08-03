@@ -56,4 +56,4 @@ jobs:
         run: node scripts/installed-smoke.mjs package-artifact
 
       - name: Publish through npm trusted publishing
-        run: npm publish package-artifact/*.tgz --provenance --access public
+        run: npm publish ./package-artifact/*.tgz --provenance --access public
