@@ -33,6 +33,7 @@ import {
   parseInteger,
   suppliedOptions,
 } from "./options";
+import { filterRows, isObject, localFilters, stringMatches, valueAt } from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 function registerPredictedPoints(ppa: Command, runtime: CommandRuntime): void {
@@ -108,7 +109,9 @@ function registerGamePpa(ppa: Command, runtime: CommandRuntime): void {
     .option("--week <number>", "Week, including 0", parseInteger)
     .option("--team <name>", "Team name")
     .option("--conference <value>", "Conference abbreviation")
-    .option("--exclude-garbage-time", "Exclude garbage-time plays");
+    .option("--exclude-garbage-time", "Exclude garbage-time plays")
+    .option("--game-id <number>", "Local filter: game ID", parseInteger)
+    .option("--opponent <name>", "Local filter: opponent");
 
   addSeasonTypeOption(games);
   addClassificationOption(games);
@@ -118,9 +121,12 @@ function registerGamePpa(ppa: Command, runtime: CommandRuntime): void {
       "\n--year is required.\n\nExamples:\n  fbs ppa games --year 2026\n  fbs ppa games --year 2026 --week 1 --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<GamePpaQuery>>(command, [
+      const { gameId, opponent, ...options } = suppliedOptions<
+        Partial<GamePpaQuery> & { gameId?: number; opponent?: string }
+      >(command, [
         "excludeGarbageTime",
       ]);
+      const filters = localFilters({ gameId, opponent });
       const rawQuery = buildGamePpaQuery(options);
 
       await withCommandContext("ppa games", rawQuery, async () => {
@@ -132,6 +138,15 @@ function registerGamePpa(ppa: Command, runtime: CommandRuntime): void {
           resultKey: "game_ppa",
           request: (api) => asStatisticsCfbdApi(api).gamePpa(query),
           transform: transformGamePpa,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                isObject(row) &&
+                (filters?.gameId === undefined || valueAt(row, "game_id") === filters.gameId) &&
+                stringMatches(valueAt(row, "opponent"), filters?.opponent as string | undefined),
+            ),
         });
       });
     })
@@ -148,7 +163,10 @@ function registerPlayerGamePpa(players: Command, runtime: CommandRuntime): void 
     .option("--position <value>", "Position abbreviation")
     .option("--player-id <id>", "Player ID")
     .option("--threshold <number>", "Minimum credited plays", parseInteger)
-    .option("--exclude-garbage-time", "Exclude garbage-time plays");
+    .option("--exclude-garbage-time", "Exclude garbage-time plays")
+    .option("--game-id <number>", "Local filter: game ID", parseInteger)
+    .option("--player <name>", "Local filter: player")
+    .option("--opponent <name>", "Local filter: opponent");
 
   addSeasonTypeOption(games);
   games
@@ -157,9 +175,16 @@ function registerPlayerGamePpa(players: Command, runtime: CommandRuntime): void 
       "\n--year and at least one of --week or --team are required.\n\nExamples:\n  fbs ppa players games --year 2026 --week 1\n  fbs ppa players games --year 2026 --team \"Florida State\" --player-id 4433971\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<PlayerGamePpaQuery>>(command, [
+      const { gameId, player: playerName, opponent, ...options } = suppliedOptions<
+        Partial<PlayerGamePpaQuery> & {
+          gameId?: number;
+          player?: string;
+          opponent?: string;
+        }
+      >(command, [
         "excludeGarbageTime",
       ]);
+      const filters = localFilters({ gameId, player: playerName, opponent });
       const rawQuery = buildPlayerGamePpaQuery(options);
 
       await withCommandContext("ppa players games", rawQuery, async () => {
@@ -171,6 +196,16 @@ function registerPlayerGamePpa(players: Command, runtime: CommandRuntime): void 
           resultKey: "player_game_ppa",
           request: (api) => asStatisticsCfbdApi(api).playerGamePpa(query),
           transform: transformPlayerGamePpa,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                isObject(row) &&
+                (filters?.gameId === undefined || valueAt(row, "game_id") === filters.gameId) &&
+                stringMatches(valueAt(row, "name", "player"), filters?.player as string | undefined) &&
+                stringMatches(valueAt(row, "opponent"), filters?.opponent as string | undefined),
+            ),
         });
       });
     })
@@ -188,14 +223,18 @@ function registerPlayerSeasonPpa(players: Command, runtime: CommandRuntime): voi
     .option("--player-id <id>", "Player ID")
     .option("--threshold <number>", "Minimum credited plays", parseInteger)
     .option("--exclude-garbage-time", "Exclude garbage-time plays")
+    .option("--player <name>", "Local filter: player")
     .addHelpText(
       "after",
       "\nAt least one of --year or --player-id is required.\n\nExamples:\n  fbs ppa players season --year 2026 --team \"Florida State\"\n  fbs ppa players season --player-id 4433971\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<PlayerSeasonPpaQuery>>(command, [
+      const { player: playerName, ...options } = suppliedOptions<
+        Partial<PlayerSeasonPpaQuery> & { player?: string }
+      >(command, [
         "excludeGarbageTime",
       ]);
+      const filters = localFilters({ player: playerName });
       const rawQuery = buildPlayerSeasonPpaQuery(options);
 
       await withCommandContext("ppa players season", rawQuery, async () => {
@@ -207,6 +246,14 @@ function registerPlayerSeasonPpa(players: Command, runtime: CommandRuntime): voi
           resultKey: "player_season_ppa",
           request: (api) => asStatisticsCfbdApi(api).playerSeasonPpa(query),
           transform: transformPlayerSeasonPpa,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                isObject(row) &&
+                stringMatches(valueAt(row, "name", "player"), filters?.player as string | undefined),
+            ),
         });
       });
     })

@@ -24,6 +24,14 @@ import {
 } from "../transformers/analytics-wepa";
 import { asAnalyticsApi } from "./analytics-shared";
 import { parseInteger, suppliedOptions } from "./options";
+import {
+  filterRows,
+  localFilters,
+  numberMatches,
+  parseNonNegativeInteger,
+  stringMatches,
+  valueAt,
+} from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 function addTeamSeasonFilters(command: Command): Command {
@@ -63,14 +71,20 @@ function registerTeamSeason(team: Command, runtime: CommandRuntime): void {
 function registerPassing(players: Command, runtime: CommandRuntime): void {
   const passing = addTeamSeasonFilters(
     players.command("passing").description("Retrieve opponent-adjusted passing metrics"),
-  ).option("--position <value>", "Position abbreviation");
+  )
+    .option("--position <value>", "Position abbreviation")
+    .option("--player <name>", "Local filter: player")
+    .option("--min-plays <number>", "Local filter: minimum plays", parseNonNegativeInteger);
   passing
     .addHelpText(
       "after",
       "\nAll filters are optional.\n\nExamples:\n  fbs wepa players passing --year 2025\n  fbs wepa players passing --team \"Florida State\" --position QB\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<WepaPassingQuery>>(command);
+      const { player, minPlays, ...options } = suppliedOptions<
+        Partial<WepaPassingQuery> & { player?: string; minPlays?: number }
+      >(command);
+      const filters = localFilters({ player, minPlays });
       const rawQuery = buildWepaPassingQuery(options);
       await withCommandContext("wepa players passing", rawQuery, async () => {
         const query = validateWepaPassingQuery(rawQuery);
@@ -81,6 +95,14 @@ function registerPassing(players: Command, runtime: CommandRuntime): void {
           resultKey: "player_metrics",
           request: (api) => asAnalyticsApi(api).wepaPassing(query),
           transform: transformWepaPassing,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                stringMatches(valueAt(row, "athlete_name", "player"), filters?.player as string | undefined) &&
+                numberMatches(valueAt(row, "plays"), filters?.minPlays as number | undefined, undefined),
+            ),
         });
       });
     })
@@ -90,14 +112,20 @@ function registerPassing(players: Command, runtime: CommandRuntime): void {
 function registerRushing(players: Command, runtime: CommandRuntime): void {
   const rushing = addTeamSeasonFilters(
     players.command("rushing").description("Retrieve opponent-adjusted rushing metrics"),
-  ).option("--position <value>", "Position abbreviation");
+  )
+    .option("--position <value>", "Position abbreviation")
+    .option("--player <name>", "Local filter: player")
+    .option("--min-plays <number>", "Local filter: minimum plays", parseNonNegativeInteger);
   rushing
     .addHelpText(
       "after",
       "\nAll filters are optional.\n\nExamples:\n  fbs wepa players rushing --year 2025\n  fbs wepa players rushing --team \"Florida State\" --position RB\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<WepaRushingQuery>>(command);
+      const { player, minPlays, ...options } = suppliedOptions<
+        Partial<WepaRushingQuery> & { player?: string; minPlays?: number }
+      >(command);
+      const filters = localFilters({ player, minPlays });
       const rawQuery = buildWepaRushingQuery(options);
       await withCommandContext("wepa players rushing", rawQuery, async () => {
         const query = validateWepaRushingQuery(rawQuery);
@@ -108,6 +136,14 @@ function registerRushing(players: Command, runtime: CommandRuntime): void {
           resultKey: "player_metrics",
           request: (api) => asAnalyticsApi(api).wepaRushing(query),
           transform: transformWepaRushing,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                stringMatches(valueAt(row, "athlete_name", "player"), filters?.player as string | undefined) &&
+                numberMatches(valueAt(row, "plays"), filters?.minPlays as number | undefined, undefined),
+            ),
         });
       });
     })
@@ -117,14 +153,19 @@ function registerRushing(players: Command, runtime: CommandRuntime): void {
 function registerKicking(players: Command, runtime: CommandRuntime): void {
   const kicking = addTeamSeasonFilters(
     players.command("kicking").description("Retrieve kicker PAAR ratings"),
-  );
+  )
+    .option("--player <name>", "Local filter: player")
+    .option("--min-attempts <number>", "Local filter: minimum attempts", parseNonNegativeInteger);
   kicking
     .addHelpText(
       "after",
       "\nAll filters are optional.\n\nExamples:\n  fbs wepa players kicking --year 2025\n  fbs wepa players kicking --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<WepaKickingQuery>>(command);
+      const { player, minAttempts, ...options } = suppliedOptions<
+        Partial<WepaKickingQuery> & { player?: string; minAttempts?: number }
+      >(command);
+      const filters = localFilters({ player, minAttempts });
       const rawQuery = buildWepaKickingQuery(options);
       await withCommandContext("wepa players kicking", rawQuery, async () => {
         const query = validateWepaKickingQuery(rawQuery);
@@ -135,6 +176,18 @@ function registerKicking(players: Command, runtime: CommandRuntime): void {
           resultKey: "kicker_ratings",
           request: (api) => asAnalyticsApi(api).wepaKicking(query),
           transform: transformWepaKicking,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                stringMatches(valueAt(row, "player", "athlete_name"), filters?.player as string | undefined) &&
+                numberMatches(
+                  valueAt(row, "attempts"),
+                  filters?.minAttempts as number | undefined,
+                  undefined,
+                ),
+            ),
         });
       });
     })

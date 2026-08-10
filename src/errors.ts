@@ -8,6 +8,7 @@ export interface CliErrorOptions {
   query?: Record<string, unknown>;
   hint?: string;
   exitCode?: number;
+  metadata?: Record<string, unknown>;
   cause?: unknown;
 }
 
@@ -18,6 +19,7 @@ export class CliError extends Error {
   readonly query: Record<string, unknown> | undefined;
   readonly hint: string | undefined;
   readonly exitCode: number;
+  readonly metadata: Record<string, unknown> | undefined;
 
   constructor(options: CliErrorOptions) {
     super(options.message, options.cause === undefined ? undefined : { cause: options.cause });
@@ -28,6 +30,7 @@ export class CliError extends Error {
     this.query = options.query;
     this.hint = options.hint;
     this.exitCode = options.exitCode ?? 1;
+    this.metadata = options.metadata;
   }
 
   withContext(command: string, query?: Record<string, unknown>): CliError {
@@ -44,6 +47,7 @@ export class CliError extends Error {
       ...(contextualQuery === undefined ? {} : { query: contextualQuery }),
       ...(this.hint === undefined ? {} : { hint: this.hint }),
       exitCode: this.exitCode,
+      ...(this.metadata === undefined ? {} : { metadata: this.metadata }),
       cause: this.cause,
     });
   }
@@ -171,6 +175,41 @@ export class QueryValidationError extends CliError {
   }
 }
 
+export class InvalidOutputLimitError extends CliError {
+  constructor() {
+    super({
+      code: "invalid_output_limit",
+      message: "FBS_MAX_OUTPUT_CHARS must be a non-negative safe integer.",
+      hint: "Set FBS_MAX_OUTPUT_CHARS to 0 to disable the limit or to a positive safe integer.",
+      exitCode: 2,
+    });
+  }
+}
+
+export class OutputTooLargeError extends CliError {
+  constructor(options: {
+    command: string;
+    query: Record<string, unknown>;
+    filters?: Record<string, unknown>;
+    outputCharacters: number;
+    maxOutputCharacters: number;
+  }) {
+    super({
+      code: "output_too_large",
+      message: "The rendered YAML exceeds FBS_MAX_OUTPUT_CHARS.",
+      command: options.command,
+      query: options.query,
+      hint: "Narrow the query or local filters, or raise FBS_MAX_OUTPUT_CHARS.",
+      exitCode: 2,
+      metadata: {
+        ...(options.filters === undefined ? {} : { filters: options.filters }),
+        outputCharacters: options.outputCharacters,
+        maxOutputCharacters: options.maxOutputCharacters,
+      },
+    });
+  }
+}
+
 export class CfbdRequestError extends CliError {
   constructor(options: Omit<CliErrorOptions, "exitCode">) {
     super({ ...options, exitCode: 1 });
@@ -224,6 +263,7 @@ function redactCliError(
     ...(error.query === undefined ? {} : { query: error.query }),
     ...(hint === undefined ? {} : { hint }),
     exitCode: error.exitCode,
+    ...(error.metadata === undefined ? {} : { metadata: error.metadata }),
     cause: error.cause,
   });
 }

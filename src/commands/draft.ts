@@ -13,6 +13,14 @@ import {
   transformDraftTeams,
 } from "../transformers/analytics-draft";
 import { asAnalyticsApi } from "./analytics-shared";
+import {
+  filterRows,
+  localFilters,
+  numberMatches,
+  parseNonNegativeInteger,
+  validateOrderedRange,
+  valueAt,
+} from "./local-filters";
 import { parseInteger, suppliedOptions } from "./options";
 import { asQueryRecord, withCommandContext } from "./shared";
 
@@ -66,14 +74,25 @@ function registerPicks(draft: Command, runtime: CommandRuntime): void {
     .option("--position <value>", "Position category")
     .option("--school <name>", "College team")
     .option("--team <name>", "NFL team")
-    .option("--year <number>", "Draft year", parseInteger);
+    .option("--year <number>", "Draft year", parseInteger)
+    .option("--round <number>", "Local filter: draft round", parseNonNegativeInteger)
+    .option("--min-overall <number>", "Local filter: minimum overall pick", parseNonNegativeInteger)
+    .option("--max-overall <number>", "Local filter: maximum overall pick", parseNonNegativeInteger);
   picks
     .addHelpText(
       "after",
       "\nAll filters are optional.\n\nExamples:\n  fbs draft picks --year 2025\n  fbs draft picks --school \"Florida State\" --position QB\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<DraftPicksQuery>>(command);
+      const { round, minOverall, maxOverall, ...options } = suppliedOptions<
+        Partial<DraftPicksQuery> & {
+          round?: number;
+          minOverall?: number;
+          maxOverall?: number;
+        }
+      >(command);
+      validateOrderedRange(minOverall, maxOverall, "min-overall", "max-overall");
+      const filters = localFilters({ round, minOverall, maxOverall });
       const rawQuery = buildDraftPicksQuery(options);
       await withCommandContext("draft picks", rawQuery, async () => {
         const query = validateDraftPicksQuery(rawQuery);
@@ -84,6 +103,18 @@ function registerPicks(draft: Command, runtime: CommandRuntime): void {
           resultKey: "draft_picks",
           request: (api) => asAnalyticsApi(api).draftPicks(query),
           transform: transformDraftPicks,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                (filters?.round === undefined || valueAt(row, "round") === filters.round) &&
+                numberMatches(
+                  valueAt(row, "overall"),
+                  filters?.minOverall as number | undefined,
+                  filters?.maxOverall as number | undefined,
+                ),
+            ),
         });
       });
     })

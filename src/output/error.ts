@@ -13,6 +13,7 @@ export function renderErrorYaml(error: CliError): string {
       message: redactSensitive(error.message),
       command: error.command,
       query: error.query,
+      ...error.metadata,
       hint: error.hint,
     },
   };

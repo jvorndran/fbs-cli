@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/) and the format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.0] - 2026-08-10
+
+### Added
+
+- A configurable 25,000-character output guard with structured recovery for
+  responses that are too large for agent context.
+- Optional filters for selected broad responses, while preserving the exact
+  request in the YAML envelope.
+- A compact agent skill command/filter index covering all 71 commands.
+
 ## [1.0.0] - 2026-08-02
 
 ### Added
@@ -41,3 +51,4 @@ The repository's trustworthy release-tag history begins with `v1.0.0`; older
 tags are not reconstructed after publication.
 
 [1.0.0]: https://github.com/jvorndran/fbs-cli/releases/tag/v1.0.0
+[1.1.0]: https://github.com/jvorndran/fbs-cli/releases/tag/v1.1.0

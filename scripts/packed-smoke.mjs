@@ -58,6 +58,14 @@ try {
   assert.ok(existsSync(join(packageRoot, "LICENSE")));
   assert.ok(existsSync(join(packageRoot, "THIRD_PARTY_NOTICES.md")));
   assert.ok(existsSync(join(packageRoot, "skills", "fbs-cli", "SKILL.md")));
+  for (const reference of ["command-index.md"]) {
+    assert.ok(
+      existsSync(
+        join(packageRoot, "skills", "fbs-cli", "references", reference),
+      ),
+      `Published skill reference is missing: ${reference}`,
+    );
+  }
 
   const packageNodeModules = join(packageRoot, "node_modules");
   mkdirSync(packageNodeModules);

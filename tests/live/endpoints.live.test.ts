@@ -16,6 +16,7 @@ async function invoke(args: readonly string[]): Promise<CliResult> {
     env: {
       ...process.env,
       CFBD_API_KEY: process.env.CFBD_API_KEY ?? "",
+      FBS_MAX_OUTPUT_CHARS: "0",
     },
     stdin: "ignore",
     stdout: "pipe",

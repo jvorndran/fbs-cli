@@ -28,6 +28,14 @@ import {
   transformVenues,
 } from "../transformers/reference-endpoints.ts";
 import { addClassificationOption, parseInteger, suppliedOptions } from "./options";
+import {
+  booleanMatches,
+  filterRows,
+  localFilters,
+  parseBoolean,
+  stringMatches,
+  valueAt,
+} from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 function registerConferencesCommand(program: Command, runtime: CommandRuntime): void {
@@ -84,8 +92,19 @@ function registerVenuesCommand(program: Command, runtime: CommandRuntime): void 
   const venues = program
     .command("venues")
     .description("List college football venues")
+    .option("--city <value>", "Local filter: city")
+    .option("--state <value>", "Local filter: state")
+    .option("--dome <boolean>", "Local filter: dome", parseBoolean)
+    .option("--grass <boolean>", "Local filter: grass", parseBoolean)
     .addHelpText("after", "\nExample:\n  fbs venues\n")
-    .action(async () => {
+    .action(async (_options: unknown, command: Command) => {
+      const options = suppliedOptions<{
+        city?: string;
+        state?: string;
+        dome?: boolean;
+        grass?: boolean;
+      }>(command);
+      const filters = localFilters(options);
       const rawQuery = buildNoQuery();
 
       await withCommandContext("venues", rawQuery, async () => {
@@ -97,6 +116,16 @@ function registerVenuesCommand(program: Command, runtime: CommandRuntime): void 
           resultKey: "venues",
           request: (api) => asReferenceCfbdApi(api).venues(),
           transform: transformVenues,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                stringMatches(valueAt(row, "city"), filters?.city as string | undefined) &&
+                stringMatches(valueAt(row, "state"), filters?.state as string | undefined) &&
+                booleanMatches(valueAt(row, "dome"), filters?.dome as boolean | undefined) &&
+                booleanMatches(valueAt(row, "grass"), filters?.grass as boolean | undefined),
+            ),
         });
       });
     });
@@ -165,7 +194,10 @@ function registerScoreboardCommand(program: Command, runtime: CommandRuntime): v
   const scoreboard = program
     .command("scoreboard")
     .description("Retrieve the current college football scoreboard")
-    .option("--conference <value>", "Conference abbreviation");
+    .option("--conference <value>", "Conference abbreviation")
+    .option("--team <name>", "Local filter: participating team")
+    .option("--status <value>", "Local filter: game status")
+    .option("--venue <value>", "Local filter: venue name");
 
   addClassificationOption(scoreboard);
   scoreboard
@@ -174,7 +206,10 @@ function registerScoreboardCommand(program: Command, runtime: CommandRuntime): v
       "\nThis endpoint may require an eligible CFBD subscription tier.\n\nExamples:\n  fbs scoreboard\n  fbs scoreboard --classification fbs --conference ACC\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<ScoreboardQuery>>(command);
+      const { team, status, venue, ...options } = suppliedOptions<
+        Partial<ScoreboardQuery> & { team?: string; status?: string; venue?: string }
+      >(command);
+      const filters = localFilters({ team, status, venue });
       const rawQuery = buildScoreboardQuery(options);
 
       await withCommandContext("scoreboard", rawQuery, async () => {
@@ -186,6 +221,17 @@ function registerScoreboardCommand(program: Command, runtime: CommandRuntime): v
           resultKey: "scoreboard",
           request: (api) => asReferenceCfbdApi(api).scoreboard(query),
           transform: transformScoreboard,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                (filters?.team === undefined ||
+                  stringMatches(valueAt(row, "home.team"), filters.team as string) ||
+                  stringMatches(valueAt(row, "away.team"), filters.team as string)) &&
+                stringMatches(valueAt(row, "status"), filters?.status as string | undefined) &&
+                stringMatches(valueAt(row, "venue.name", "venue"), filters?.venue as string | undefined),
+            ),
         });
       });
     })

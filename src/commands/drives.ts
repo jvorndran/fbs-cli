@@ -14,6 +14,14 @@ import {
   parseInteger,
   suppliedOptions,
 } from "./options";
+import {
+  booleanMatches,
+  filterRows,
+  localFilters,
+  parseBoolean,
+  stringMatches,
+  valueAt,
+} from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 export function registerDrivesCommand(program: Command, runtime: CommandRuntime): void {
@@ -29,6 +37,10 @@ export function registerDrivesCommand(program: Command, runtime: CommandRuntime)
     .option("--offense-conference <value>", "Offensive conference")
     .option("--defense-conference <value>", "Defensive conference");
 
+  drives
+    .option("--result <value>", "Local filter: drive result")
+    .option("--scoring <boolean>", "Local filter: scoring drives", parseBoolean);
+
   addSeasonTypeOption(drives);
   addClassificationOption(drives);
   drives
@@ -37,7 +49,10 @@ export function registerDrivesCommand(program: Command, runtime: CommandRuntime)
       "\nExamples:\n  fbs drives --year 2026 --team \"Florida State\" --week 1\n  fbs drives --year 2026 --offense \"Florida State\" --defense Miami\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<DrivesQuery>>(command);
+      const { result, scoring, ...options } = suppliedOptions<
+        Partial<DrivesQuery> & { result?: string; scoring?: boolean }
+      >(command);
+      const filters = localFilters({ result, scoring });
       const rawQuery = buildDrivesQuery(options);
 
       await withCommandContext("drives", rawQuery, async () => {
@@ -49,6 +64,14 @@ export function registerDrivesCommand(program: Command, runtime: CommandRuntime)
           resultKey: "drives",
           request: (api) => api.drives(query),
           transform: transformDrives,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                stringMatches(valueAt(row, "result"), filters?.result as string | undefined) &&
+                booleanMatches(valueAt(row, "scoring"), filters?.scoring as boolean | undefined),
+            ),
         });
       });
     })

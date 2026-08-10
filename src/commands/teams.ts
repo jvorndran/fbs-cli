@@ -29,6 +29,7 @@ import {
   suppliedLeafOptions,
   suppliedOptions,
 } from "./options";
+import { filterRows, localFilters, stringMatches, valueAt } from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 export function registerTeamsCommand(program: Command, runtime: CommandRuntime): void {
@@ -37,12 +38,16 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
     .description("Retrieve college football teams")
     .option("--conference <value>", "Conference abbreviation")
     .option("--year <number>", "Historical affiliation year", parseInteger)
+    .option("--classification <value>", "Local filter: division classification")
     .addHelpText(
       "after",
       "\nExamples:\n  fbs teams\n  fbs teams --conference ACC --year 2026\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<TeamsQuery>>(command);
+      const { classification, ...options } = suppliedOptions<
+        Partial<TeamsQuery> & { classification?: string }
+      >(command);
+      const filters = localFilters({ classification });
       const rawQuery = buildTeamsQuery(options);
 
       await withCommandContext("teams", rawQuery, async () => {
@@ -54,6 +59,11 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
           resultKey: "teams",
           request: (api) => asReferenceCfbdApi(api).teams(query),
           transform: transformTeams,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(rows, (row) =>
+              stringMatches(valueAt(row, "classification"), filters?.classification as string | undefined),
+            ),
         });
       });
     });
@@ -62,9 +72,13 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
     .command("fbs")
     .description("Retrieve current or historical FBS teams")
     .option("--year <number>", "Season year", parseInteger)
+    .option("--conference <value>", "Local filter: conference abbreviation")
     .addHelpText("after", "\nExample:\n  fbs teams fbs --year 2026\n")
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedLeafOptions<Partial<FbsTeamsQuery>>(command);
+      const { conference, ...options } = suppliedLeafOptions<
+        Partial<FbsTeamsQuery> & { conference?: string }
+      >(command);
+      const filters = localFilters({ conference });
       const rawQuery = buildFbsTeamsQuery(options);
 
       await withCommandContext("teams fbs", rawQuery, async () => {
@@ -76,6 +90,11 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
           resultKey: "teams",
           request: (api) => api.fbsTeams(query),
           transform: transformTeams,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(rows, (row) =>
+              stringMatches(valueAt(row, "conference"), filters?.conference as string | undefined),
+            ),
         });
       });
     });

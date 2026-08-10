@@ -29,6 +29,17 @@ import {
   suppliedLeafOptions,
   suppliedOptions,
 } from "./options";
+import {
+  booleanMatches,
+  filterRows,
+  localFilters,
+  numberMatches,
+  parseBoolean,
+  parseNonNegativeInteger,
+  parseNumber,
+  validateOrderedRange,
+  valueAt,
+} from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 function registerPlayStatsCommand(plays: Command, runtime: CommandRuntime): void {
@@ -41,7 +52,9 @@ function registerPlayStatsCommand(plays: Command, runtime: CommandRuntime): void
     .option("--year <number>", "Season year", parseInteger)
     .option("--week <number>", "Week, including 0", parseInteger)
     .option("--team <name>", "Team name")
-    .option("--conference <value>", "Conference abbreviation");
+    .option("--conference <value>", "Conference abbreviation")
+    .option("--period <number>", "Local filter: period", parseNonNegativeInteger)
+    .option("--down <number>", "Local filter: down", parseNonNegativeInteger);
 
   addSeasonTypeOption(stats);
   stats
@@ -50,7 +63,10 @@ function registerPlayStatsCommand(plays: Command, runtime: CommandRuntime): void
       "\nExamples:\n  fbs plays stats --game-id 401752731\n  fbs plays stats --year 2026 --week 1 --team \"Florida State\"\n  fbs plays stats --athlete-id 4433971 --stat-type-id 1\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedLeafOptions<Partial<PlayStatsQuery>>(command);
+      const { period, down, ...options } = suppliedLeafOptions<
+        Partial<PlayStatsQuery> & { period?: number; down?: number }
+      >(command);
+      const filters = localFilters({ period, down });
       const rawQuery = buildPlayStatsQuery(options);
 
       await withCommandContext("plays stats", rawQuery, async () => {
@@ -62,6 +78,14 @@ function registerPlayStatsCommand(plays: Command, runtime: CommandRuntime): void
           resultKey: "play_stats",
           request: (api) => api.playStats(query),
           transform: transformPlayStats,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                (filters?.period === undefined || valueAt(row, "period") === filters.period) &&
+                (filters?.down === undefined || valueAt(row, "down") === filters.down),
+            ),
         });
       });
     })
@@ -128,7 +152,14 @@ export function registerPlaysCommand(program: Command, runtime: CommandRuntime):
     .option("--conference <value>", "Either participating conference")
     .option("--offense-conference <value>", "Offensive conference")
     .option("--defense-conference <value>", "Defensive conference")
-    .option("--play-type <value>", "Play type abbreviation or name");
+    .option("--play-type <value>", "Play type abbreviation or name")
+    .option("--period <number>", "Local filter: period", parseNonNegativeInteger)
+    .option("--down <number>", "Local filter: down", parseNonNegativeInteger)
+    .option("--scoring <boolean>", "Local filter: scoring plays", parseBoolean)
+    .option("--min-yards-gained <number>", "Local filter: minimum yards gained", parseNumber)
+    .option("--max-yards-gained <number>", "Local filter: maximum yards gained", parseNumber)
+    .option("--min-ppa <number>", "Local filter: minimum PPA", parseNumber)
+    .option("--max-ppa <number>", "Local filter: maximum PPA", parseNumber);
 
   addSeasonTypeOption(plays);
   addClassificationOption(plays);
@@ -138,7 +169,37 @@ export function registerPlaysCommand(program: Command, runtime: CommandRuntime):
       "\nBoth --year and --week are required.\n\nExamples:\n  fbs plays --year 2026 --week 1 --team \"Florida State\"\n  fbs plays --year 2026 --week 1 --offense \"Florida State\" --play-type Rush\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<PlaysQuery>>(command);
+      const {
+        period,
+        down,
+        scoring,
+        minYardsGained,
+        maxYardsGained,
+        minPpa,
+        maxPpa,
+        ...options
+      } = suppliedOptions<
+        Partial<PlaysQuery> & {
+          period?: number;
+          down?: number;
+          scoring?: boolean;
+          minYardsGained?: number;
+          maxYardsGained?: number;
+          minPpa?: number;
+          maxPpa?: number;
+        }
+      >(command);
+      validateOrderedRange(minYardsGained, maxYardsGained, "min-yards-gained", "max-yards-gained");
+      validateOrderedRange(minPpa, maxPpa, "min-ppa", "max-ppa");
+      const filters = localFilters({
+        period,
+        down,
+        scoring,
+        minYardsGained,
+        maxYardsGained,
+        minPpa,
+        maxPpa,
+      });
       const rawQuery = buildPlaysQuery(options);
 
       await withCommandContext("plays", rawQuery, async () => {
@@ -150,6 +211,25 @@ export function registerPlaysCommand(program: Command, runtime: CommandRuntime):
           resultKey: "plays",
           request: (api) => api.plays(query),
           transform: transformPlays,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                (filters?.period === undefined || valueAt(row, "period") === filters.period) &&
+                (filters?.down === undefined || valueAt(row, "down") === filters.down) &&
+                booleanMatches(valueAt(row, "scoring"), filters?.scoring as boolean | undefined) &&
+                numberMatches(
+                  valueAt(row, "yards_gained"),
+                  filters?.minYardsGained as number | undefined,
+                  filters?.maxYardsGained as number | undefined,
+                ) &&
+                numberMatches(
+                  valueAt(row, "ppa"),
+                  filters?.minPpa as number | undefined,
+                  filters?.maxPpa as number | undefined,
+                ),
+            ),
         });
       });
     })

@@ -9,6 +9,7 @@ export type AgentYamlEnvelope = {
   endpoint: string;
   query: Record<string, unknown>;
   count: number;
+  filters?: Record<string, unknown>;
 } & Record<string, unknown>;
 
 function normalizeOutput(value: unknown): unknown {
@@ -31,7 +32,7 @@ export function renderYamlDocument(
 }
 
 export function renderAgentYaml(envelope: AgentYamlEnvelope): string {
-  return renderYamlDocument(envelope, ["command", "endpoint", "query", "count"]);
+  return renderYamlDocument(envelope, ["command", "endpoint", "query", "filters", "count"]);
 }
 
 export function printAgentYaml(

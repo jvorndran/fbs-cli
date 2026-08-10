@@ -12,7 +12,9 @@ security problem that cannot be fixed compatibly:
   documented flag, an endpoint result key, or a stable error code.
 - Changing a documented flag's direct mapping to a CFBD query field.
 - Changing the success envelope keys `command`, `endpoint`, `query`, `count`,
-  or the endpoint-specific final key.
+  or the endpoint-specific final key. The additive `filters` key is present
+  only when client-side filters were supplied; `query` remains the exact CFBD
+  request and `count` is then post-filter.
 - Changing the error envelope from `error`, changing stdout/stderr separation,
   or changing the documented success and failure exit behavior.
 - Changing an existing output field's type or nesting in a way that breaks a
@@ -43,6 +45,9 @@ A compatible minor release may add:
 - Newly accepted provider enum values.
 - New output fields or nested provider details without removing or changing
   existing fields.
+- Optional client-side filter flags, their additive `filters` success metadata,
+  and the local `output_too_large` error metadata (`query`, optional `filters`,
+  `output_characters`, and `max_output_characters`).
 - New machine-actionable error codes or deterministic hints for previously
   unclassified failures.
 - Documentation, examples, fixtures, or agent-guide workflows.
@@ -50,6 +55,13 @@ A compatible minor release may add:
 Consumers should parse YAML, ignore unknown keys, and avoid depending on the
 textual ordering of keys. The serializer remains deterministic, but key order
 is a readability aid rather than a data-model guarantee.
+
+`FBS_MAX_OUTPUT_CHARS` defaults to 25,000 Unicode code points per endpoint
+success document, including its trailing newline. Process environment takes
+precedence over the current-directory `.env`; `0` explicitly disables the
+guard. A too-large rendered endpoint response writes no stdout and returns
+the local, exit-2 `output_too_large` error. Help, version output, `auth`, and
+provider errors are outside this guard.
 
 ## Patch releases
 

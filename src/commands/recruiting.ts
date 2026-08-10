@@ -19,6 +19,15 @@ import {
   transformRecruitingTeams,
 } from "../transformers/analytics-recruiting";
 import { asAnalyticsApi } from "./analytics-shared";
+import {
+  filterRows,
+  localFilters,
+  numberMatches,
+  parseNonNegativeInteger,
+  parseNumber,
+  stringMatches,
+  valueAt,
+} from "./local-filters";
 import { parseInteger, suppliedOptions } from "./options";
 import { asQueryRecord, withCommandContext } from "./shared";
 
@@ -36,14 +45,24 @@ function registerPlayers(recruiting: Command, runtime: CommandRuntime): void {
     .option("--position <value>", "Position category")
     .option("--state <value>", "State or province")
     .option("--team <name>", "Committed team")
-    .option("--year <number>", "Recruiting class year", parseInteger);
+    .option("--year <number>", "Recruiting class year", parseInteger)
+    .option("--min-stars <number>", "Local filter: minimum stars", parseNonNegativeInteger)
+    .option("--min-rating <number>", "Local filter: minimum rating", parseNumber)
+    .option("--max-ranking <number>", "Local filter: maximum ranking", parseNonNegativeInteger);
   players
     .addHelpText(
       "after",
       "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs recruiting players --year 2026\n  fbs recruiting players --team \"Florida State\" --position QB\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<RecruitingPlayersQuery>>(command);
+      const { minStars, minRating, maxRanking, ...options } = suppliedOptions<
+        Partial<RecruitingPlayersQuery> & {
+          minStars?: number;
+          minRating?: number;
+          maxRanking?: number;
+        }
+      >(command);
+      const filters = localFilters({ minStars, minRating, maxRanking });
       const rawQuery = buildRecruitingPlayersQuery(options);
       await withCommandContext("recruiting players", rawQuery, async () => {
         const query = validateRecruitingPlayersQuery(rawQuery);
@@ -54,6 +73,15 @@ function registerPlayers(recruiting: Command, runtime: CommandRuntime): void {
           resultKey: "recruits",
           request: (api) => asAnalyticsApi(api).recruitingPlayers(query),
           transform: transformRecruitingPlayers,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                numberMatches(valueAt(row, "stars"), filters?.minStars as number | undefined, undefined) &&
+                numberMatches(valueAt(row, "rating"), filters?.minRating as number | undefined, undefined) &&
+                numberMatches(valueAt(row, "ranking"), undefined, filters?.maxRanking as number | undefined),
+            ),
         });
       });
     })
@@ -65,14 +93,18 @@ function registerTeams(recruiting: Command, runtime: CommandRuntime): void {
     .command("teams")
     .description("Retrieve team recruiting rankings")
     .option("--team <name>", "Team name")
-    .option("--year <number>", "Recruiting class year", parseInteger);
+    .option("--year <number>", "Recruiting class year", parseInteger)
+    .option("--max-rank <number>", "Local filter: maximum rank", parseNonNegativeInteger);
   teams
     .addHelpText(
       "after",
       "\nAll filters are optional.\n\nExamples:\n  fbs recruiting teams --year 2026\n  fbs recruiting teams --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<RecruitingTeamsQuery>>(command);
+      const { maxRank, ...options } = suppliedOptions<
+        Partial<RecruitingTeamsQuery> & { maxRank?: number }
+      >(command);
+      const filters = localFilters({ maxRank });
       const rawQuery = buildRecruitingTeamsQuery(options);
       await withCommandContext("recruiting teams", rawQuery, async () => {
         const query = validateRecruitingTeamsQuery(rawQuery);
@@ -83,6 +115,9 @@ function registerTeams(recruiting: Command, runtime: CommandRuntime): void {
           resultKey: "team_rankings",
           request: (api) => asAnalyticsApi(api).recruitingTeams(query),
           transform: transformRecruitingTeams,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(rows, (row) => numberMatches(valueAt(row, "rank"), undefined, filters?.maxRank as number | undefined)),
         });
       });
     })
@@ -99,14 +134,24 @@ function registerGroups(recruiting: Command, runtime: CommandRuntime): void {
       new Option("--recruit-type <value>", "Recruit type").choices([...RECRUIT_TYPES]),
     )
     .option("--start-year <number>", "Start of recruiting year range", parseInteger)
-    .option("--team <name>", "Team name");
+    .option("--team <name>", "Team name")
+    .option("--position-group <value>", "Local filter: position group")
+    .option("--min-commits <number>", "Local filter: minimum commits", parseNonNegativeInteger)
+    .option("--min-average-stars <number>", "Local filter: minimum average stars", parseNumber);
   groups
     .addHelpText(
       "after",
       "\nAll filters are optional. --start-year must not exceed --end-year.\n\nExamples:\n  fbs recruiting groups --team \"Florida State\"\n  fbs recruiting groups --conference ACC --start-year 2020 --end-year 2025\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<RecruitingGroupsQuery>>(command);
+      const { positionGroup, minCommits, minAverageStars, ...options } = suppliedOptions<
+        Partial<RecruitingGroupsQuery> & {
+          positionGroup?: string;
+          minCommits?: number;
+          minAverageStars?: number;
+        }
+      >(command);
+      const filters = localFilters({ positionGroup, minCommits, minAverageStars });
       const rawQuery = buildRecruitingGroupsQuery(options);
       await withCommandContext("recruiting groups", rawQuery, async () => {
         const query = validateRecruitingGroupsQuery(rawQuery);
@@ -117,6 +162,22 @@ function registerGroups(recruiting: Command, runtime: CommandRuntime): void {
           resultKey: "recruiting_groups",
           request: (api) => asAnalyticsApi(api).recruitingGroups(query),
           transform: transformRecruitingGroups,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                stringMatches(
+                  valueAt(row, "position_group"),
+                  filters?.positionGroup as string | undefined,
+                ) &&
+                numberMatches(valueAt(row, "commits"), filters?.minCommits as number | undefined, undefined) &&
+                numberMatches(
+                  valueAt(row, "average_stars"),
+                  filters?.minAverageStars as number | undefined,
+                  undefined,
+                ),
+            ),
         });
       });
     })

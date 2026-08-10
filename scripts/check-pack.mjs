@@ -70,6 +70,7 @@ try {
     "dist/fbs.js",
     "package.json",
     "skills/fbs-cli/SKILL.md",
+    "skills/fbs-cli/references/command-index.md",
   ];
   assert.deepEqual(
     metadata.files.map((file) => file.path).sort(),

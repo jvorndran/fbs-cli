@@ -30,6 +30,18 @@ import {
   transformTransferPortal,
 } from "../transformers/players.ts";
 import { parseInteger, suppliedOptions } from "./options";
+import {
+  filterRows,
+  isObject,
+  localFilters,
+  numberMatches,
+  parseDate,
+  parseNonNegativeInteger,
+  parseNumber,
+  stringMatches,
+  validateDateRange,
+  valueAt,
+} from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 function registerPlayerUsage(player: Command, runtime: CommandRuntime): void {
@@ -168,12 +180,52 @@ function registerTransferPortal(player: Command, runtime: CommandRuntime): void 
     .command("portal")
     .description("Retrieve transfer portal entries")
     .option("--year <number>", "Portal season year (required)", parseInteger)
+    .option("--origin <name>", "Local filter: originating team")
+    .option("--destination <name>", "Local filter: destination team")
+    .option("--position <value>", "Local filter: position")
+    .option("--eligibility <value>", "Local filter: eligibility")
+    .option("--min-rating <number>", "Local filter: minimum rating", parseNumber)
+    .option("--min-stars <number>", "Local filter: minimum stars", parseNonNegativeInteger)
+    .option("--from-date <date>", "Local filter: transfer date on or after YYYY-MM-DD", parseDate)
+    .option("--to-date <date>", "Local filter: transfer date on or before YYYY-MM-DD", parseDate)
     .addHelpText(
       "after",
       "\n--year is required.\n\nExample:\n  fbs player portal --year 2026\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<TransferPortalQuery>>(command);
+      const {
+        origin,
+        destination,
+        position,
+        eligibility,
+        minRating,
+        minStars,
+        fromDate,
+        toDate,
+        ...options
+      } = suppliedOptions<
+        Partial<TransferPortalQuery> & {
+          origin?: string;
+          destination?: string;
+          position?: string;
+          eligibility?: string;
+          minRating?: number;
+          minStars?: number;
+          fromDate?: string;
+          toDate?: string;
+        }
+      >(command);
+      validateDateRange(fromDate, toDate);
+      const filters = localFilters({
+        origin,
+        destination,
+        position,
+        eligibility,
+        minRating,
+        minStars,
+        fromDate,
+        toDate,
+      });
       const rawQuery = buildTransferPortalQuery(options);
 
       await withCommandContext("player portal", rawQuery, async () => {
@@ -185,6 +237,29 @@ function registerTransferPortal(player: Command, runtime: CommandRuntime): void 
           resultKey: "transfers",
           request: (api) => asStatisticsCfbdApi(api).transferPortal(query),
           transform: transformTransferPortal,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) => {
+                if (!isObject(row)) return false;
+                const transferDate = valueAt(row, "transfer_date");
+                const date = typeof transferDate === "string" ? transferDate.slice(0, 10) : undefined;
+                return (
+                  stringMatches(valueAt(row, "origin"), filters?.origin as string | undefined) &&
+                  stringMatches(
+                    valueAt(row, "destination"),
+                    filters?.destination as string | undefined,
+                  ) &&
+                  stringMatches(valueAt(row, "position"), filters?.position as string | undefined) &&
+                  stringMatches(valueAt(row, "eligibility"), filters?.eligibility as string | undefined) &&
+                  numberMatches(valueAt(row, "rating"), filters?.minRating as number | undefined, undefined) &&
+                  numberMatches(valueAt(row, "stars"), filters?.minStars as number | undefined, undefined) &&
+                  (filters?.fromDate === undefined || (date !== undefined && date >= filters.fromDate)) &&
+                  (filters?.toDate === undefined || (date !== undefined && date <= filters.toDate))
+                );
+              },
+            ),
         });
       });
     })

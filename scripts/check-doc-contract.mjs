@@ -14,6 +14,16 @@ const skill = readFileSync(
   resolve(workspace, "skills", "fbs-cli", "SKILL.md"),
   "utf8",
 );
+const commandIndex = readFileSync(
+  resolve(
+    workspace,
+    "skills",
+    "fbs-cli",
+    "references",
+    "command-index.md",
+  ),
+  "utf8",
+);
 const landingPage = readFileSync(resolve(workspace, "index.html"), "utf8");
 const socialPreview = readFileSync(
   resolve(workspace, "assets", "social-preview.png"),
@@ -58,47 +68,67 @@ assert.equal(
   "Landing page must use the social preview for Open Graph and Twitter",
 );
 
-function commandRows(document, includeFlags) {
-  const pattern = includeFlags
-    ? /^\| `fbs ([^`]+)` \| `([^`]+)` -> `([^`]+)` \| (.*?) \| .*? \|$/gmu
-    : /^\| `fbs ([^`]+)` \| `([^`]+)` -> `([^`]+)` \| .*? \|$/gmu;
-
+function readmeCommandRows(document) {
+  const pattern = /^\| `fbs ([^`]+)` \| `([^`]+)` -> `([^`]+)` \| (.*?) \| .*? \|$/gmu;
   return [...document.matchAll(pattern)].map((match) => ({
     command: match[1],
     endpoint: match[2],
     resultKey: match[3],
-    flags: includeFlags
-      ? [...match[4].matchAll(/`(--[a-z0-9-]+)`/gu)].map(
-          (flagMatch) => flagMatch[1],
-        )
-      : [],
+    flags: [...match[4].matchAll(/`(--[a-z0-9-]+)`/gu)].map(
+      (flagMatch) => flagMatch[1],
+    ),
   }));
 }
 
-const readmeRows = commandRows(readme, true);
-const skillRows = commandRows(skill, false);
+function skillCommandRows(document) {
+  const pattern = /^\| `fbs ([^`]+)` \| (.*?) \|$/gmu;
+  return [...document.matchAll(pattern)].map((match) => ({
+    command: match[1],
+    flags: [...match[2].matchAll(/`(--[a-z0-9-]+)`/gu)].map(
+      (flagMatch) => flagMatch[1],
+    ),
+  }));
+}
+
+const readmeRows = readmeCommandRows(readme);
+const commandIndexRows = skillCommandRows(commandIndex);
 
 assert.equal(readmeRows.length, 71, "README must document exactly 71 GET commands");
-assert.equal(skillRows.length, 71, "Skill must document exactly 71 GET commands");
+assert.equal(
+  commandIndexRows.length,
+  71,
+  "Skill command index must document exactly 71 GET commands",
+);
 assert.equal(
   new Set(readmeRows.map((row) => row.command)).size,
   71,
   "README command paths must be unique",
 );
 assert.deepEqual(
-  skillRows.map(({ command, endpoint, resultKey }) => ({
-    command,
-    endpoint,
-    resultKey,
-  })),
-  readmeRows.map(({ command, endpoint, resultKey }) => ({
-    command,
-    endpoint,
-    resultKey,
-  })),
-  "README and skill endpoint/result-key mappings must stay synchronized",
+  commandIndexRows.map(({ command, flags }) => ({ command, flags: [...flags].sort() })),
+  readmeRows.map(({ command, flags }) => ({ command, flags: [...flags].sort() })),
+  "README and skill command-index command/filter mappings must stay synchronized",
 );
 
+const skillLineCount = skill.trimEnd().split(/\r?\n/u).length;
+assert.ok(
+  skillLineCount <= 110,
+  `SKILL.md must remain a concise entrypoint (found ${skillLineCount} lines)`,
+);
+assert.equal(
+  skillCommandRows(skill).length,
+  0,
+  "The 71-command catalog belongs in references/command-index.md, not SKILL.md",
+);
+for (const reference of [
+  "command-index.md",
+]) {
+  assert.match(
+    skill,
+    new RegExp(`\\(references/${reference.replace(".", "\\.")}\\)`, "u"),
+    `SKILL.md must link to ${reference}`,
+  );
+}
 const cfbdVersion = packageJson.devDependencies?.cfbd;
 assert.equal(cfbdVersion, "5.21.0", "The generated-client audit is pinned to cfbd 5.21.0");
 

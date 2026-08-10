@@ -155,6 +155,7 @@ try {
   await assertEarlyClosingConsumerExitsCleanly(temporaryRoot, {
     ...cleanEnvironment,
     CFBD_API_KEY: epipeKey,
+    FBS_MAX_OUTPUT_CHARS: "0",
     FBS_EPIPE_TEST_EXPECTED_KEY: epipeKey,
   });
 

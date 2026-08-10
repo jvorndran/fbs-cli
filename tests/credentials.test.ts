@@ -3,7 +3,11 @@ import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
 
-import { resolveCredential } from "../src/config.ts";
+import {
+  DEFAULT_MAX_OUTPUT_CHARS,
+  resolveCredential,
+  resolveMaxOutputChars,
+} from "../src/config.ts";
 
 const temporaryDirectories: string[] = [];
 
@@ -132,5 +136,42 @@ describe("credential resolution", () => {
     await expect(
       resolveCredential({ environment: {}, environmentFile }),
     ).rejects.toMatchObject({ code: "missing_api_key", exitCode: 2 });
+  });
+});
+
+describe("output budget configuration", () => {
+  test("defaults, honors environment precedence, and falls back to .env", async () => {
+    const root = await createTemporaryDirectory();
+    const environmentFile = join(root, ".env");
+    await writeFile(environmentFile, "FBS_MAX_OUTPUT_CHARS=12\nCFBD_API_KEY=not-used\n", "utf8");
+
+    await expect(
+      resolveMaxOutputChars({ environment: {}, environmentFile: join(root, "missing.env") }),
+    ).resolves.toBe(DEFAULT_MAX_OUTPUT_CHARS);
+    await expect(
+      resolveMaxOutputChars({ environment: { FBS_MAX_OUTPUT_CHARS: "7" }, environmentFile }),
+    ).resolves.toBe(7);
+    await expect(resolveMaxOutputChars({ environment: {}, environmentFile })).resolves.toBe(12);
+  });
+
+  test("accepts zero and rejects blank, invalid, and unsafe values", async () => {
+    const root = await createTemporaryDirectory();
+    const environmentFile = join(root, ".env");
+
+    await expect(
+      resolveMaxOutputChars({ environment: { FBS_MAX_OUTPUT_CHARS: "0" }, environmentFile }),
+    ).resolves.toBe(0);
+    await expect(
+      resolveMaxOutputChars({
+        environment: { FBS_MAX_OUTPUT_CHARS: Number.MAX_SAFE_INTEGER.toString() },
+        environmentFile,
+      }),
+    ).resolves.toBe(Number.MAX_SAFE_INTEGER);
+
+    for (const value of ["", " ", "-1", "1.5", "9007199254740992"]) {
+      await expect(
+        resolveMaxOutputChars({ environment: { FBS_MAX_OUTPUT_CHARS: value }, environmentFile }),
+      ).rejects.toMatchObject({ code: "invalid_output_limit", exitCode: 2 });
+    }
   });
 });

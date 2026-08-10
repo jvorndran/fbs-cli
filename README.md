@@ -131,36 +131,36 @@ The tables below list every executable endpoint command. All shown flags are acc
 | `fbs info usage` | `/info/usage` -> `usage` | `--api`, `--days`, `--limit` | Optional; `days` is 1-31 and `limit` is 1-50. |
 | `fbs conferences` | `/conferences` -> `conferences` | None | No filters. |
 | `fbs talent` | `/talent` -> `talent` | `--year` | Require `--year`. |
-| `fbs venues` | `/venues` -> `venues` | None | No filters. |
+| `fbs venues` | `/venues` -> `venues` | `--city`, `--state`, `--dome`, `--grass` | Optional local filters. |
 | `fbs records` | `/records` -> `records` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
 | `fbs calendar` | `/calendar` -> `calendar` | `--year` | Require `--year`. |
-| `fbs scoreboard` | `/scoreboard` -> `scoreboard` | `--conference`, `--classification` | Optional; may require an eligible CFBD tier and includes embedded betting fields when supplied by CFBD. |
-| `fbs teams` | `/teams` -> `teams` | `--conference`, `--year` | Optional. |
-| `fbs teams fbs` | `/teams/fbs` -> `teams` | `--year` | Optional. |
+| `fbs scoreboard` | `/scoreboard` -> `scoreboard` | `--conference`, `--classification`, `--team`, `--status`, `--venue` | Optional; may require an eligible CFBD tier and includes embedded betting fields when supplied by CFBD. |
+| `fbs teams` | `/teams` -> `teams` | `--conference`, `--year`, `--classification` | Optional. |
+| `fbs teams fbs` | `/teams/fbs` -> `teams` | `--year`, `--conference` | Optional. |
 | `fbs teams matchup` | `/teams/matchup` -> `matchup` | `--team1`, `--team2`, `--min-year`, `--max-year` | Require both teams; `min-year <= max-year`. |
 | `fbs teams ats` | `/teams/ats` -> `team_ats` | `--year`, `--team`, `--conference` | Require `--year`; returns historical ATS records. |
-| `fbs roster` | `/roster` -> `players` | `--year`, `--team`, `--classification` | Optional. |
+| `fbs roster` | `/roster` -> `players` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--country`, `--jersey`, `--class-year` | Optional. |
 
 ### Games, box scores, and live data
 
 | Command | Endpoint -> result key | Accepted flags | Required rule |
 |---|---|---|---|
-| `fbs games` | `/games` -> `games` | `--id`, `--year`, `--week`, `--team`, `--home`, `--away`, `--conference`, `--season-type`, `--classification`, `--competition`, `--round` | Require `--id` or `--year`; `--round` requires `--competition cfp`. |
+| `fbs games` | `/games` -> `games` | `--id`, `--year`, `--week`, `--team`, `--home`, `--away`, `--conference`, `--season-type`, `--classification`, `--competition`, `--round`, `--completed`, `--neutral-site`, `--conference-game`, `--venue` | Require `--id` or `--year`; `--round` requires `--competition cfp`. |
 | `fbs games teams` | `/games/teams` -> `games` | `--id`, `--year`, `--week`, `--team`, `--conference`, `--season-type`, `--classification` | Require `--id`, or `--year` plus one of `--week`, `--team`, `--conference`. |
 | `fbs games players` | `/games/players` -> `player_stats` | `--id`, `--year`, `--week`, `--team`, `--conference`, `--category`, `--season-type`, `--classification` | Same ID-or-scoped-year rule as `games teams`. |
-| `fbs games weather` | `/games/weather` -> `weather` | `--game-id`, `--year`, `--week`, `--team`, `--conference`, `--season-type`, `--classification` | Require `--game-id` or `--year`; may require an eligible tier. |
+| `fbs games weather` | `/games/weather` -> `weather` | `--game-id`, `--year`, `--week`, `--team`, `--conference`, `--season-type`, `--classification`, `--indoors`, `--weather-condition`, `--min-temperature`, `--max-temperature` | Require `--game-id` or `--year`; may require an eligible tier. |
 | `fbs games media` | `/games/media` -> `media` | `--year`, `--week`, `--team`, `--conference`, `--media-type`, `--season-type`, `--classification` | Require `--year`. |
 | `fbs lines` | `/lines` -> `lines` | `--game-id`, `--year`, `--week`, `--season-type`, `--team`, `--home`, `--away`, `--conference`, `--provider` | Require `--game-id` or `--year`; returns historical provider lines. |
-| `fbs game box advanced` | `/game/box/advanced` -> `box_score` | `--id` | Require `--id`; may require an eligible tier. |
-| `fbs live plays` | `/live/plays` -> `live_game` | `--game-id` | Require `--game-id`; may require an eligible tier. |
+| `fbs game box advanced` | `/game/box/advanced` -> `box_score` | `--id`, `--team`, `--player`, `--position` | Require `--id`; may require an eligible tier. |
+| `fbs live plays` | `/live/plays` -> `live_game` | `--game-id`, `--team`, `--period`, `--play-type`, `--scoring`, `--success`, `--rush-pass`, `--garbage-time` | Require `--game-id`; may require an eligible tier. |
 
 ### Drives and plays
 
 | Command | Endpoint -> result key | Accepted flags | Required rule |
 |---|---|---|---|
-| `fbs drives` | `/drives` -> `drives` | `--year`, `--week`, `--team`, `--offense`, `--defense`, `--conference`, `--offense-conference`, `--defense-conference`, `--season-type`, `--classification` | Require `--year`. |
-| `fbs plays` | `/plays` -> `plays` | `--year`, `--week`, `--team`, `--offense`, `--defense`, `--conference`, `--offense-conference`, `--defense-conference`, `--play-type`, `--season-type`, `--classification` | Require both `--year` and `--week`. |
-| `fbs plays stats` | `/plays/stats` -> `play_stats` | `--game-id`, `--athlete-id`, `--stat-type-id`, `--year`, `--week`, `--team`, `--conference`, `--season-type` | Optional; CFBD caps the response at 2,000 rows and the CLI does not page. |
+| `fbs drives` | `/drives` -> `drives` | `--year`, `--week`, `--team`, `--offense`, `--defense`, `--conference`, `--offense-conference`, `--defense-conference`, `--season-type`, `--classification`, `--result`, `--scoring` | Require `--year`. |
+| `fbs plays` | `/plays` -> `plays` | `--year`, `--week`, `--team`, `--offense`, `--defense`, `--conference`, `--offense-conference`, `--defense-conference`, `--play-type`, `--season-type`, `--classification`, `--period`, `--down`, `--scoring`, `--min-yards-gained`, `--max-yards-gained`, `--min-ppa`, `--max-ppa` | Require both `--year` and `--week`. |
+| `fbs plays stats` | `/plays/stats` -> `play_stats` | `--game-id`, `--athlete-id`, `--stat-type-id`, `--year`, `--week`, `--team`, `--conference`, `--season-type`, `--period`, `--down` | Optional; CFBD caps the response at 2,000 rows and the CLI does not page. |
 | `fbs plays stats types` | `/plays/stats/types` -> `play_stat_types` | None | No filters. |
 | `fbs plays types` | `/plays/types` -> `play_types` | None | No filters. |
 
@@ -168,19 +168,19 @@ The tables below list every executable endpoint command. All shown flags are acc
 
 | Command | Endpoint -> result key | Accepted flags | Required rule |
 |---|---|---|---|
-| `fbs stats game advanced` | `/stats/game/advanced` -> `advanced_game_stats` | `--year`, `--team`, `--week`, `--opponent`, `--season-type`, `--exclude-garbage-time` | Require `--year` or `--team`. |
-| `fbs stats game havoc` | `/stats/game/havoc` -> `game_havoc_stats` | `--year`, `--week`, `--team`, `--opponent`, `--season-type` | Require `--year` or `--team`. |
+| `fbs stats game advanced` | `/stats/game/advanced` -> `advanced_game_stats` | `--year`, `--team`, `--week`, `--opponent`, `--season-type`, `--exclude-garbage-time`, `--game-id` | Require `--year` or `--team`. |
+| `fbs stats game havoc` | `/stats/game/havoc` -> `game_havoc_stats` | `--year`, `--week`, `--team`, `--opponent`, `--season-type`, `--game-id` | Require `--year` or `--team`. |
 | `fbs stats season` | `/stats/season` -> `team_stats` | `--year`, `--team`, `--conference`, `--start-week`, `--end-week`, `--classification` | Require `--year` or `--team`; `start-week <= end-week`. |
 | `fbs stats season advanced` | `/stats/season/advanced` -> `advanced_season_stats` | `--year`, `--team`, `--start-week`, `--end-week`, `--classification`, `--exclude-garbage-time` | Require `--year` or `--team`; `start-week <= end-week`. |
-| `fbs stats player season` | `/stats/player/season` -> `player_season_stats` | `--year`, `--team`, `--conference`, `--start-week`, `--end-week`, `--category`, `--season-type` | Require `--year`; `start-week <= end-week`. |
-| `fbs stats player success` | `/stats/player/success` -> `player_success_rates` | `--year`, `--player-id`, `--team`, `--conference`, `--start-week`, `--end-week`, `--threshold`, `--season-type`, `--exclude-garbage-time` | Require `--year` or `--player-id`; `start-week <= end-week`. |
-| `fbs stats player success game` | `/stats/player/success/game` -> `player_game_success_rates` | `--year`, `--week`, `--player-id`, `--team`, `--conference`, `--threshold`, `--season-type`, `--exclude-garbage-time` | Require `--year` plus one of `--week`, `--team`, `--player-id`. |
+| `fbs stats player season` | `/stats/player/season` -> `player_season_stats` | `--year`, `--team`, `--conference`, `--start-week`, `--end-week`, `--category`, `--season-type`, `--player`, `--stat-type` | Require `--year`; `start-week <= end-week`. |
+| `fbs stats player success` | `/stats/player/success` -> `player_success_rates` | `--year`, `--player-id`, `--team`, `--conference`, `--start-week`, `--end-week`, `--threshold`, `--season-type`, `--exclude-garbage-time`, `--player` | Require `--year` or `--player-id`; `start-week <= end-week`. |
+| `fbs stats player success game` | `/stats/player/success/game` -> `player_game_success_rates` | `--year`, `--week`, `--player-id`, `--team`, `--conference`, `--threshold`, `--season-type`, `--exclude-garbage-time`, `--player` | Require `--year` plus one of `--week`, `--team`, `--player-id`. |
 | `fbs stats categories` | `/stats/categories` -> `categories` | None | No filters. |
 | `fbs player usage` | `/player/usage` -> `player_usage` | `--year`, `--team`, `--conference`, `--player-id`, `--position`, `--exclude-garbage-time` | Require `--year`. |
 | `fbs player search` | `/player/search` -> `players` | `--search-term`, `--year`, `--team`, `--position` | Require `--search-term`. |
 | `fbs player season overview` | `/player/season/overview` -> `player_season_overview` | `--year`, `--player-id` | Require both flags. |
 | `fbs player returning` | `/player/returning` -> `returning_production` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
-| `fbs player portal` | `/player/portal` -> `transfers` | `--year` | Require `--year`. |
+| `fbs player portal` | `/player/portal` -> `transfers` | `--year`, `--origin`, `--destination`, `--position`, `--eligibility`, `--min-rating`, `--min-stars`, `--from-date`, `--to-date` | Require `--year`. |
 
 ### PPA and probability metrics
 
@@ -188,11 +188,11 @@ The tables below list every executable endpoint command. All shown flags are acc
 |---|---|---|---|
 | `fbs ppa predicted` | `/ppa/predicted` -> `predicted_points` | `--down`, `--distance` | Require both; down is 1-4 and distance is nonnegative. |
 | `fbs ppa teams` | `/ppa/teams` -> `team_ppa` | `--year`, `--team`, `--conference`, `--classification`, `--exclude-garbage-time` | Require `--year` or `--team`. |
-| `fbs ppa games` | `/ppa/games` -> `game_ppa` | `--year`, `--week`, `--team`, `--conference`, `--season-type`, `--classification`, `--exclude-garbage-time` | Require `--year`. |
-| `fbs ppa players games` | `/ppa/players/games` -> `player_game_ppa` | `--year`, `--week`, `--team`, `--position`, `--player-id`, `--threshold`, `--season-type`, `--exclude-garbage-time` | Require `--year` plus `--week` or `--team`. |
-| `fbs ppa players season` | `/ppa/players/season` -> `player_season_ppa` | `--year`, `--team`, `--conference`, `--position`, `--player-id`, `--threshold`, `--exclude-garbage-time` | Require `--year` or `--player-id`. |
-| `fbs metrics wp` | `/metrics/wp` -> `win_probability` | `--game-id` | Require `--game-id`. |
-| `fbs metrics wp pregame` | `/metrics/wp/pregame` -> `pregame_win_probabilities` | `--year`, `--week`, `--team`, `--season-type` | Optional. |
+| `fbs ppa games` | `/ppa/games` -> `game_ppa` | `--year`, `--week`, `--team`, `--conference`, `--season-type`, `--classification`, `--exclude-garbage-time`, `--game-id`, `--opponent` | Require `--year`. |
+| `fbs ppa players games` | `/ppa/players/games` -> `player_game_ppa` | `--year`, `--week`, `--team`, `--position`, `--player-id`, `--threshold`, `--season-type`, `--exclude-garbage-time`, `--game-id`, `--player`, `--opponent` | Require `--year` plus `--week` or `--team`. |
+| `fbs ppa players season` | `/ppa/players/season` -> `player_season_ppa` | `--year`, `--team`, `--conference`, `--position`, `--player-id`, `--threshold`, `--exclude-garbage-time`, `--player` | Require `--year` or `--player-id`. |
+| `fbs metrics wp` | `/metrics/wp` -> `win_probability` | `--game-id`, `--period` | Require `--game-id`. |
+| `fbs metrics wp pregame` | `/metrics/wp/pregame` -> `pregame_win_probabilities` | `--year`, `--week`, `--team`, `--season-type`, `--home`, `--away` | Optional. |
 | `fbs metrics fg ep` | `/metrics/fg/ep` -> `field_goal_expected_points` | None | No filters. |
 
 ### Opponent-adjusted metrics
@@ -200,17 +200,17 @@ The tables below list every executable endpoint command. All shown flags are acc
 | Command | Endpoint -> result key | Accepted flags | Required rule |
 |---|---|---|---|
 | `fbs wepa team season` | `/wepa/team/season` -> `team_metrics` | `--year`, `--team`, `--conference` | Optional. |
-| `fbs wepa players passing` | `/wepa/players/passing` -> `player_metrics` | `--year`, `--team`, `--conference`, `--position` | Optional. |
-| `fbs wepa players rushing` | `/wepa/players/rushing` -> `player_metrics` | `--year`, `--team`, `--conference`, `--position` | Optional. |
-| `fbs wepa players kicking` | `/wepa/players/kicking` -> `kicker_ratings` | `--year`, `--team`, `--conference` | Optional. |
+| `fbs wepa players passing` | `/wepa/players/passing` -> `player_metrics` | `--year`, `--team`, `--conference`, `--position`, `--player`, `--min-plays` | Optional. |
+| `fbs wepa players rushing` | `/wepa/players/rushing` -> `player_metrics` | `--year`, `--team`, `--conference`, `--position`, `--player`, `--min-plays` | Optional. |
+| `fbs wepa players kicking` | `/wepa/players/kicking` -> `kicker_ratings` | `--year`, `--team`, `--conference`, `--player`, `--min-attempts` | Optional. |
 
 ### Recruiting, ratings, and rankings
 
 | Command | Endpoint -> result key | Accepted flags | Required rule |
 |---|---|---|---|
-| `fbs recruiting players` | `/recruiting/players` -> `recruits` | `--year`, `--team`, `--classification`, `--position`, `--state` | Require `--year` or `--team`. |
-| `fbs recruiting teams` | `/recruiting/teams` -> `team_rankings` | `--year`, `--team` | Optional. |
-| `fbs recruiting groups` | `/recruiting/groups` -> `recruiting_groups` | `--conference`, `--start-year`, `--end-year`, `--recruit-type`, `--team` | Optional; `start-year <= end-year`. |
+| `fbs recruiting players` | `/recruiting/players` -> `recruits` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--min-stars`, `--min-rating`, `--max-ranking` | Require `--year` or `--team`. |
+| `fbs recruiting teams` | `/recruiting/teams` -> `team_rankings` | `--year`, `--team`, `--max-rank` | Optional. |
+| `fbs recruiting groups` | `/recruiting/groups` -> `recruiting_groups` | `--conference`, `--start-year`, `--end-year`, `--recruit-type`, `--team`, `--position-group`, `--min-commits`, `--min-average-stars` | Optional; `start-year <= end-year`. |
 | `fbs ratings sp` | `/ratings/sp` -> `sp_ratings` | `--year`, `--team` | Require `--year` or `--team`. |
 | `fbs ratings sp conferences` | `/ratings/sp/conferences` -> `conference_sp_ratings` | `--year`, `--conference`, `--classification` | Optional. |
 | `fbs ratings srs` | `/ratings/srs` -> `srs_ratings` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
@@ -218,6 +218,8 @@ The tables below list every executable endpoint command. All shown flags are acc
 | `fbs ratings elo` | `/ratings/elo` -> `elo_ratings` | `--year`, `--week`, `--team`, `--conference`, `--season-type` | Optional. |
 | `fbs ratings fpi` | `/ratings/fpi` -> `fpi_ratings` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
 | `fbs rankings` | `/rankings` -> `rankings` | `--year`, `--week`, `--poll`, `--season-type`, `--latest`, `--final` | Require `--year`. |
+
+For `fbs ratings sp`, supplying both `--year` and `--team` makes one full-year provider request and filters that response locally. This preserves CFBD's national overall, offense, and defense ranking fields instead of the rank-within-filter values returned by a team-filtered request. The YAML `query` still records both user-supplied filters, and `count` reflects the locally filtered result. A team-only query is forwarded unchanged because there is no bounded season comparison set.
 
 ### Playoffs, draft, and coaches
 
@@ -228,7 +230,7 @@ The tables below list every executable endpoint command. All shown flags are acc
 | `fbs playoffs cfp games` | `/playoffs/cfp/games` -> `games` | `--year`, `--round` | Require `--year`. |
 | `fbs draft teams` | `/draft/teams` -> `draft_teams` | None | No filters. |
 | `fbs draft positions` | `/draft/positions` -> `draft_positions` | None | No filters. |
-| `fbs draft picks` | `/draft/picks` -> `draft_picks` | `--year`, `--team`, `--school`, `--conference`, `--position` | Optional. |
+| `fbs draft picks` | `/draft/picks` -> `draft_picks` | `--year`, `--team`, `--school`, `--conference`, `--position`, `--round`, `--min-overall`, `--max-overall` | Optional. |
 | `fbs coaches` | `/coaches` -> `coaches` | `--first-name`, `--last-name`, `--min-year`, `--max-year`, `--team`, `--year` | Optional; `min-year <= max-year`. |
 | `fbs coaches profile` | `/coaches/profile` -> `coach_profile` | `--coach-id` | Require `--coach-id`. |
 | `fbs coaches seasons` | `/coaches/seasons` -> `coach_seasons` | `--coach-id`, `--min-year`, `--max-year`, `--team`, `--year` | Optional; `min-year <= max-year`. |
@@ -245,7 +247,15 @@ The tables below list every executable endpoint command. All shown flags are acc
 - `--poll`: `cfp`
 - `--api`: `all`, `cfb`, `cbb`
 
-Kebab-case flags map directly to the corresponding CFBD camelCase query fields, such as `--game-id` -> `gameId`, `--player-id` -> `playerId`, `--season-type` -> `seasonType`, and `--exclude-garbage-time` -> `excludeGarbageTime`. Do not invent aliases.
+Kebab-case provider flags map directly to the corresponding CFBD camelCase query fields, such as `--game-id` -> `gameId`, `--player-id` -> `playerId`, `--season-type` -> `seasonType`, and `--exclude-garbage-time` -> `excludeGarbageTime`. Do not invent aliases.
+
+### Local filters and output budget
+
+Flags described as **Local filter** in executable help are applied after CFBD responds and after the endpoint transformer runs. They are never sent to CFBD: `query` remains the exact provider request and an additive `filters` object records the supplied local filter values. String matching is case-insensitive exact matching, numeric bounds are inclusive, and local boolean values must be `true` or `false`.
+
+Every endpoint success document is limited to `25,000` Unicode code points by default, including its final newline. Configure `FBS_MAX_OUTPUT_CHARS` in the process environment first, then the current-directory `.env`; set it to a non-negative safe integer, or to `0` to explicitly disable the limit. `auth`, help, version output, and provider errors are unaffected.
+
+When a rendered document is too large, stdout remains empty and stderr contains `output_too_large` with the request `query`, any applied `filters`, `output_characters`, and `max_output_characters`. Narrow the request or local filters, or intentionally raise `FBS_MAX_OUTPUT_CHARS`.
 
 ### Nested command parsing
 
@@ -340,6 +350,8 @@ games:
 
 This historical response is abridged. Keys are snake_case, unavailable values are omitted, and provider IDs and numeric precision are preserved. The final collection key matches the result key in the command tables above.
 
+When local filters were supplied, the additive `filters` key appears between `query` and `count`; `count` then describes the filtered collection. It does not change the CFBD request recorded in `query`.
+
 For `/games`, the raw `completed` boolean is preserved and the presentation `status` is exactly `completed` or `not_completed`. A false provider value cannot reliably distinguish a scheduled game from one in progress; use `fbs scoreboard` for richer current game status. For `/drives`, each `start` and `end` keeps the display `score: "O-D"` and also exposes numeric `offense_score` and `defense_score` fields.
 
 Failures write YAML to stderr and exit with a nonzero status, making them straightforward to handle from scripts and agents:
@@ -356,6 +368,7 @@ error:
 ```
 
 Errors do not include the API key, authorization header, or a stack trace.
+`output_too_large` is a local exit-2 error and includes the rendered character count and configured cap; use its hint to reduce the response before retrying.
 Exit code `0` means success, help/version output, or a quiet stdout `EPIPE`.
 Exit code `2` identifies a locally correctable invocation, query, or credential
 configuration error. Exit code `1` covers provider, network, filesystem, and

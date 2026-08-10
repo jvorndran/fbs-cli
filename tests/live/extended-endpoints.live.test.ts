@@ -31,7 +31,7 @@ async function runCli(args: readonly string[]): Promise<CliResult> {
   let stderr = "";
 
   const exitCode = await executeCli(args, {
-    environment: process.env,
+    environment: { ...process.env, FBS_MAX_OUTPUT_CHARS: "0" },
     io: {
       stdout: (value) => {
         stdout += value;

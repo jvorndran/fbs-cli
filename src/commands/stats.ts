@@ -47,6 +47,7 @@ import {
   suppliedLeafOptions,
   suppliedOptions,
 } from "./options";
+import { filterRows, isObject, localFilters, stringMatches, valueAt } from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 function registerAdvancedGameStats(game: Command, runtime: CommandRuntime): void {
@@ -57,7 +58,8 @@ function registerAdvancedGameStats(game: Command, runtime: CommandRuntime): void
     .option("--team <name>", "Team name")
     .option("--week <number>", "Week, including 0", parseInteger)
     .option("--opponent <name>", "Opponent name")
-    .option("--exclude-garbage-time", "Exclude garbage-time plays");
+    .option("--exclude-garbage-time", "Exclude garbage-time plays")
+    .option("--game-id <number>", "Local filter: game ID", parseInteger);
 
   addSeasonTypeOption(advanced);
   advanced
@@ -66,9 +68,12 @@ function registerAdvancedGameStats(game: Command, runtime: CommandRuntime): void
       "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs stats game advanced --year 2026 --team \"Florida State\"\n  fbs stats game advanced --year 2026 --week 1 --exclude-garbage-time\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<AdvancedGameStatsQuery>>(command, [
+      const { gameId, ...options } = suppliedOptions<
+        Partial<AdvancedGameStatsQuery> & { gameId?: number }
+      >(command, [
         "excludeGarbageTime",
       ]);
+      const filters = localFilters({ gameId });
       const rawQuery = buildAdvancedGameStatsQuery(options);
 
       await withCommandContext("stats game advanced", rawQuery, async () => {
@@ -80,6 +85,9 @@ function registerAdvancedGameStats(game: Command, runtime: CommandRuntime): void
           resultKey: "advanced_game_stats",
           request: (api) => api.advancedGameStats(query),
           transform: transformAdvancedGameStats,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(rows, (row) => filters?.gameId === undefined || valueAt(row, "game_id") === filters.gameId),
         });
       });
     })
@@ -93,7 +101,8 @@ function registerGameHavocStats(game: Command, runtime: CommandRuntime): void {
     .option("--year <number>", "Season year", parseInteger)
     .option("--week <number>", "Week, including 0", parseInteger)
     .option("--team <name>", "Team name")
-    .option("--opponent <name>", "Opponent name");
+    .option("--opponent <name>", "Opponent name")
+    .option("--game-id <number>", "Local filter: game ID", parseInteger);
 
   addSeasonTypeOption(havoc);
   havoc
@@ -102,7 +111,10 @@ function registerGameHavocStats(game: Command, runtime: CommandRuntime): void {
       "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs stats game havoc --year 2026 --week 1\n  fbs stats game havoc --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<GameHavocStatsQuery>>(command);
+      const { gameId, ...options } = suppliedOptions<
+        Partial<GameHavocStatsQuery> & { gameId?: number }
+      >(command);
+      const filters = localFilters({ gameId });
       const rawQuery = buildGameHavocStatsQuery(options);
 
       await withCommandContext("stats game havoc", rawQuery, async () => {
@@ -114,6 +126,12 @@ function registerGameHavocStats(game: Command, runtime: CommandRuntime): void {
           resultKey: "game_havoc_stats",
           request: (api) => asStatisticsCfbdApi(api).gameHavocStats(query),
           transform: transformGameHavocStats,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) => isObject(row) && (filters?.gameId === undefined || valueAt(row, "game_id") === filters.gameId),
+            ),
         });
       });
     })
@@ -210,7 +228,9 @@ function registerStatsPlayerSeason(player: Command, runtime: CommandRuntime): vo
     .option("--conference <value>", "Conference abbreviation")
     .option("--start-week <number>", "First week in range, including 0", parseInteger)
     .option("--end-week <number>", "Last week in range, including 0", parseInteger)
-    .option("--category <value>", "Statistical category");
+    .option("--category <value>", "Statistical category")
+    .option("--player <name>", "Local filter: player")
+    .option("--stat-type <value>", "Local filter: stat type");
 
   addSeasonTypeOption(season);
   season
@@ -219,7 +239,10 @@ function registerStatsPlayerSeason(player: Command, runtime: CommandRuntime): vo
       "\n--year is required.\n\nExamples:\n  fbs stats player season --year 2026\n  fbs stats player season --year 2026 --team \"Florida State\" --category passing\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<PlayerSeasonStatsQuery>>(command);
+      const { player: playerName, statType, ...options } = suppliedOptions<
+        Partial<PlayerSeasonStatsQuery> & { player?: string; statType?: string }
+      >(command);
+      const filters = localFilters({ player: playerName, statType });
       const rawQuery = buildPlayerSeasonStatsQuery(options);
 
       await withCommandContext("stats player season", rawQuery, async () => {
@@ -231,6 +254,15 @@ function registerStatsPlayerSeason(player: Command, runtime: CommandRuntime): vo
           resultKey: "player_season_stats",
           request: (api) => asStatisticsCfbdApi(api).playerSeasonStats(query),
           transform: transformPlayerSeasonStats,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                isObject(row) &&
+                stringMatches(valueAt(row, "player", "name"), filters?.player as string | undefined) &&
+                stringMatches(valueAt(row, "stat_type"), filters?.statType as string | undefined),
+            ),
         });
       });
     })
@@ -250,7 +282,8 @@ function registerStatsPlayerGameSuccess(
     .option("--team <name>", "Team name")
     .option("--conference <value>", "Conference abbreviation")
     .option("--threshold <number>", "Minimum credited plays", parseInteger)
-    .option("--exclude-garbage-time", "Exclude garbage-time plays");
+    .option("--exclude-garbage-time", "Exclude garbage-time plays")
+    .option("--player <name>", "Local filter: player");
 
   addSeasonTypeOption(game);
   game
@@ -259,9 +292,12 @@ function registerStatsPlayerGameSuccess(
       "\n--year and at least one of --week, --team, or --player-id are required.\n\nExamples:\n  fbs stats player success game --year 2026 --week 1\n  fbs stats player success game --year 2026 --player-id 4433971\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedLeafOptions<Partial<PlayerGameSuccessQuery>>(command, [
+      const { player: playerName, ...options } = suppliedLeafOptions<
+        Partial<PlayerGameSuccessQuery> & { player?: string }
+      >(command, [
         "excludeGarbageTime",
       ]);
+      const filters = localFilters({ player: playerName });
       const rawQuery = buildPlayerGameSuccessQuery(options);
 
       await withCommandContext("stats player success game", rawQuery, async () => {
@@ -273,6 +309,12 @@ function registerStatsPlayerGameSuccess(
           resultKey: "player_game_success_rates",
           request: (api) => asStatisticsCfbdApi(api).playerGameSuccessRates(query),
           transform: transformPlayerGameSuccessRates,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) => isObject(row) && stringMatches(valueAt(row, "player", "name"), filters?.player as string | undefined),
+            ),
         });
       });
     })
@@ -290,7 +332,8 @@ function registerStatsPlayerSuccess(player: Command, runtime: CommandRuntime): v
     .option("--start-week <number>", "First week in range, including 0", parseInteger)
     .option("--end-week <number>", "Last week in range, including 0", parseInteger)
     .option("--threshold <number>", "Minimum credited plays", parseInteger)
-    .option("--exclude-garbage-time", "Exclude garbage-time plays");
+    .option("--exclude-garbage-time", "Exclude garbage-time plays")
+    .option("--player <name>", "Local filter: player");
 
   addSeasonTypeOption(success);
   success
@@ -299,9 +342,12 @@ function registerStatsPlayerSuccess(player: Command, runtime: CommandRuntime): v
       "\nAt least one of --year or --player-id is required.\n\nExamples:\n  fbs stats player success --year 2026 --team \"Florida State\"\n  fbs stats player success --player-id 4433971\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<PlayerSeasonSuccessQuery>>(command, [
+      const { player: playerName, ...options } = suppliedOptions<
+        Partial<PlayerSeasonSuccessQuery> & { player?: string }
+      >(command, [
         "excludeGarbageTime",
       ]);
+      const filters = localFilters({ player: playerName });
       const rawQuery = buildPlayerSeasonSuccessQuery(options);
 
       await withCommandContext("stats player success", rawQuery, async () => {
@@ -313,6 +359,12 @@ function registerStatsPlayerSuccess(player: Command, runtime: CommandRuntime): v
           resultKey: "player_success_rates",
           request: (api) => asStatisticsCfbdApi(api).playerSeasonSuccessRates(query),
           transform: transformPlayerSeasonSuccessRates,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) => isObject(row) && stringMatches(valueAt(row, "player", "name"), filters?.player as string | undefined),
+            ),
         });
       });
     })

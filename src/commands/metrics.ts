@@ -22,6 +22,14 @@ import {
   suppliedLeafOptions,
   suppliedOptions,
 } from "./options";
+import {
+  filterRows,
+  isObject,
+  localFilters,
+  parseNonNegativeInteger,
+  stringMatches,
+  valueAt,
+} from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 function registerPregameWinProbabilities(
@@ -33,7 +41,9 @@ function registerPregameWinProbabilities(
     .description("Retrieve pregame win probabilities")
     .option("--year <number>", "Season year", parseInteger)
     .option("--week <number>", "Week, including 0", parseInteger)
-    .option("--team <name>", "Team name");
+    .option("--team <name>", "Team name")
+    .option("--home <name>", "Local filter: home team")
+    .option("--away <name>", "Local filter: away team");
 
   addSeasonTypeOption(pregame);
   pregame
@@ -42,7 +52,10 @@ function registerPregameWinProbabilities(
       "\nAll filters are optional.\n\nExamples:\n  fbs metrics wp pregame\n  fbs metrics wp pregame --year 2026 --week 1 --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedLeafOptions<Partial<PregameWinProbabilitiesQuery>>(command);
+      const { home, away, ...options } = suppliedLeafOptions<
+        Partial<PregameWinProbabilitiesQuery> & { home?: string; away?: string }
+      >(command);
+      const filters = localFilters({ home, away });
       const rawQuery = buildPregameWinProbabilitiesQuery(options);
 
       await withCommandContext("metrics wp pregame", rawQuery, async () => {
@@ -55,6 +68,15 @@ function registerPregameWinProbabilities(
           request: (api) =>
             asStatisticsCfbdApi(api).pregameWinProbabilities(query),
           transform: transformPregameWinProbabilities,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                isObject(row) &&
+                stringMatches(valueAt(row, "home_team"), filters?.home as string | undefined) &&
+                stringMatches(valueAt(row, "away_team"), filters?.away as string | undefined),
+            ),
         });
       });
     })
@@ -66,12 +88,16 @@ function registerWinProbability(metrics: Command, runtime: CommandRuntime): void
     .command("wp")
     .description("Retrieve play-by-play win probability values")
     .option("--game-id <number>", "Game ID (required)", parseInteger)
+    .option("--period <number>", "Local filter: period", parseNonNegativeInteger)
     .addHelpText(
       "after",
       "\n--game-id is required.\n\nExample:\n  fbs metrics wp --game-id 401752731\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<WinProbabilityQuery>>(command);
+      const { period, ...options } = suppliedOptions<
+        Partial<WinProbabilityQuery> & { period?: number }
+      >(command);
+      const filters = localFilters({ period });
       const rawQuery = buildWinProbabilityQuery(options);
 
       await withCommandContext("metrics wp", rawQuery, async () => {
@@ -83,6 +109,12 @@ function registerWinProbability(metrics: Command, runtime: CommandRuntime): void
           resultKey: "win_probability",
           request: (api) => asStatisticsCfbdApi(api).winProbability(query),
           transform: transformWinProbability,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) => isObject(row) && (filters?.period === undefined || valueAt(row, "period") === filters.period),
+            ),
         });
       });
     })

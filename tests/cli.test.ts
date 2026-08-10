@@ -542,7 +542,7 @@ describe("offline CLI routing", () => {
   test.each([
     {
       label: "teams fbs",
-      argv: ["teams", "--year", "2026", "fbs"],
+      argv: ["teams", "--year", "2026", "--conference", "ACC", "fbs"],
       method: "fbsTeams",
       query: { year: 2026 },
     },
@@ -659,6 +659,24 @@ describe("offline CLI routing", () => {
     expect(result.calls).toEqual([
       { method: "gameTeamStats", query: { week: 1, year: 2026 } },
     ]);
+  });
+
+  test("records local filters without contaminating the CFBD query", async () => {
+    const result = await invokeWithMock([
+      "games",
+      "--year",
+      "2026",
+      "--completed",
+      "false",
+    ]);
+
+    expect(result.calls).toEqual([{ method: "games", query: { year: 2026 } }]);
+    expect(parse(result.stdout)).toMatchObject({
+      query: { year: 2026 },
+      filters: { completed: false },
+      count: 1,
+      games: [{ id: 401752732, completed: false }],
+    });
   });
 
   test("omits an optional boolean when its flag is not supplied", async () => {
@@ -809,7 +827,6 @@ describe("offline CLI failures", () => {
   });
 
   test.each([
-    ["teams fbs", ["teams", "--conference", "ACC", "fbs"]],
     ["teams matchup", ["teams", "--year", "2026", "matchup", "--team1", "Florida State", "--team2", "Miami"]],
     ["games teams", ["games", "--home", "Florida State", "teams", "--year", "2026", "--week", "1"]],
     ["games players", ["games", "--away", "Miami", "players", "--year", "2026", "--week", "1"]],
