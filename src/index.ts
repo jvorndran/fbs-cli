@@ -6,6 +6,7 @@ import type { AuthService } from "./auth/service";
 import { createAuthService } from "./auth/service";
 import { getEnvironmentFilePath } from "./auth/env-file";
 import { registerAuthCommand } from "./commands/auth";
+import { registerAnalyzeCommand } from "./commands/analyze";
 import { registerCoachesCommand } from "./commands/coaches";
 import { registerDraftCommand } from "./commands/draft";
 import { registerDrivesCommand } from "./commands/drives";
@@ -49,6 +50,7 @@ function buildProgram(runtime: CommandRuntime, auth: AuthService): Command {
     });
 
   registerAuthCommand(program, runtime, auth);
+  registerAnalyzeCommand(program, runtime);
   registerTeamsCommand(program, runtime);
   registerGamesCommand(program, runtime);
   registerRosterCommand(program, runtime);
@@ -74,7 +76,7 @@ function buildProgram(runtime: CommandRuntime, auth: AuthService): Command {
   program
     .addHelpText(
       "after",
-      "\nExamples:\n  fbs auth\n  fbs games --year 2026 --team \"Florida State\"\n  fbs plays --year 2026 --week 1 --offense \"Florida State\"\n  fbs info usage --api cfb --days 7\n",
+      "\nExamples:\n  fbs auth\n  fbs analyze team --year 2026 --team \"Florida State\"\n  fbs games --year 2026 --team \"Florida State\"\n  fbs plays --year 2026 --week 1 --offense \"Florida State\"\n  fbs info usage --api cfb --days 7\n",
     )
     .action(() => {
       program.outputHelp();

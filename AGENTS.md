@@ -8,7 +8,7 @@ This repository implements `fbs`, an agent-first, read-only Node.js and TypeScri
 Commander options -> pure query builder -> Zod validation -> cfbd client -> endpoint transformer -> YAML
 ```
 
-Commands mirror CFBD endpoint paths and flags mirror CFBD query parameters. Do not introduce domain-specific aliases when the provider term is already clear.
+Commands mirror CFBD endpoint paths and flags mirror CFBD query parameters. Do not introduce domain-specific aliases when the provider term is already clear. `fbs analyze team` is the sole intentional derived-command exception: it composes fresh historical reads into a cutoff-safe team report without changing the 71-route endpoint surface.
 
 The product scope explicitly excludes endpoint writes, MCP, databases, caches, RAG, custom pagination, output-format switches, file export, model execution, spinners, and decorative terminal UI. `fbs auth` is the sole local-write and interactive-prompt exception: it collects a key at a masked prompt, validates it with one `GET /info` request, and creates or updates `.env` in the current working directory. No other command may prompt or write locally. Betting fields, provider lines, and ATS records are supported as historical read-only data.
 
@@ -57,6 +57,8 @@ Do not run live tests without explicit authorization and a user-provided `CFBD_A
 The pinned `cfbd` 5.21.0 client exposes 71 GET routes. Keep all 71 endpoint commands stable.
 
 `fbs auth` is a local credential-setup command, not a CFBD endpoint and not part of the 71-route count.
+
+`fbs analyze team` is a read-only derived report, not a provider endpoint and not part of the 71-route count. It requires `--year` and `--team`; supports mutually exclusive `--as-of` and `--before-game-id`; defaults `--season-type` to `both` and `--classification` to `fbs`; makes six fixed source requests plus one league `/plays` request per included week; never caches or writes; and aborts atomically on any required source failure. Keep its compact wire contract, cutoff semantics, warnings, rounding, unavailable-metric paths, formulas, bounded player selection, and unsupported-metric exclusions synchronized with README and the packaged skill.
 
 Executable endpoint commands, grouped by domain:
 
@@ -139,6 +141,8 @@ All CFBD endpoint operations are read-only, but live calls consume CFBD quota. S
 - `src/index.ts`: expose the importable Commander root and register first-level command groups without executing the process.
 - `src/cli.ts`: executable Node entry; load the optional working-directory `.env` for endpoint commands, invoke the CLI, and set the process exit code.
 - `src/commands/auth.ts`: register the local `auth` command and emit its key-safe YAML result.
+- `src/commands/analyze.ts`: register the explicit derived `analyze team` command; keep orchestration out of the Commander action.
+- `src/analysis/*.ts`: pure cutoff classification, aggregation, situational, drive, player-role, opponent-adjustment, and report composition logic.
 - `src/auth/service.ts`: collect masked input, validate it once through `/info`, and save it only after validation succeeds.
 - `src/auth/env-file.ts`: normalize keys and create or update `.env` in the current working directory.
 - `src/commands/*.ts`: explicit `registerX(program)` functions; keep endpoint actions small.
@@ -147,6 +151,7 @@ All CFBD endpoint operations are read-only, but live calls consume CFBD quota. S
 - `src/cfbd/query-builders.ts`: pure option-to-query mapping only.
 - `src/transformers/*.ts`: endpoint-specific reshaping without provider calls.
 - `src/output/yaml.ts`: deterministic success serialization.
+- `src/output/analysis.ts`: dedicated analysis envelope renderer; never invent a provider endpoint.
 - `src/output/error.ts`: deterministic stderr envelope.
 - `src/utils/*.ts`: small normalization helpers.
 
@@ -173,6 +178,8 @@ Transform for readability without inventing analysis:
 
 Do not calculate rankings, betting edges, schemes, predictions, or opinions in transformers.
 
+The analysis modules are a separate, explicit exception to transformer non-analysis. They may calculate only the documented descriptive team formulas and cutoff-safe custom strength rankings. They must not create betting recommendations, predictions, schemes, neutral pace, target share, true pressure/disrupted-dropback rates, player scoring-opportunity share, player with/without results, or blends with current/full-season WEPA or SP+.
+
 ## Output and error contracts
 
 Success writes one YAML document to stdout:
@@ -195,6 +202,8 @@ env_file: /project/.env
 ```
 
 This success document means `/info` accepted the entered key and `.env` was updated. Validation consumes one CFBD API request. Authentication, network, quota, and server failures use the normal structured error codes and do not modify `.env`.
+
+`analyze team` is the other envelope-shape exception. Success emits only `team`, `year`, optional non-default `season_type`/`classification`, effective `as_of`, `games`, optional `warnings`, and `analysis`. It has no fake `endpoint`, command/query echo, version, lineage, z-scores, method metadata, or per-metric denominator fields. `games.included` is the only general sample size. Metrics without a valid denominator are omitted and their dotted paths are listed in `analysis.unavailable_metrics`; omit that list when empty. Rates/shares and percentage-point changes use one decimal, PPA uses three, point/yardage averages use two, and counts/ranks are integers. Preserve full internal precision and normalize rounded negative zero to `0`.
 
 When `auth` runs interactively, its brief explanation and masked prompt are the sole permitted prose on stderr; an interactive cancellation or invalid key therefore places them before the YAML error. Piped `auth` input emits no explanation or prompt and retains the YAML-only stream contract for agents and scripts.
 
@@ -220,6 +229,8 @@ Use stable machine-actionable codes, preserve useful provider messages, and add 
 For every command, cover exact option-to-query mapping and conditional validation. Transformer fixtures should prove snake_case conversion, null removal, ID preservation, nested grouping/flattening, clock formatting, and unchanged numerical precision. CLI tests should use a mocked API layer and assert YAML parsing, stream separation, exit codes, nested command parsing, and complete help options.
 
 For `auth`, cover missing-file creation, preservation of unrelated `.env` entries, replacement without duplicate keys, input normalization, the interactive explanation and hidden input, silent piped input, file failures, key redaction, exactly one `/info` validation request, and no write when validation fails. Distribution smoke tests must exercise `auth` only inside an isolated temporary working directory with a mocked fetch; the default suite must never call live CFBD.
+
+For `analyze team`, unit-test formula boundaries, zero denominators, weighted aggregate PROE, rolling windows, bounded/deduplicated player selection, leave-one-opponent-out adjustment, shrinkage, full-precision ranking direction, and public rounding. Mock orchestration tests must cover preseason and partial-season behavior, scheduled-versus-included counts, exact cutoff IDs, incomplete/future games, Week 0/byes/postponements, one fresh request per source/week, weekly concurrency three, compact golden output, warnings/unavailable metrics, atomic failure streams with source metadata, output limits, and repeated invocations. Never use live data in these tests.
 
 When changing behavior:
 

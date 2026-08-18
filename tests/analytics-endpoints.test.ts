@@ -499,6 +499,7 @@ interface RouteCase {
   command: string;
   endpoint: string;
   query: Record<string, unknown>;
+  response?: unknown;
   resultKey: string;
 }
 
@@ -512,6 +513,9 @@ async function runRegisteredRoute(route: RouteCase): Promise<{
     {
       get: (_target, method) => async (query?: unknown) => {
         calls.push({ method, query });
+        if (method === route.adapter && route.response !== undefined) {
+          return route.response;
+        }
         return method === "coachProfile" ? {} : [];
       },
     },
@@ -587,6 +591,64 @@ describe("analytics and history command registrations", () => {
       query: snakeCaseDeep(route.query),
       count: route.adapter === "coachProfile" ? 1 : 0,
       [route.resultKey]: route.adapter === "coachProfile" ? {} : [],
+    });
+  });
+
+  test("preserves national SP+ ranks by filtering a full-year response locally", async () => {
+    const floridaState = {
+      year: 2025,
+      team: "Florida State",
+      conference: "ACC",
+      rating: 7.2,
+      ranking: 41,
+      offense: { rating: 29.3, ranking: 54 },
+      defense: { rating: 21.2, ranking: 38, havoc: {} },
+      specialTeams: { rating: -0.8 },
+    };
+    const { call, document } = await runRegisteredRoute({
+      argv: ["ratings", "sp", "--year", "2025", "--team", "florida state"],
+      adapter: "spRatings",
+      command: "ratings sp",
+      endpoint: "/ratings/sp",
+      query: { year: 2025, team: "florida state" },
+      response: [
+        floridaState,
+        { ...floridaState, team: "Miami", rating: 22, ranking: 6 },
+      ],
+      resultKey: "sp_ratings",
+    });
+
+    expect(call).toEqual({ method: "spRatings", query: { year: 2025 } });
+    expect(document).toMatchObject({
+      command: "ratings sp",
+      endpoint: "/ratings/sp",
+      query: { year: 2025, team: "florida state" },
+      count: 1,
+      sp_ratings: [
+        {
+          team: "Florida State",
+          rating: 7.2,
+          ranking: 41,
+          offense: { ranking: 54 },
+          defense: { ranking: 38 },
+        },
+      ],
+    });
+  });
+
+  test("keeps team-only SP+ queries provider-filtered", async () => {
+    const { call } = await runRegisteredRoute({
+      argv: ["ratings", "sp", "--team", "Florida State"],
+      adapter: "spRatings",
+      command: "ratings sp",
+      endpoint: "/ratings/sp",
+      query: { team: "Florida State" },
+      resultKey: "sp_ratings",
+    });
+
+    expect(call).toEqual({
+      method: "spRatings",
+      query: { team: "Florida State" },
     });
   });
 });

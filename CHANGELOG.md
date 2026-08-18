@@ -4,6 +4,33 @@ All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/) and the format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.2.0] - 2026-08-17
+
+### Added
+
+- `fbs analyze team`, a read-only derived report that composes fresh historical
+  CFBD data into cutoff-safe team, situational, drive, player, and
+  opponent-adjusted metrics.
+- Exact `--as-of` and `--before-game-id` cutoffs, compact unavailable-metric
+  reporting, bounded player selection, and structured source-failure details.
+- Offline formula, orchestration, integration, and output-contract coverage for
+  the analysis pipeline, plus an opt-in live comparison oracle.
+
+### Changed
+
+- `ratings sp --year --team` retains the provider's national ranking context
+  while returning only the requested team.
+- The README, packaged agent skill, command index, and project site now document
+  the derived analysis workflow without changing the 71-route endpoint surface.
+
+### Fixed
+
+- Strict cutoff timestamp validation, atomic weekly-request cancellation,
+  preflight output-limit validation, interception-return classification, and
+  decimal rounding at large and small magnitudes.
+- The coverage job now enforces its intended 90% aggregate line and function
+  thresholds instead of Bun's per-file threshold semantics.
+
 ## [1.1.0] - 2026-08-10
 
 ### Added
@@ -52,3 +79,4 @@ tags are not reconstructed after publication.
 
 [1.0.0]: https://github.com/jvorndran/fbs-cli/releases/tag/v1.0.0
 [1.1.0]: https://github.com/jvorndran/fbs-cli/releases/tag/v1.1.0
+[1.2.0]: https://github.com/jvorndran/fbs-cli/releases/tag/v1.2.0

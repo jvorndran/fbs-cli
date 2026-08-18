@@ -40,6 +40,13 @@ import {
 } from "./options";
 import { asQueryRecord, withCommandContext } from "./shared";
 
+function sameTeamName(providerTeam: string, requestedTeam: string | undefined): boolean {
+  return (
+    requestedTeam !== undefined &&
+    providerTeam.localeCompare(requestedTeam, "en-US", { sensitivity: "base" }) === 0
+  );
+}
+
 function registerConferenceSp(sp: Command, runtime: CommandRuntime): void {
   const conferences = sp
     .command("conferences")
@@ -79,20 +86,33 @@ function registerSp(ratings: Command, runtime: CommandRuntime): void {
   sp
     .addHelpText(
       "after",
-      "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs ratings sp --year 2025\n  fbs ratings sp --team \"Florida State\"\n",
+      "\nAt least one of --year or --team is required. When both are supplied, fbs filters the full-year response locally so provider ranking fields remain national.\n\nExamples:\n  fbs ratings sp --year 2025\n  fbs ratings sp --year 2025 --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
       const options = suppliedOptions<Partial<SpRatingsQuery>>(command);
       const rawQuery = buildSpRatingsQuery(options);
       await withCommandContext("ratings sp", rawQuery, async () => {
         const query = validateSpRatingsQuery(rawQuery);
+        const preserveNationalRanks = query.year !== undefined && query.team !== undefined;
+        const requestQuery: SpRatingsQuery =
+          query.year !== undefined && query.team !== undefined
+            ? { year: query.year }
+            : query;
         await runEndpoint(runtime, {
           command: "ratings sp",
           endpoint: "/ratings/sp",
           query: asQueryRecord(query),
           resultKey: "sp_ratings",
-          request: (api) => asAnalyticsApi(api).spRatings(query),
-          transform: transformSpRatings,
+          request: (api) => asAnalyticsApi(api).spRatings(requestQuery),
+          transform: (response) =>
+            transformSpRatings(
+              preserveNationalRanks
+                ? response.filter(
+                    (rating) => sameTeamName(rating.team, query.team),
+                  )
+                : response,
+            ),
+          count: (_response, output) => output.length,
         });
       });
     })

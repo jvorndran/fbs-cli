@@ -113,6 +113,17 @@
         transform: translateY(0);
       }
 
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
       .shell {
         width: min(1120px, calc(100% - 2rem));
         margin: 0 auto;
@@ -447,6 +458,382 @@
         font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
       }
 
+      .research-loop {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+        margin: 0 0 1rem;
+        padding: 0;
+        list-style: none;
+        counter-reset: research-step;
+      }
+
+      .research-loop li {
+        position: relative;
+        min-width: 0;
+        padding: 1.2rem 3.25rem 1.2rem 1.2rem;
+        background: linear-gradient(145deg, rgba(19, 28, 45, 0.92), rgba(13, 22, 37, 0.88));
+        border: 1px solid var(--line);
+        border-radius: 0.9rem;
+        counter-increment: research-step;
+      }
+
+      .research-loop li::before {
+        display: block;
+        margin-bottom: 0.55rem;
+        color: var(--accent);
+        content: "0" counter(research-step);
+        font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+      }
+
+      .research-loop .loop-arrow {
+        position: absolute;
+        top: 50%;
+        right: -0.7rem;
+        z-index: 1;
+        display: grid;
+        width: 1.4rem;
+        height: 1.4rem;
+        place-items: center;
+        color: #1a1208;
+        background: var(--accent);
+        border-radius: 50%;
+        font-weight: 900;
+        transform: translateY(-50%);
+      }
+
+      .research-loop strong,
+      .research-loop span {
+        display: block;
+      }
+
+      .research-loop strong {
+        margin-bottom: 0.2rem;
+        font-size: 1rem;
+      }
+
+      .research-loop span {
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .loop-return {
+        display: flex;
+        gap: 0.55rem;
+        align-items: center;
+        justify-content: flex-end;
+        margin: 0 0 2rem;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .loop-return-mark {
+        color: var(--success);
+        font-size: 1.15rem;
+        font-weight: 900;
+      }
+
+      .playbook-stack {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .playbook {
+        overflow: clip;
+        background: rgba(13, 22, 37, 0.82);
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+      }
+
+      .playbook[open] {
+        border-color: rgba(255, 184, 77, 0.3);
+        box-shadow: 0 22px 55px rgba(0, 0, 0, 0.24);
+      }
+
+      .playbook summary {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 1rem;
+        align-items: center;
+        padding: 1.25rem 1.35rem;
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .playbook summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .playbook summary:hover {
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      .playbook summary:focus-visible {
+        outline-offset: -4px;
+      }
+
+      .playbook-number {
+        display: grid;
+        width: 2.35rem;
+        height: 2.35rem;
+        place-items: center;
+        color: var(--accent);
+        background: rgba(255, 184, 77, 0.1);
+        border: 1px solid rgba(255, 184, 77, 0.24);
+        border-radius: 0.72rem;
+        font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .playbook-summary-copy {
+        min-width: 0;
+      }
+
+      .playbook-title {
+        display: block;
+        margin: 0 0 0.2rem;
+        font-size: clamp(1.05rem, 2vw, 1.28rem);
+        font-weight: 750;
+        line-height: 1.25;
+      }
+
+      .playbook-description {
+        display: block;
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.87rem;
+      }
+
+      .playbook-summary-meta {
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+      }
+
+      .playbook-tag {
+        padding: 0.25rem 0.5rem;
+        color: var(--success);
+        background: rgba(117, 224, 167, 0.08);
+        border: 1px solid rgba(117, 224, 167, 0.2);
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 750;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+
+      .playbook-toggle {
+        display: grid;
+        width: 1.8rem;
+        height: 1.8rem;
+        place-items: center;
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        font-size: 1rem;
+      }
+
+      .playbook-toggle::before {
+        content: "+";
+      }
+
+      .playbook[open] .playbook-toggle::before {
+        content: "−";
+      }
+
+      .playbook-body {
+        padding: 0 1.35rem 1.35rem;
+        border-top: 1px solid var(--line);
+      }
+
+      .agent-prompt {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1rem;
+        align-items: start;
+        margin: 1.35rem 0;
+        padding: 1rem;
+        background: rgba(255, 184, 77, 0.06);
+        border: 1px solid rgba(255, 184, 77, 0.18);
+        border-left: 3px solid var(--accent);
+        border-radius: 0.7rem;
+      }
+
+      .agent-prompt-label,
+      .phase-label,
+      .artifact-label {
+        display: block;
+        margin-bottom: 0.35rem;
+        color: var(--accent);
+        font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.67rem;
+        font-weight: 800;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+      }
+
+      .agent-prompt blockquote {
+        margin: 0;
+        color: #e8edf7;
+        font-size: 0.93rem;
+      }
+
+      .prompt-copy {
+        padding: 0.42rem 0.62rem;
+      }
+
+      .playbook-phases {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.85rem;
+      }
+
+      .playbook-phase {
+        min-width: 0;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.025);
+        border: 1px solid var(--line);
+        border-radius: 0.75rem;
+      }
+
+      .playbook-phase h4,
+      .artifact-preview h4,
+      .research-disclaimer h3 {
+        margin: 0 0 0.7rem;
+        font-size: 0.95rem;
+      }
+
+      .playbook-phase p {
+        margin: 0 0 0.75rem;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .command-block,
+      .artifact-block {
+        padding: 0.9rem;
+        background: var(--code);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 0.6rem;
+        font-size: 0.72rem;
+        line-height: 1.62;
+      }
+
+      .command-block {
+        color: #f5c879;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+
+      .artifact-block {
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+
+      .playbook-notes {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.85rem;
+        margin-top: 0.85rem;
+      }
+
+      .playbook-note {
+        padding: 0.9rem 1rem;
+        color: var(--muted);
+        background: rgba(141, 185, 255, 0.05);
+        border: 1px solid rgba(141, 185, 255, 0.14);
+        border-radius: 0.7rem;
+        font-size: 0.82rem;
+      }
+
+      .playbook-note strong {
+        color: #c9dcff;
+      }
+
+      .playbook-findings {
+        display: grid;
+        gap: 0.5rem;
+        margin: 0;
+        padding-left: 1.15rem;
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .playbook-findings li::marker {
+        color: var(--success);
+      }
+
+      .artifact-preview {
+        margin-top: 0.85rem;
+        padding: 1rem;
+        background: linear-gradient(145deg, rgba(19, 28, 45, 0.9), rgba(8, 14, 25, 0.95));
+        border: 1px solid var(--line);
+        border-radius: 0.75rem;
+      }
+
+      .artifact-block {
+        color: #dfe7f5;
+      }
+
+      .artifact-footnote {
+        margin: 0.75rem 0 0;
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      .grade-rules {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.7rem;
+        margin: 0.85rem 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .grade-rule {
+        padding: 0.8rem;
+        background: rgba(255, 255, 255, 0.025);
+        border: 1px solid var(--line);
+        border-radius: 0.65rem;
+      }
+
+      .grade-rule strong,
+      .grade-rule span {
+        display: block;
+      }
+
+      .grade-rule strong {
+        margin-bottom: 0.28rem;
+        color: var(--accent);
+        font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.78rem;
+      }
+
+      .grade-rule span {
+        color: var(--muted);
+        font-size: 0.76rem;
+      }
+
+      .research-disclaimer {
+        margin-top: 1rem;
+        padding: 1.2rem;
+        background: rgba(255, 143, 61, 0.07);
+        border: 1px solid rgba(255, 143, 61, 0.24);
+        border-radius: 0.9rem;
+      }
+
+      .research-disclaimer p {
+        max-width: 920px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.87rem;
+      }
+
       .output-panel {
         display: grid;
         grid-template-columns: minmax(0, 0.76fr) minmax(380px, 1.24fr);
@@ -515,11 +902,29 @@
         .command-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+
+        .playbook-phases,
+        .playbook-notes {
+          grid-template-columns: 1fr;
+        }
       }
 
       @media (max-width: 620px) {
         nav {
+          gap: 0;
+        }
+
+        nav a {
           display: none;
+        }
+
+        nav a[href="#playbooks"] {
+          display: inline-flex;
+          padding: 0.38rem 0.68rem;
+          color: var(--ink);
+          border: 1px solid var(--line);
+          border-radius: 999px;
+          font-size: 0.78rem;
         }
 
         h1 {
@@ -529,6 +934,49 @@
         .steps,
         .command-grid {
           grid-template-columns: 1fr;
+        }
+
+        .research-loop,
+        .grade-rules {
+          grid-template-columns: 1fr;
+        }
+
+        .research-loop li {
+          padding-right: 1.2rem;
+        }
+
+        .research-loop .loop-arrow {
+          top: auto;
+          right: 50%;
+          bottom: -0.7rem;
+          transform: translateX(50%) rotate(90deg);
+        }
+
+        .loop-return {
+          justify-content: flex-start;
+        }
+
+        .playbook summary {
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          gap: 0.75rem;
+          padding: 1rem;
+        }
+
+        .playbook-description,
+        .playbook-tag {
+          display: none;
+        }
+
+        .playbook-body {
+          padding: 0 1rem 1rem;
+        }
+
+        .agent-prompt {
+          grid-template-columns: 1fr;
+        }
+
+        .prompt-copy {
+          justify-self: start;
         }
 
         .terminal pre {
@@ -560,6 +1008,7 @@
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
+    <p class="visually-hidden" id="copy-status" role="status" aria-live="polite" aria-atomic="true"></p>
 
     <div class="shell">
       <header>
@@ -569,6 +1018,7 @@
         </a>
         <nav aria-label="Primary navigation">
           <a href="#quick-start">Quick start</a>
+          <a href="#playbooks">Playbooks</a>
           <a href="#commands">Commands</a>
           <a href="#output">Output</a>
           <a href="https://github.com/jvorndran/fbs-cli">GitHub</a>
@@ -578,12 +1028,12 @@
       <main id="main">
         <section class="hero" id="top" aria-labelledby="hero-title">
           <div>
-            <p class="eyebrow">Unofficial · 71 read-only routes · agent-ready</p>
+            <p class="eyebrow">Unofficial · 71 read-only routes + team analysis · agent-ready</p>
             <h1 id="hero-title">The shortest path from <span>question</span> to kickoff data.</h1>
             <p class="lede">
               FBS CLI is an independent command line interface for CollegeFootballData. It
-              covers all 71 GET routes in the pinned <code>cfbd</code> 5.21.0 client, including
-              historical lines and team ATS records, and returns every result as clean YAML.
+              covers all 71 GET routes in the pinned <code>cfbd</code> 5.21.0 client, plus a
+              cutoff-safe <code>analyze team</code> report, and returns every result as clean YAML.
             </p>
             <div class="actions">
               <a class="button button-primary" href="#quick-start">Start in three steps</a>
@@ -655,6 +1105,426 @@
           </div>
         </section>
 
+        <section class="section" id="playbooks" aria-labelledby="playbooks-title">
+          <div class="section-heading">
+            <h2 id="playbooks-title">Ask for a handicap. Get an investigation—not a hunch.</h2>
+            <p>
+              Build a team dossier, investigate the next matchup, and audit the result. Bring a
+              timestamped sportsbook number and current availability news; FBS CLI supplies
+              structured CFBD evidence.
+            </p>
+          </div>
+
+          <ol class="research-loop" aria-label="Repeating betting research loop">
+            <li>
+              <strong>Team dossier</strong>
+              <span>Separate record, efficiency, opponent quality, personnel, and market history.</span>
+              <span class="loop-arrow" aria-hidden="true">→</span>
+            </li>
+            <li>
+              <strong>Pregame betting card</strong>
+              <span>Test the matchup and current number with a strict pre-kickoff data cutoff.</span>
+              <span class="loop-arrow" aria-hidden="true">→</span>
+            </li>
+            <li>
+              <strong>Postgame audit</strong>
+              <span>Separate result from process, then carry durable lessons forward.</span>
+            </li>
+          </ol>
+          <p class="loop-return"><span class="loop-return-mark" aria-hidden="true">↻</span>Each audit updates the next team dossier.</p>
+
+          <div class="playbook-stack">
+            <details class="playbook" open>
+              <summary>
+                <span class="playbook-number" aria-hidden="true">01</span>
+                <span class="playbook-summary-copy">
+                  <span class="playbook-title" role="heading" aria-level="3">Build the full team handicap file</span>
+                  <span class="playbook-description">Test whether the record, underlying play, and historical market results tell the same story.</span>
+                </span>
+                <span class="playbook-summary-meta">
+                  <span class="playbook-tag">Reusable dossier</span>
+                  <span class="playbook-toggle" aria-hidden="true"></span>
+                </span>
+              </summary>
+
+              <div class="playbook-body">
+                <div class="agent-prompt">
+                  <div>
+                    <span class="agent-prompt-label">Agent prompt</span>
+                    <blockquote>
+                      Investigate 2025 Florida State. Determine whether its record was supported by
+                      opponent quality, underlying efficiency, recent form, player concentration, and
+                      historical market performance. Identify the conditions that made the team
+                      attractive or dangerous for sides and totals.
+                    </blockquote>
+                  </div>
+                  <button
+                    class="copy-button prompt-copy"
+                    type="button"
+                    data-copy="Investigate 2025 Florida State. Determine whether its record was supported by opponent quality, underlying efficiency, recent form, player concentration, and historical market performance. Identify the conditions that made the team attractive or dangerous for sides and totals."
+                  >Copy prompt</button>
+                </div>
+
+                <div class="playbook-phases">
+                  <section class="playbook-phase">
+                    <span class="phase-label">Phase 01</span>
+                    <h4>Results and market history</h4>
+                    <p>Establish the schedule ledger, expected record, ATS sample, and stored provider observations.</p>
+                    <pre class="command-block">fbs games --year 2025 --team "Florida State" --season-type regular
+fbs records --year 2025 --team "Florida State"
+fbs teams ats --year 2025 --team "Florida State"
+fbs lines --year 2025 --team "Florida State" --season-type regular</pre>
+                  </section>
+
+                  <section class="playbook-phase">
+                    <span class="phase-label">Phase 02</span>
+                    <h4>Efficiency and trend splits</h4>
+                    <p>Contrast full-season quality with early and late form while removing garbage time.</p>
+                    <pre class="command-block">fbs stats season advanced --year 2025 --team "Florida State" --exclude-garbage-time
+fbs stats season advanced --year 2025 --team "Florida State" --start-week 1 --end-week 7 --exclude-garbage-time
+fbs stats season advanced --year 2025 --team "Florida State" --start-week 8 --end-week 14 --exclude-garbage-time
+fbs ppa games --year 2025 --team "Florida State" --exclude-garbage-time
+fbs wepa team season --year 2025 --team "Florida State"</pre>
+                  </section>
+
+                  <section class="playbook-phase">
+                    <span class="phase-label">Phase 03</span>
+                    <h4>Opponent quality and ratings</h4>
+                    <p>Check whether schedule strength and multiple provider rating systems confirm the raw profile.</p>
+                    <pre class="command-block">fbs ratings srs expanded --year 2025
+fbs ratings sp --year 2025 --team "Florida State"
+fbs ratings fpi --year 2025 --team "Florida State"</pre>
+                  </section>
+
+                  <section class="playbook-phase">
+                    <span class="phase-label">Phase 04</span>
+                    <h4>Personnel concentration</h4>
+                    <p>Find out whether production is distributed or dependent on a small number of players.</p>
+                    <pre class="command-block">fbs player usage --year 2025 --team "Florida State" --exclude-garbage-time
+fbs ppa players season --year 2025 --team "Florida State" --threshold 10 --exclude-garbage-time</pre>
+                  </section>
+                </div>
+
+                <div class="playbook-notes">
+                  <div class="playbook-note">
+                    <strong>Join the evidence.</strong> Match <code>games[].id</code> with
+                    <code>lines[].id</code>, then join each opponent name to the expanded SRS rows.
+                  </div>
+                  <div class="playbook-note">
+                    <strong>Keep market context descriptive.</strong> Show provider and sample size;
+                    do not treat a stored spread as a guaranteed live or closing number.
+                  </div>
+                </div>
+
+                <div class="artifact-preview">
+                  <span class="artifact-label">Final artifact</span>
+                  <h4>Reusable team betting profile</h4>
+                  <pre class="artifact-block">TEAM DOSSIER
+Record vs. expected wins:
+Opponent quality and strength of schedule:
+Offensive and defensive identity:
+Early vs. late trend:
+Game-to-game volatility:
+Player concentration:
+Side-friendly conditions:
+Total-friendly conditions:
+Historical ATS and provider context:
+Conflicting evidence and data gaps:</pre>
+                </div>
+              </div>
+            </details>
+
+            <details class="playbook">
+              <summary>
+                <span class="playbook-number" aria-hidden="true">02</span>
+                <span class="playbook-summary-copy">
+                  <span class="playbook-title" role="heading" aria-level="3">Produce the pregame side and total card</span>
+                  <span class="playbook-description">Use only information available before kickoff, then grade both markets at the verified price.</span>
+                </span>
+                <span class="playbook-summary-meta">
+                  <span class="playbook-tag">Side + total</span>
+                  <span class="playbook-toggle" aria-hidden="true"></span>
+                </span>
+              </summary>
+
+              <div class="playbook-body">
+                <div class="agent-prompt">
+                  <div>
+                    <span class="agent-prompt-label">Agent prompt</span>
+                    <blockquote>
+                      Investigate {TEAM} versus {OPPONENT} using only information available before
+                      kickoff. The live market from {SPORTSBOOK} at {TIMESTAMP} is
+                      {SPREAD_AND_PRICE} with a total of {TOTAL_AND_PRICE}. Availability notes:
+                      {NOTES}. Return one side and one total entry with a bettable number,
+                      counterarguments, invalidation conditions, and a 0u, 0.5u, or 1u grade.
+                    </blockquote>
+                  </div>
+                  <button
+                    class="copy-button prompt-copy"
+                    type="button"
+                    data-copy="Investigate {TEAM} versus {OPPONENT} using only information available before kickoff. The live market from {SPORTSBOOK} at {TIMESTAMP} is {SPREAD_AND_PRICE} with a total of {TOTAL_AND_PRICE}. Availability notes: {NOTES}. Return one side and one total entry with a bettable number, counterarguments, invalidation conditions, and a 0u, 0.5u, or 1u grade."
+                  >Copy prompt</button>
+                </div>
+
+                <div class="playbook-notes">
+                  <div class="playbook-note">
+                    <strong>Required live inputs.</strong> Supply sportsbook, timestamp, spread,
+                    total, prices, verified availability notes, and your own definition of one unit.
+                  </div>
+                  <div class="playbook-note">
+                    <strong>Pass the timing gate.</strong> Run the live card before kickoff. Confirm
+                    the target game has <code>completed: false</code>, the current time precedes
+                    <code>start_date</code>, and each cutoff is that team’s last completed week.
+                  </div>
+                </div>
+
+                <div class="playbook-phases">
+                  <section class="playbook-phase">
+                    <span class="phase-label">Phase 01</span>
+                    <h4>Build the schedule ledger and benchmark</h4>
+                    <p>Locate the target by opponent, capture its ID and week, derive each team’s completed-game weeks, then add stored market and model context.</p>
+                    <pre class="command-block">fbs games --year {YEAR} --team "{TEAM}" --season-type regular
+fbs games --year {YEAR} --team "{OPPONENT}" --season-type regular
+fbs games --year {YEAR} --week {TARGET_WEEK} --team "{TEAM}" --season-type regular
+fbs lines --game-id {GAME_ID}
+fbs teams ats --year {YEAR} --team "{TEAM}"
+fbs teams ats --year {YEAR} --team "{OPPONENT}"
+fbs metrics wp pregame --year {YEAR} --week {TARGET_WEEK} --team "{TEAM}"
+fbs ratings elo --year {YEAR} --week {TARGET_WEEK} --team "{TEAM}"
+fbs ratings elo --year {YEAR} --week {TARGET_WEEK} --team "{OPPONENT}"</pre>
+                  </section>
+
+                  <section class="playbook-phase">
+                    <span class="phase-label">Phase 02</span>
+                    <h4>Map the efficiency mismatch</h4>
+                    <p>Repeat for both teams, then compare each offense with the opposing defense.</p>
+                    <pre class="command-block">fbs stats season advanced --year {YEAR} --team "{TEAM}" --start-week 0 --end-week {CUTOFF_WEEK} --exclude-garbage-time
+fbs stats game havoc --year {YEAR} --team "{TEAM}" --season-type regular
+fbs ppa games --year {YEAR} --team "{TEAM}" --season-type regular --exclude-garbage-time</pre>
+                  </section>
+
+                  <section class="playbook-phase">
+                    <span class="phase-label">Phase 03</span>
+                    <h4>Stress-test volume and personnel</h4>
+                    <p>Repeat for both teams. Query plays once for each team’s last three completed-game weeks; byes mean those weeks can differ.</p>
+                    <pre class="command-block">fbs drives --year {YEAR} --team "{TEAM}" --season-type regular
+fbs plays --year {YEAR} --week {EACH_COMPLETED_WEEK} --team "{TEAM}" --season-type regular
+fbs stats player season --year {YEAR} --team "{TEAM}" --start-week 0 --end-week {CUTOFF_WEEK} --season-type regular
+fbs player usage --year {YEAR} --team "{TEAM}" --exclude-garbage-time
+fbs ppa players games --year {YEAR} --team "{TEAM}" --threshold 10 --season-type regular --exclude-garbage-time</pre>
+                  </section>
+
+                  <section class="playbook-phase">
+                    <span class="phase-label">Phase 04</span>
+                    <h4>Add low-weight context</h4>
+                    <p>Use series history as context only and treat tier-denied weather as missing evidence.</p>
+                    <pre class="command-block">fbs teams matchup --team1 "{TEAM}" --team2 "{OPPONENT}" --min-year {HISTORY_START} --max-year {PRIOR_YEAR}
+fbs games weather --game-id {GAME_ID}</pre>
+                  </section>
+                </div>
+
+                <div class="playbook-notes">
+                  <div class="playbook-note">
+                    <strong>Side lens.</strong> Compare passing, rushing, standard downs, passing
+                    downs, line play, havoc, recent form, ratings, and player concentration.
+                  </div>
+                  <div class="playbook-note">
+                    <strong>Total lens.</strong> Test game scripts using play volume, drives,
+                    explosiveness, scoring opportunities, field position, availability, and weather.
+                  </div>
+                  <div class="playbook-note">
+                    <strong>Historical replay rule.</strong> Keep only game-level rows with
+                    <code>week &lt; TARGET_WEEK</code>. Omit season ATS, player usage, WEPA, SP+, FPI,
+                    and forecast-weather claims unless archived before kickoff; use the target
+                    game’s preserved <code>pregame_elo</code> instead of assuming weekly Elo timing.
+                  </div>
+                  <div class="playbook-note">
+                    <strong>Count evidence families once.</strong> Treat matchup efficiency,
+                    ratings/pregame probability, volume and game script, and personnel/availability
+                    as distinct primary families. Correlated metrics within one family count once;
+                    ATS and head-to-head remain context only.
+                  </div>
+                </div>
+
+                <div class="artifact-preview">
+                  <span class="artifact-label">Final artifact</span>
+                  <h4>Always return both markets</h4>
+                  <pre class="artifact-block">MARKET SNAPSHOT
+Sportsbook:
+Captured at:
+Verified spread, total, and prices:
+Availability snapshot:
+One-unit definition:
+
+SIDE
+Decision: PASS | LEAN | PLAY
+Selection: {TEAM_AND_EXACT_VERIFIED_SPREAD}
+Price:
+Grade: 0u | 0.5u | 1u
+Heuristic fair range:
+Bettable through:
+Evidence for:
+Evidence against:
+Valid only at:
+Invalidated by:
+Missing inputs:
+
+TOTAL
+Decision: PASS | LEAN | PLAY
+Selection: Over/Under {EXACT_VERIFIED_TOTAL}
+Price:
+Grade: 0u | 0.5u | 1u
+Heuristic fair range:
+Bettable through:
+Evidence for:
+Evidence against:
+Valid only at:
+Invalidated by:
+Missing inputs:</pre>
+
+                  <ul class="grade-rules" aria-label="Betting card grade rules">
+                    <li class="grade-rule">
+                      <strong>PLAY · 1u</strong>
+                      <span>Three primary families agree, both teams have four relevant games, price and pivotal availability are verified, and no major contradiction remains.</span>
+                    </li>
+                    <li class="grade-rule">
+                      <strong>LEAN · 0.5u</strong>
+                      <span>Two primary families agree, but one noncritical uncertainty or counter-signal remains.</span>
+                    </li>
+                    <li class="grade-rule">
+                      <strong>PASS · 0u</strong>
+                      <span>Evidence is weak or split, the sample is thin, the live price is missing or moved, or availability or material weather is unresolved.</span>
+                    </li>
+                  </ul>
+                  <p class="artifact-footnote">Maximum exposure is 1u per entry. Historical ATS and head-to-head never raise a tier by themselves, and units are never converted to dollars.</p>
+                </div>
+              </div>
+            </details>
+
+            <details class="playbook">
+              <summary>
+                <span class="playbook-number" aria-hidden="true">03</span>
+                <span class="playbook-summary-copy">
+                  <span class="playbook-title" role="heading" aria-level="3">Run the signal-or-noise postgame audit</span>
+                  <span class="playbook-description">Separate the result from the reasoning, then update the profile without outcome chasing.</span>
+                </span>
+                <span class="playbook-summary-meta">
+                  <span class="playbook-tag">Feedback loop</span>
+                  <span class="playbook-toggle" aria-hidden="true"></span>
+                </span>
+              </summary>
+
+              <div class="playbook-body">
+                <div class="agent-prompt">
+                  <div>
+                    <span class="agent-prompt-label">Agent prompt</span>
+                    <blockquote>
+                      Audit game {GAME_ID} against the original betting card. Separate the betting
+                      result from the quality of the reasoning, identify high-variance events,
+                      determine whether the matchup thesis held, and update the team dossier without
+                      outcome chasing.
+                    </blockquote>
+                  </div>
+                  <button
+                    class="copy-button prompt-copy"
+                    type="button"
+                    data-copy="Audit game {GAME_ID} against the original betting card. Separate the betting result from the quality of the reasoning, identify high-variance events, determine whether the matchup thesis held, and update the team dossier without outcome chasing."
+                  >Copy prompt</button>
+                </div>
+
+                <div class="playbook-phases">
+                  <section class="playbook-phase">
+                    <span class="phase-label">Phase 01</span>
+                    <h4>Record the result and context</h4>
+                    <p>Use the original timestamped sportsbook number as the authoritative grading input.</p>
+                    <pre class="command-block">fbs games --id {GAME_ID}
+fbs lines --game-id {GAME_ID}
+fbs games teams --id {GAME_ID}
+fbs games players --id {GAME_ID}</pre>
+                  </section>
+
+                  <section class="playbook-phase">
+                    <span class="phase-label">Phase 02</span>
+                    <h4>Test whether the thesis held</h4>
+                    <p>Compare the final score with efficiency, disruption, and predicted-points evidence.</p>
+                    <pre class="command-block">fbs stats game advanced --year {YEAR} --week {WEEK} --team "{TEAM}" --opponent "{OPPONENT}" --exclude-garbage-time
+fbs stats game havoc --year {YEAR} --week {WEEK} --team "{TEAM}" --opponent "{OPPONENT}"
+fbs ppa games --year {YEAR} --week {WEEK} --team "{TEAM}" --exclude-garbage-time</pre>
+                  </section>
+
+                  <section class="playbook-phase">
+                    <span class="phase-label">Phase 03</span>
+                    <h4>Locate variance and turning points</h4>
+                    <p>Trace field position, explosive plays, short fields, and the largest win-probability swings.</p>
+                    <pre class="command-block">fbs drives --year {YEAR} --week {WEEK} --team "{TEAM}"
+fbs plays --year {YEAR} --week {WEEK} --team "{TEAM}"
+fbs metrics wp --game-id {GAME_ID}</pre>
+                  </section>
+
+                  <section class="playbook-phase">
+                    <span class="phase-label">Optional</span>
+                    <h4>Use the consolidated advanced box</h4>
+                    <p>Add this evidence only when the authenticated CFBD tier permits the endpoint.</p>
+                    <pre class="command-block">fbs game box advanced --id {GAME_ID}</pre>
+                  </section>
+                </div>
+
+                <div class="playbook-notes">
+                  <div class="playbook-note">
+                    <strong>Grade both recorded entries.</strong> Determine each side and total
+                    result against the sportsbook number and price captured before kickoff—not a
+                    later provider observation.
+                  </div>
+                  <div class="playbook-note">
+                    <strong>Separate process from outcome.</strong> Turnovers, special teams, short
+                    fields, explosive plays, and garbage time can overwhelm an otherwise sound thesis.
+                  </div>
+                </div>
+
+                <div class="artifact-preview">
+                  <span class="artifact-label">Final artifact</span>
+                  <h4>Postgame process audit</h4>
+                  <pre class="artifact-block">POSTGAME AUDIT
+Sportsbook and captured-at timestamp:
+Pregame availability snapshot:
+
+SIDE AUDIT
+Recorded selection, price, and grade:
+Result: WIN | LOSS | PUSH
+Thesis status: CONFIRMED | MIXED | REFUTED
+Evidence that held / failed:
+
+TOTAL AUDIT
+Recorded selection, price, and grade:
+Result: WIN | LOSS | PUSH
+Thesis status: CONFIRMED | MIXED | REFUTED
+Evidence that held / failed:
+
+SHARED PROCESS REVIEW
+Repeatable efficiency signals:
+High-variance events:
+Largest win-probability swings:
+Profile upgrades / holds / downgrades:
+Next-game watch conditions:
+Remaining uncertainty:</pre>
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <aside class="research-disclaimer" aria-labelledby="research-disclaimer-title">
+            <span class="artifact-label">Read-only research layer</span>
+            <h3 id="research-disclaimer-title">Bring the live market. Keep every judgment attributable.</h3>
+            <p>
+              FBS CLI retrieves historical and provider-supplied data; the connected agent performs
+              the synthesis. The CLI does not provide an injury or availability feed, guarantee a
+              current sportsbook price, recommend or place wagers, convert units to dollars, or
+              promise returns. Current prices and availability must come from an external source,
+              and a missing material input means the affected card is a pass.
+            </p>
+          </aside>
+        </section>
+
         <section class="section" id="commands" aria-labelledby="commands-title">
           <div class="section-heading">
             <h2 id="commands-title">One predictable surface, across every research domain.</h2>
@@ -662,6 +1532,11 @@
           </div>
 
           <div class="command-grid">
+            <article class="card route">
+              <div class="route-label">Team analysis</div>
+              <h3>analyze team</h3>
+              <p>Build a fresh, cutoff-safe YAML report with record, offense and defense efficiency, drives, PROE, player trends, and adjusted ranks.</p>
+            </article>
             <article class="card route">
               <div class="route-label">Teams &amp; reference</div>
               <h3>teams · roster · records</h3>
@@ -735,6 +1610,8 @@
     </div>
 
     <script>
+      const copyStatus = document.querySelector("#copy-status");
+
       const copyText = async (value) => {
         if (navigator.clipboard && window.isSecureContext) {
           await navigator.clipboard.writeText(value);
@@ -755,11 +1632,14 @@
       document.querySelectorAll("[data-copy]").forEach((button) => {
         button.addEventListener("click", async () => {
           const original = button.textContent;
+          copyStatus.textContent = "";
           try {
             await copyText(button.dataset.copy);
             button.textContent = "Copied";
+            copyStatus.textContent = "Copied to clipboard.";
           } catch {
-            button.textContent = "Select text";
+            button.textContent = "Copy failed";
+            copyStatus.textContent = "Automatic copy failed. Select and copy the text manually.";
           }
           window.setTimeout(() => {
             button.textContent = original;

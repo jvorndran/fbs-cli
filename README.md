@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22.12-43853d)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-`fbs` is an unofficial, read-only command-line interface for the [CollegeFootballData](https://collegefootballdata.com/) API. It exposes all 71 GET routes from the pinned official `cfbd` 5.21.0 TypeScript client as predictable commands and returns deterministic YAML for terminals, scripts, and agent workflows.
+`fbs` is an unofficial, read-only command-line interface for the [CollegeFootballData](https://collegefootballdata.com/) API. It exposes all 71 GET routes from the pinned official `cfbd` 5.21.0 TypeScript client as predictable commands, plus one intentional cutoff-safe team analysis report, and returns deterministic YAML for terminals, scripts, and agent workflows.
 
 ```bash
 $ fbs games --year 2024 --week 1 --team "Florida State"
@@ -27,10 +27,10 @@ The response above is abridged. The real command preserves provider IDs, timesta
 
 Why use it:
 
-- Endpoint-shaped commands and provider terminology: no hidden aliases or generated analysis.
+- Endpoint-shaped commands and provider terminology for all 71 routes, with `analyze team` as the single explicit derived-analysis exception.
 - Read-only access to schedules, teams, players, plays, metrics, recruiting, ratings, draft history, historical lines, and every other CFBD GET route.
 - One YAML document on stdout for success and one machine-actionable YAML error on stderr for failure.
-- No database, cache, pagination layer, file export, model execution, or decorative terminal UI.
+- No database, cache, pagination layer, file export, model execution, or decorative terminal UI; analysis is rebuilt from fresh CFBD responses on every invocation.
 
 ## Quick start
 
@@ -65,6 +65,7 @@ CFBD_API_KEY=your_key_here
 ```bash
 fbs --help
 fbs games --year 2026 --team "Florida State"
+fbs analyze team --year 2026 --team "Florida State"
 ```
 
 Quote team and player names that contain spaces. Use `fbs <command path> --help` to see the flags accepted by any command.
@@ -122,6 +123,19 @@ Version 1 follows semantic versioning. Command paths, documented flags, result k
 ## Command reference
 
 The tables below list every executable endpoint command. All shown flags are accepted; flags are optional unless the rule says otherwise. Quote multiword values. Run `fbs <command path> --help` for descriptions, enum choices, and examples from the executable itself.
+
+### Team analysis
+
+`fbs analyze team --year <number> --team <name>` builds a fresh team report from completed games before a cutoff. Use `--as-of <RFC3339>` for an explicit time or `--before-game-id <id>` for a pregame report; the flags are mutually exclusive. It also accepts `--season-type` (default `both`) and `--classification` (default `fbs`).
+
+The YAML output contains:
+
+- Team, season, effective cutoff, scheduled and included game counts, record, and included game IDs.
+- Offense and defense-allowed efficiency with passing, rushing, havoc, drive, and PROE metrics.
+- Selected player workload, shares, recent changes, and opponent-adjusted team ranks.
+- Optional warnings and `analysis.unavailable_metrics` when provider data is incomplete.
+
+Only provider-completed games before the cutoff are analyzed; future and incomplete games are excluded. If no games qualify, the command returns the structured `analysis_no_completed_games` error on stderr.
 
 ### Teams, account, and reference data
 

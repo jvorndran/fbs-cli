@@ -210,6 +210,43 @@ export class OutputTooLargeError extends CliError {
   }
 }
 
+export class UnknownAnalysisTeamError extends CliError {
+  constructor(team: string, year: number) {
+    super({
+      code: "analysis_unknown_team",
+      message: `${team} was not found in the ${year} schedule for the selected classification.`,
+      hint: "Use the CFBD school name and verify --year and --classification.",
+      exitCode: 2,
+    });
+  }
+}
+
+export class InvalidAnalysisCutoffError extends CliError {
+  constructor(message: string, hint?: string) {
+    super({
+      code: "analysis_invalid_cutoff",
+      message,
+      ...(hint === undefined ? {} : { hint }),
+      exitCode: 2,
+    });
+  }
+}
+
+export class NoCompletedAnalysisGamesError extends CliError {
+  constructor(team: string, effectiveAsOf: string, scheduledGames: number) {
+    super({
+      code: "analysis_no_completed_games",
+      message: `No completed ${team} games precede the effective cutoff.`,
+      hint: "Choose a later --as-of value or a later target with --before-game-id.",
+      exitCode: 2,
+      metadata: {
+        effectiveAsOf,
+        scheduledGames,
+      },
+    });
+  }
+}
+
 export class CfbdRequestError extends CliError {
   constructor(options: Omit<CliErrorOptions, "exitCode">) {
     super({ ...options, exitCode: 1 });

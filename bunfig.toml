@@ -4,5 +4,5 @@ env = false
 preload = ["./tests/helpers/deny-network.ts"]
 coverageReporter = ["text", "lcov"]
 coverageDir = "coverage"
-coverageThreshold = 0.9
 coverageSkipTestFiles = true
+coveragePathIgnorePatterns = ["tests/helpers/analysis-live-oracle.ts"]

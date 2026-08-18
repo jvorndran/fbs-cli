@@ -4,6 +4,13 @@ Use this reference to select a command and its accepted filters. Put filters aft
 the complete command path. Executable `fbs <complete leaf path> --help` remains
 authoritative for validation rules, enum choices, and examples.
 
+## Derived report exception
+
+`fbs analyze team --year YEAR --team "TEAM"` accepts optional mutually exclusive
+`--as-of` and `--before-game-id` cutoffs, plus `--season-type` and
+`--classification`. It returns compact team, games, record, efficiency, drives,
+PROE, player, and adjusted-rank analysis.
+
 ## Account, teams, and reference data
 
 | Command | Filters |
