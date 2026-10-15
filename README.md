@@ -153,7 +153,7 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 | `fbs teams fbs` | `/teams/fbs` -> `teams` | `--year`, `--conference` | Optional. |
 | `fbs teams matchup` | `/teams/matchup` -> `matchup` | `--team1`, `--team2`, `--min-year`, `--max-year` | Require both teams; `min-year <= max-year`. |
 | `fbs teams ats` | `/teams/ats` -> `team_ats` | `--year`, `--team`, `--conference` | Require `--year`; returns historical ATS records. |
-| `fbs roster` | `/roster` -> `players` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--country`, `--jersey`, `--class-year` | Optional. |
+| `fbs roster` | `/roster` -> `players` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--country`, `--jersey`, `--class-year`, `--min-height`, `--max-height`, `--min-weight`, `--max-weight` | Optional. |
 
 ### Games, box scores, and live data
 
@@ -264,6 +264,8 @@ For `fbs ratings sp`, supplying both `--year` and `--team` makes one full-year p
 Kebab-case provider flags map directly to the corresponding CFBD camelCase query fields, such as `--game-id` -> `gameId`, `--player-id` -> `playerId`, `--season-type` -> `seasonType`, and `--exclude-garbage-time` -> `excludeGarbageTime`. Do not invent aliases.
 
 ### Local filters and output budget
+
+Roster measurement filters accept non-negative safe integers: `--min-height` and `--max-height` use inches; `--min-weight` and `--max-weight` use pounds. Bounds are inclusive and each minimum must not exceed its maximum. Players with unavailable measurements are excluded only when that measurement is filtered. Combine these flags with `--position` to inspect a position group, for example `fbs roster --year 2026 --team "Florida State" --position OL --min-weight 300`.
 
 Flags described as **Local filter** in executable help are applied after CFBD responds and after the endpoint transformer runs. They are never sent to CFBD: `query` remains the exact provider request and an additive `filters` object records the supplied local filter values. String matching is case-insensitive exact matching, numeric bounds are inclusive, and local boolean values must be `true` or `false`.
 

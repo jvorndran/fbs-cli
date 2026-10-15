@@ -27,7 +27,7 @@ PROE, player, and adjusted-rank analysis.
 | `fbs teams fbs` | `--year`, `--conference` |
 | `fbs teams matchup` | `--team1`, `--team2`, `--min-year`, `--max-year` |
 | `fbs teams ats` | `--year`, `--team`, `--conference` |
-| `fbs roster` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--country`, `--jersey`, `--class-year` |
+| `fbs roster` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--country`, `--jersey`, `--class-year`, `--min-height`, `--max-height`, `--min-weight`, `--max-weight` |
 
 ## Games, drives, and plays
 

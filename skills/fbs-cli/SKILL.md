@@ -84,3 +84,7 @@ Failures are one `error` document on stderr with a nonzero exit. A 25,000-code-p
 - [command-index.md](references/command-index.md): all 71 commands and their accepted filters.
 
 FBS CLI is an independent community project built on CollegeFootballData and its official `cfbd` client. It is not affiliated with or endorsed by CollegeFootballData or Rad Sports Analytics.
+
+## Roster measurement filters
+
+Use `roster --min-height N --max-height N` for inclusive height bounds in inches and `--min-weight N --max-weight N` for inclusive weight bounds in pounds. Values must be non-negative safe integers, and a minimum cannot exceed its maximum. These are local filters applied after the one `/roster` request; combine them with position or class-year filters. Missing measurements do not match an active bound. Read the applied values from `filters`, the unchanged provider request from `query`, and the filtered record count from `count`.
