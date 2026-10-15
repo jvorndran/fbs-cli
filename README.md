@@ -145,7 +145,7 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 | `fbs info usage` | `/info/usage` -> `usage` | `--api`, `--days`, `--limit` | Optional; `days` is 1-31 and `limit` is 1-50. |
 | `fbs conferences` | `/conferences` -> `conferences` | None | No filters. |
 | `fbs talent` | `/talent` -> `talent` | `--year` | Require `--year`. |
-| `fbs venues` | `/venues` -> `venues` | `--city`, `--state`, `--dome`, `--grass` | Optional local filters. |
+| `fbs venues` | `/venues` -> `venues` | `--city`, `--state`, `--dome`, `--grass`, `--min-capacity`, `--max-capacity` | Optional local filters; inclusive seating capacity bounds. |
 | `fbs records` | `/records` -> `records` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
 | `fbs calendar` | `/calendar` -> `calendar` | `--year` | Require `--year`. |
 | `fbs scoreboard` | `/scoreboard` -> `scoreboard` | `--conference`, `--classification`, `--team`, `--status`, `--venue` | Optional; may require an eligible CFBD tier and includes embedded betting fields when supplied by CFBD. |
@@ -264,6 +264,8 @@ For `fbs ratings sp`, supplying both `--year` and `--team` makes one full-year p
 Kebab-case provider flags map directly to the corresponding CFBD camelCase query fields, such as `--game-id` -> `gameId`, `--player-id` -> `playerId`, `--season-type` -> `seasonType`, and `--exclude-garbage-time` -> `excludeGarbageTime`. Do not invent aliases.
 
 ### Local filters and output budget
+
+Use `fbs venues --min-capacity 50000 --max-capacity 90000` to inspect venues within an inclusive seating capacity range. Bounds must be non-negative safe integers and the minimum cannot exceed the maximum. Combine them with city, state, dome, or grass filters. Venues with unavailable capacity are excluded only when a capacity bound is supplied; zero capacity remains a valid value. These filters do not change the one query-free `/venues` request.
 
 Roster measurement filters accept non-negative safe integers: `--min-height` and `--max-height` use inches; `--min-weight` and `--max-weight` use pounds. Bounds are inclusive and each minimum must not exceed its maximum. Players with unavailable measurements are excluded only when that measurement is filtered. Combine these flags with `--position` to inspect a position group, for example `fbs roster --year 2026 --team "Florida State" --position OL --min-weight 300`.
 

@@ -85,6 +85,8 @@ Failures are one `error` document on stderr with a nonzero exit. A 25,000-code-p
 
 FBS CLI is an independent community project built on CollegeFootballData and its official `cfbd` client. It is not affiliated with or endorsed by CollegeFootballData or Rad Sports Analytics.
 
-## Roster measurement filters
+## Local measurement filters
 
 Use `roster --min-height N --max-height N` for inclusive height bounds in inches and `--min-weight N --max-weight N` for inclusive weight bounds in pounds. Values must be non-negative safe integers, and a minimum cannot exceed its maximum. These are local filters applied after the one `/roster` request; combine them with position or class-year filters. Missing measurements do not match an active bound. Read the applied values from `filters`, the unchanged provider request from `query`, and the filtered record count from `count`.
+
+Use `venues --min-capacity N --max-capacity N` for inclusive seating capacity bounds, optionally combined with city, state, dome, or grass filters. Bounds must be non-negative safe integers with minimum no greater than maximum. An active capacity filter excludes unavailable capacity but preserves a reported zero. The single `/venues` request still has no query parameters; `filters` and `count` describe the local result.
