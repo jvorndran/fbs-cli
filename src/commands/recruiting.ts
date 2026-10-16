@@ -26,6 +26,7 @@ import {
   parseNonNegativeInteger,
   parseNumber,
   stringMatches,
+  validateOrderedRange,
   valueAt,
 } from "./local-filters";
 import { parseInteger, suppliedOptions } from "./options";
@@ -47,7 +48,10 @@ function registerPlayers(recruiting: Command, runtime: CommandRuntime): void {
     .option("--team <name>", "Committed team")
     .option("--year <number>", "Recruiting class year", parseInteger)
     .option("--min-stars <number>", "Local filter: minimum stars", parseNonNegativeInteger)
+    .option("--max-stars <number>", "Local filter: maximum stars", parseNonNegativeInteger)
     .option("--min-rating <number>", "Local filter: minimum rating", parseNumber)
+    .option("--max-rating <number>", "Local filter: maximum rating", parseNumber)
+    .option("--min-ranking <number>", "Local filter: minimum numerical ranking", parseNonNegativeInteger)
     .option("--max-ranking <number>", "Local filter: maximum ranking", parseNonNegativeInteger);
   players
     .addHelpText(
@@ -55,16 +59,22 @@ function registerPlayers(recruiting: Command, runtime: CommandRuntime): void {
       "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs recruiting players --year 2026\n  fbs recruiting players --team \"Florida State\" --position QB\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { minStars, minRating, maxRanking, ...options } = suppliedOptions<
+      const { minStars, maxStars, minRating, maxRating, minRanking, maxRanking, ...options } = suppliedOptions<
         Partial<RecruitingPlayersQuery> & {
           minStars?: number;
+          maxStars?: number;
           minRating?: number;
+          maxRating?: number;
+          minRanking?: number;
           maxRanking?: number;
         }
       >(command);
-      const filters = localFilters({ minStars, minRating, maxRanking });
+      const filters = localFilters({ minStars, maxStars, minRating, maxRating, minRanking, maxRanking });
       const rawQuery = buildRecruitingPlayersQuery(options);
       await withCommandContext("recruiting players", rawQuery, async () => {
+        validateOrderedRange(minStars, maxStars, "min-stars", "max-stars");
+        validateOrderedRange(minRating, maxRating, "min-rating", "max-rating");
+        validateOrderedRange(minRanking, maxRanking, "min-ranking", "max-ranking");
         const query = validateRecruitingPlayersQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "recruiting players",
@@ -78,9 +88,9 @@ function registerPlayers(recruiting: Command, runtime: CommandRuntime): void {
             filterRows(
               rows,
               (row) =>
-                numberMatches(valueAt(row, "stars"), filters?.minStars as number | undefined, undefined) &&
-                numberMatches(valueAt(row, "rating"), filters?.minRating as number | undefined, undefined) &&
-                numberMatches(valueAt(row, "ranking"), undefined, filters?.maxRanking as number | undefined),
+                numberMatches(valueAt(row, "stars"), minStars, maxStars) &&
+                numberMatches(valueAt(row, "rating"), minRating, maxRating) &&
+                numberMatches(valueAt(row, "ranking"), minRanking, maxRanking),
             ),
         });
       });
