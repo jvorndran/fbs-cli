@@ -222,7 +222,7 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 
 | Command | Endpoint -> result key | Accepted flags | Required rule |
 |---|---|---|---|
-| `fbs recruiting players` | `/recruiting/players` -> `recruits` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--min-stars`, `--min-rating`, `--max-ranking` | Require `--year` or `--team`. |
+| `fbs recruiting players` | `/recruiting/players` -> `recruits` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--min-stars`, `--max-stars`, `--min-rating`, `--max-rating`, `--min-ranking`, `--max-ranking` | Require `--year` or `--team`. |
 | `fbs recruiting teams` | `/recruiting/teams` -> `team_rankings` | `--year`, `--team`, `--max-rank` | Optional. |
 | `fbs recruiting groups` | `/recruiting/groups` -> `recruiting_groups` | `--conference`, `--start-year`, `--end-year`, `--recruit-type`, `--team`, `--position-group`, `--min-commits`, `--min-average-stars` | Optional; `start-year <= end-year`. |
 | `fbs ratings sp` | `/ratings/sp` -> `sp_ratings` | `--year`, `--team` | Require `--year` or `--team`. |
@@ -264,6 +264,8 @@ For `fbs ratings sp`, supplying both `--year` and `--team` makes one full-year p
 Kebab-case provider flags map directly to the corresponding CFBD camelCase query fields, such as `--game-id` -> `gameId`, `--player-id` -> `playerId`, `--season-type` -> `seasonType`, and `--exclude-garbage-time` -> `excludeGarbageTime`. Do not invent aliases.
 
 ### Local filters and output budget
+
+Recruiting player ranges support inclusive star, rating, and numerical national-ranking bounds. For example, `fbs recruiting players --year 2026 --min-stars 3 --max-stars 3 --min-ranking 100 --max-ranking 500` selects three-star recruits ranked 100 through 500. Star and ranking bounds accept non-negative safe integers; rating bounds accept finite numbers without rounding. A minimum cannot exceed its maximum. An unknown value is excluded only when that field has a supplied bound. These filters leave the provider query and result ordering unchanged.
 
 Roster measurement filters accept non-negative safe integers: `--min-height` and `--max-height` use inches; `--min-weight` and `--max-weight` use pounds. Bounds are inclusive and each minimum must not exceed its maximum. Players with unavailable measurements are excluded only when that measurement is filtered. Combine these flags with `--position` to inspect a position group, for example `fbs roster --year 2026 --team "Florida State" --position OL --min-weight 300`.
 

@@ -88,3 +88,7 @@ FBS CLI is an independent community project built on CollegeFootballData and its
 ## Roster measurement filters
 
 Use `roster --min-height N --max-height N` for inclusive height bounds in inches and `--min-weight N --max-weight N` for inclusive weight bounds in pounds. Values must be non-negative safe integers, and a minimum cannot exceed its maximum. These are local filters applied after the one `/roster` request; combine them with position or class-year filters. Missing measurements do not match an active bound. Read the applied values from `filters`, the unchanged provider request from `query`, and the filtered record count from `count`.
+
+## Recruiting player ranges
+
+Use `recruiting players --year YEAR` or `--team TEAM` with `--min-stars`/`--max-stars`, `--min-rating`/`--max-rating`, and `--min-ranking`/`--max-ranking` to inspect a bounded cohort. Bounds are inclusive; ranking means numerical national rank (100 through 500 includes ranks 100 and 500). Star and ranking values must be non-negative safe integers; ratings accept finite numbers with full precision. Reject reversed ranges before a request. These local filters never enter the CFBD query, exclude unavailable values only for the filtered fields, and preserve provider ordering. Read the applied bounds in `filters` and the filtered record total in `count`.
