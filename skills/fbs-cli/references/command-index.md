@@ -81,7 +81,7 @@ PROE, player, and adjusted-rank analysis.
 
 | Command | Filters |
 |---|---|
-| `fbs recruiting players` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--min-stars`, `--min-rating`, `--max-ranking` |
+| `fbs recruiting players` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--min-stars`, `--max-stars`, `--min-rating`, `--max-rating`, `--min-ranking`, `--max-ranking` |
 | `fbs recruiting teams` | `--year`, `--team`, `--max-rank` |
 | `fbs recruiting groups` | `--conference`, `--start-year`, `--end-year`, `--recruit-type`, `--team`, `--position-group`, `--min-commits`, `--min-average-stars` |
 | `fbs ratings sp` | `--year`, `--team` |
