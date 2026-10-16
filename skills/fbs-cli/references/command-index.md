@@ -19,7 +19,7 @@ PROE, player, and adjusted-rank analysis.
 | `fbs info usage` | `--api`, `--days`, `--limit` |
 | `fbs conferences` | None. |
 | `fbs talent` | `--year` |
-| `fbs venues` | `--city`, `--state`, `--dome`, `--grass` |
+| `fbs venues` | `--city`, `--state`, `--dome`, `--grass`, `--min-capacity`, `--max-capacity` |
 | `fbs records` | `--year`, `--team`, `--conference` |
 | `fbs calendar` | `--year` |
 | `fbs scoreboard` | `--conference`, `--classification`, `--team`, `--status`, `--venue` |

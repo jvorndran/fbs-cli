@@ -32,8 +32,11 @@ import {
   booleanMatches,
   filterRows,
   localFilters,
+  numberMatches,
   parseBoolean,
+  parseNonNegativeInteger,
   stringMatches,
+  validateOrderedRange,
   valueAt,
 } from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
@@ -96,6 +99,8 @@ function registerVenuesCommand(program: Command, runtime: CommandRuntime): void 
     .option("--state <value>", "Local filter: state")
     .option("--dome <boolean>", "Local filter: dome", parseBoolean)
     .option("--grass <boolean>", "Local filter: grass", parseBoolean)
+    .option("--min-capacity <number>", "Local filter: minimum seating capacity (inclusive)", parseNonNegativeInteger)
+    .option("--max-capacity <number>", "Local filter: maximum seating capacity (inclusive)", parseNonNegativeInteger)
     .addHelpText("after", "\nExample:\n  fbs venues\n")
     .action(async (_options: unknown, command: Command) => {
       const options = suppliedOptions<{
@@ -103,11 +108,14 @@ function registerVenuesCommand(program: Command, runtime: CommandRuntime): void 
         state?: string;
         dome?: boolean;
         grass?: boolean;
+        minCapacity?: number;
+        maxCapacity?: number;
       }>(command);
       const filters = localFilters(options);
       const rawQuery = buildNoQuery();
 
       await withCommandContext("venues", rawQuery, async () => {
+        validateOrderedRange(options.minCapacity, options.maxCapacity, "min-capacity", "max-capacity");
         const query = validateNoQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "venues",
@@ -124,7 +132,8 @@ function registerVenuesCommand(program: Command, runtime: CommandRuntime): void 
                 stringMatches(valueAt(row, "city"), filters?.city as string | undefined) &&
                 stringMatches(valueAt(row, "state"), filters?.state as string | undefined) &&
                 booleanMatches(valueAt(row, "dome"), filters?.dome as boolean | undefined) &&
-                booleanMatches(valueAt(row, "grass"), filters?.grass as boolean | undefined),
+                booleanMatches(valueAt(row, "grass"), filters?.grass as boolean | undefined) &&
+                numberMatches(valueAt(row, "capacity"), options.minCapacity, options.maxCapacity),
             ),
         });
       });
