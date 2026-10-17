@@ -35,6 +35,7 @@ import {
   numberMatches,
   parseBoolean,
   parseNonNegativeInteger,
+  parseNumber,
   stringMatches,
   validateOrderedRange,
   valueAt,
@@ -70,12 +71,19 @@ function registerTalentCommand(program: Command, runtime: CommandRuntime): void 
     .command("talent")
     .description("Retrieve team talent composite ratings")
     .option("--year <number>", "Season year (required)", parseInteger)
+    .option("--team <name>", "Local filter: exact team name (case-insensitive)")
+    .option("--min-talent <number>", "Local filter: minimum talent score (inclusive)", parseNumber)
+    .option("--max-talent <number>", "Local filter: maximum talent score (inclusive)", parseNumber)
     .addHelpText("after", "\nExample:\n  fbs talent --year 2026\n")
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<TalentQuery>>(command);
+      const { team, minTalent, maxTalent, ...options } = suppliedOptions<
+        Partial<TalentQuery> & { team?: string; minTalent?: number; maxTalent?: number }
+      >(command);
+      const filters = localFilters({ team, minTalent, maxTalent });
       const rawQuery = buildTalentQuery(options);
 
       await withCommandContext("talent", rawQuery, async () => {
+        validateOrderedRange(minTalent, maxTalent, "min-talent", "max-talent");
         const query = validateTalentQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "talent",
@@ -84,6 +92,14 @@ function registerTalentCommand(program: Command, runtime: CommandRuntime): void 
           resultKey: "talent",
           request: (api) => asReferenceCfbdApi(api).talent(query),
           transform: transformTalent,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                stringMatches(valueAt(row, "team"), filters?.team as string | undefined) &&
+                numberMatches(valueAt(row, "talent"), minTalent, maxTalent),
+            ),
         });
       });
     });

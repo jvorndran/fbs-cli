@@ -144,7 +144,7 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 | `fbs info` | `/info` -> `info` | None | No filters. |
 | `fbs info usage` | `/info/usage` -> `usage` | `--api`, `--days`, `--limit` | Optional; `days` is 1-31 and `limit` is 1-50. |
 | `fbs conferences` | `/conferences` -> `conferences` | None | No filters. |
-| `fbs talent` | `/talent` -> `talent` | `--year` | Require `--year`. |
+| `fbs talent` | `/talent` -> `talent` | `--year`, `--team`, `--min-talent`, `--max-talent` | Require `--year`; team and inclusive talent bounds filter locally. |
 | `fbs venues` | `/venues` -> `venues` | `--city`, `--state`, `--dome`, `--grass`, `--min-capacity`, `--max-capacity` | Optional local filters; inclusive seating capacity bounds. |
 | `fbs records` | `/records` -> `records` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
 | `fbs calendar` | `/calendar` -> `calendar` | `--year` | Require `--year`. |
