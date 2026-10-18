@@ -147,7 +147,7 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 | `fbs talent` | `/talent` -> `talent` | `--year`, `--team`, `--min-talent`, `--max-talent` | Require `--year`; team and inclusive talent bounds filter locally. |
 | `fbs venues` | `/venues` -> `venues` | `--city`, `--state`, `--dome`, `--grass`, `--min-capacity`, `--max-capacity` | Optional local filters; inclusive seating capacity bounds. |
 | `fbs records` | `/records` -> `records` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
-| `fbs calendar` | `/calendar` -> `calendar` | `--year` | Require `--year`. |
+| `fbs calendar` | `/calendar` -> `calendar` | `--year`, `--min-week`, `--max-week` | Require `--year`; inclusive local week bounds across season types. |
 | `fbs scoreboard` | `/scoreboard` -> `scoreboard` | `--conference`, `--classification`, `--team`, `--status`, `--venue` | Optional; may require an eligible CFBD tier and includes embedded betting fields when supplied by CFBD. |
 | `fbs teams` | `/teams` -> `teams` | `--conference`, `--year`, `--classification` | Optional. |
 | `fbs teams fbs` | `/teams/fbs` -> `teams` | `--year`, `--conference` | Optional. |
@@ -274,6 +274,8 @@ Roster measurement filters accept non-negative safe integers: `--min-height` and
 Flags described as **Local filter** in executable help are applied after CFBD responds and after the endpoint transformer runs. They are never sent to CFBD: `query` remains the exact provider request and an additive `filters` object records the supplied local filter values. String matching is case-insensitive exact matching, numeric bounds are inclusive, and local boolean values must be `true` or `false`.
 
 Every endpoint success document is limited to `25,000` Unicode code points by default, including its final newline. Configure `FBS_MAX_OUTPUT_CHARS` in the process environment first, then the current-directory `.env`; set it to a non-negative safe integer, or to `0` to explicitly disable the limit. `auth`, help, version output, and provider errors are unaffected.
+
+Use `fbs calendar --year 2026 --min-week 0 --max-week 3` to inspect a week-number window. Bounds are inclusive non-negative safe integers and reject reversed ranges before a request. Week 0 is supported; repeated week numbers from different season types are all retained, in provider order. Only `year` enters the single `/calendar` request; applied bounds appear in `filters` and `count` describes the filtered calendar. Omitting both bounds preserves the full calendar.
 
 When a rendered document is too large, stdout remains empty and stderr contains `output_too_large` with the request `query`, any applied `filters`, `output_characters`, and `max_output_characters`. Narrow the request or local filters, or intentionally raise `FBS_MAX_OUTPUT_CHARS`.
 

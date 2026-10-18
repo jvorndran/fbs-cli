@@ -95,6 +95,8 @@ Use `venues --min-capacity N --max-capacity N` for inclusive seating capacity bo
 
 Use `talent --year YEAR --min-talent N --max-talent N` for an inclusive cohort of provider talent composite scores, optionally with an exact case-insensitive `--team` filter. Bounds accept finite numbers and reject reversed ranges before requesting data. Only `year` enters the single `/talent` query. Local `filters` and `count` describe the result without sorting, rounding, or deriving rankings; unfiltered output is unchanged. Talent is a season-level provider view, not a historical pregame snapshot.
 
+Use `calendar --year YEAR --min-week N --max-week N` for inclusive week-number bounds, including Week 0. Bounds must be non-negative safe integers and reject reversed ranges before the one year-only `/calendar` request. Matching week numbers from all season types remain in provider order; `filters` and `count` describe the local result. Omitting bounds retains the full calendar.
+
 ## Recruiting player ranges
 
 Use `recruiting players --year YEAR` or `--team TEAM` with `--min-stars`/`--max-stars`, `--min-rating`/`--max-rating`, and `--min-ranking`/`--max-ranking` to inspect a bounded cohort. Bounds are inclusive; ranking means numerical national rank (100 through 500 includes ranks 100 and 500). Star and ranking values must be non-negative safe integers; ratings accept finite numbers with full precision. Reject reversed ranges before a request. These local filters never enter the CFBD query, exclude unavailable values only for the filtered fields, and preserve provider ordering. Read the applied bounds in `filters` and the filtered record total in `count`.

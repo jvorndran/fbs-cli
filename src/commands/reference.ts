@@ -194,12 +194,18 @@ function registerCalendarCommand(program: Command, runtime: CommandRuntime): voi
     .command("calendar")
     .description("Retrieve the season week calendar")
     .option("--year <number>", "Season year (required)", parseInteger)
+    .option("--min-week <number>", "Local filter: minimum week (inclusive)", parseNonNegativeInteger)
+    .option("--max-week <number>", "Local filter: maximum week (inclusive)", parseNonNegativeInteger)
     .addHelpText("after", "\nExample:\n  fbs calendar --year 2026\n")
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<CalendarQuery>>(command);
+      const { minWeek, maxWeek, ...options } = suppliedOptions<
+        Partial<CalendarQuery> & { minWeek?: number; maxWeek?: number }
+      >(command);
+      const filters = localFilters({ minWeek, maxWeek });
       const rawQuery = buildCalendarQuery(options);
 
       await withCommandContext("calendar", rawQuery, async () => {
+        validateOrderedRange(minWeek, maxWeek, "min-week", "max-week");
         const query = validateCalendarQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "calendar",
@@ -208,6 +214,9 @@ function registerCalendarCommand(program: Command, runtime: CommandRuntime): voi
           resultKey: "calendar",
           request: (api) => asReferenceCfbdApi(api).calendar(query),
           transform: transformCalendar,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(rows, (row) => numberMatches(valueAt(row, "week"), minWeek, maxWeek)),
         });
       });
     });
