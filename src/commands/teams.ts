@@ -39,15 +39,17 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
     .option("--conference <value>", "Conference abbreviation")
     .option("--year <number>", "Historical affiliation year", parseInteger)
     .option("--classification <value>", "Local filter: division classification")
+    .option("--city <value>", "Local filter: exact venue city (case-insensitive)")
+    .option("--state <value>", "Local filter: exact venue state (case-insensitive)")
     .addHelpText(
       "after",
       "\nExamples:\n  fbs teams\n  fbs teams --conference ACC --year 2026\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { classification, ...options } = suppliedOptions<
-        Partial<TeamsQuery> & { classification?: string }
+      const { classification, city, state, ...options } = suppliedOptions<
+        Partial<TeamsQuery> & { classification?: string; city?: string; state?: string }
       >(command);
-      const filters = localFilters({ classification });
+      const filters = localFilters({ classification, city, state });
       const rawQuery = buildTeamsQuery(options);
 
       await withCommandContext("teams", rawQuery, async () => {
@@ -62,7 +64,9 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
           ...(filters === undefined ? {} : { filters }),
           filter: (rows) =>
             filterRows(rows, (row) =>
-              stringMatches(valueAt(row, "classification"), filters?.classification as string | undefined),
+              stringMatches(valueAt(row, "classification"), filters?.classification as string | undefined) &&
+              stringMatches(valueAt(row, "location.city"), filters?.city as string | undefined) &&
+              stringMatches(valueAt(row, "location.state"), filters?.state as string | undefined),
             ),
         });
       });
@@ -73,12 +77,14 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
     .description("Retrieve current or historical FBS teams")
     .option("--year <number>", "Season year", parseInteger)
     .option("--conference <value>", "Local filter: conference abbreviation")
+    .option("--city <value>", "Local filter: exact venue city (case-insensitive)")
+    .option("--state <value>", "Local filter: exact venue state (case-insensitive)")
     .addHelpText("after", "\nExample:\n  fbs teams fbs --year 2026\n")
     .action(async (_options: unknown, command: Command) => {
-      const { conference, ...options } = suppliedLeafOptions<
-        Partial<FbsTeamsQuery> & { conference?: string }
+      const { conference, city, state, ...options } = suppliedLeafOptions<
+        Partial<FbsTeamsQuery> & { conference?: string; city?: string; state?: string }
       >(command);
-      const filters = localFilters({ conference });
+      const filters = localFilters({ conference, city, state });
       const rawQuery = buildFbsTeamsQuery(options);
 
       await withCommandContext("teams fbs", rawQuery, async () => {
@@ -93,7 +99,9 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
           ...(filters === undefined ? {} : { filters }),
           filter: (rows) =>
             filterRows(rows, (row) =>
-              stringMatches(valueAt(row, "conference"), filters?.conference as string | undefined),
+              stringMatches(valueAt(row, "conference"), filters?.conference as string | undefined) &&
+              stringMatches(valueAt(row, "location.city"), filters?.city as string | undefined) &&
+              stringMatches(valueAt(row, "location.state"), filters?.state as string | undefined),
             ),
         });
       });

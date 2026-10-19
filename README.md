@@ -149,8 +149,8 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 | `fbs records` | `/records` -> `records` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
 | `fbs calendar` | `/calendar` -> `calendar` | `--year`, `--min-week`, `--max-week` | Require `--year`; inclusive local week bounds across season types. |
 | `fbs scoreboard` | `/scoreboard` -> `scoreboard` | `--conference`, `--classification`, `--team`, `--status`, `--venue` | Optional; may require an eligible CFBD tier and includes embedded betting fields when supplied by CFBD. |
-| `fbs teams` | `/teams` -> `teams` | `--conference`, `--year`, `--classification` | Optional. |
-| `fbs teams fbs` | `/teams/fbs` -> `teams` | `--year`, `--conference` | Optional. |
+| `fbs teams` | `/teams` -> `teams` | `--conference`, `--year`, `--classification`, `--city`, `--state` | Optional; local exact venue geography. |
+| `fbs teams fbs` | `/teams/fbs` -> `teams` | `--year`, `--conference`, `--city`, `--state` | Optional; local exact venue geography. |
 | `fbs teams matchup` | `/teams/matchup` -> `matchup` | `--team1`, `--team2`, `--min-year`, `--max-year` | Require both teams; `min-year <= max-year`. |
 | `fbs teams ats` | `/teams/ats` -> `team_ats` | `--year`, `--team`, `--conference` | Require `--year`; returns historical ATS records. |
 | `fbs roster` | `/roster` -> `players` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--country`, `--jersey`, `--class-year`, `--min-height`, `--max-height`, `--min-weight`, `--max-weight` | Optional. |
@@ -276,6 +276,8 @@ Flags described as **Local filter** in executable help are applied after CFBD re
 Every endpoint success document is limited to `25,000` Unicode code points by default, including its final newline. Configure `FBS_MAX_OUTPUT_CHARS` in the process environment first, then the current-directory `.env`; set it to a non-negative safe integer, or to `0` to explicitly disable the limit. `auth`, help, version output, and provider errors are unaffected.
 
 Use `fbs calendar --year 2026 --min-week 0 --max-week 3` to inspect a week-number window. Bounds are inclusive non-negative safe integers and reject reversed ranges before a request. Week 0 is supported; repeated week numbers from different season types are all retained, in provider order. Only `year` enters the single `/calendar` request; applied bounds appear in `filters` and `count` describes the filtered calendar. Omitting both bounds preserves the full calendar.
+
+Use `fbs teams --state FL --city Tallahassee` or `fbs teams fbs --year 2026 --state FL` to discover teams by provider-reported venue location. City and state are trimmed, exact, case-insensitive local matches and combine with existing filters. Use provider state values such as `FL`; substrings do not match. Each invocation retains its original single provider request, row order and numerical precision. Missing location fields are excluded only when that filter is active; `filters` and `count` describe the local result. Blank geography is rejected before requests.
 
 When a rendered document is too large, stdout remains empty and stderr contains `output_too_large` with the request `query`, any applied `filters`, `output_characters`, and `max_output_characters`. Narrow the request or local filters, or intentionally raise `FBS_MAX_OUTPUT_CHARS`.
 
