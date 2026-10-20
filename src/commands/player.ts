@@ -40,6 +40,7 @@ import {
   parseNumber,
   stringMatches,
   validateDateRange,
+  validateOrderedRange,
   valueAt,
 } from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
@@ -185,7 +186,9 @@ function registerTransferPortal(player: Command, runtime: CommandRuntime): void 
     .option("--position <value>", "Local filter: position")
     .option("--eligibility <value>", "Local filter: eligibility")
     .option("--min-rating <number>", "Local filter: minimum rating", parseNumber)
+    .option("--max-rating <number>", "Local filter: maximum rating (inclusive)", parseNumber)
     .option("--min-stars <number>", "Local filter: minimum stars", parseNonNegativeInteger)
+    .option("--max-stars <number>", "Local filter: maximum stars (inclusive)", parseNonNegativeInteger)
     .option("--from-date <date>", "Local filter: transfer date on or after YYYY-MM-DD", parseDate)
     .option("--to-date <date>", "Local filter: transfer date on or before YYYY-MM-DD", parseDate)
     .addHelpText(
@@ -199,7 +202,9 @@ function registerTransferPortal(player: Command, runtime: CommandRuntime): void 
         position,
         eligibility,
         minRating,
+        maxRating,
         minStars,
+        maxStars,
         fromDate,
         toDate,
         ...options
@@ -210,7 +215,9 @@ function registerTransferPortal(player: Command, runtime: CommandRuntime): void 
           position?: string;
           eligibility?: string;
           minRating?: number;
+          maxRating?: number;
           minStars?: number;
+          maxStars?: number;
           fromDate?: string;
           toDate?: string;
         }
@@ -222,13 +229,17 @@ function registerTransferPortal(player: Command, runtime: CommandRuntime): void 
         position,
         eligibility,
         minRating,
+        maxRating,
         minStars,
+        maxStars,
         fromDate,
         toDate,
       });
       const rawQuery = buildTransferPortalQuery(options);
 
       await withCommandContext("player portal", rawQuery, async () => {
+        validateOrderedRange(minRating, maxRating, "min-rating", "max-rating");
+        validateOrderedRange(minStars, maxStars, "min-stars", "max-stars");
         const query = validateTransferPortalQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "player portal",
@@ -253,8 +264,8 @@ function registerTransferPortal(player: Command, runtime: CommandRuntime): void 
                   ) &&
                   stringMatches(valueAt(row, "position"), filters?.position as string | undefined) &&
                   stringMatches(valueAt(row, "eligibility"), filters?.eligibility as string | undefined) &&
-                  numberMatches(valueAt(row, "rating"), filters?.minRating as number | undefined, undefined) &&
-                  numberMatches(valueAt(row, "stars"), filters?.minStars as number | undefined, undefined) &&
+                  numberMatches(valueAt(row, "rating"), minRating, maxRating) &&
+                  numberMatches(valueAt(row, "stars"), minStars, maxStars) &&
                   (filters?.fromDate === undefined || (date !== undefined && date >= filters.fromDate)) &&
                   (filters?.toDate === undefined || (date !== undefined && date <= filters.toDate))
                 );

@@ -102,3 +102,8 @@ Use `teams --state FL --city Tallahassee` or `teams fbs --year YEAR --state FL` 
 ## Recruiting player ranges
 
 Use `recruiting players --year YEAR` or `--team TEAM` with `--min-stars`/`--max-stars`, `--min-rating`/`--max-rating`, and `--min-ranking`/`--max-ranking` to inspect a bounded cohort. Bounds are inclusive; ranking means numerical national rank (100 through 500 includes ranks 100 and 500). Star and ranking values must be non-negative safe integers; ratings accept finite numbers with full precision. Reject reversed ranges before a request. These local filters never enter the CFBD query, exclude unavailable values only for the filtered fields, and preserve provider ordering. Read the applied bounds in `filters` and the filtered record total in `count`.
+
+
+## Transfer portal ranges
+
+Use `player portal --year YEAR` with `--min-rating`/`--max-rating` and `--min-stars`/`--max-stars` for inclusive transfer cohorts. Ratings accept finite numbers without rounding; star bounds require non-negative safe integers. Reversed ranges fail before a request. These local bounds compose with origin, destination, position, eligibility and transfer dates; only `year` enters the single `/player/portal` request. Missing ratings or stars fail only an active bound for that field, reported zero values remain usable, and provider order is preserved. Read the bounds from `filters` and the filtered total from `count`; omitting bounds preserves existing output.

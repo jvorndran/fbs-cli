@@ -194,7 +194,10 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 | `fbs player search` | `/player/search` -> `players` | `--search-term`, `--year`, `--team`, `--position` | Require `--search-term`. |
 | `fbs player season overview` | `/player/season/overview` -> `player_season_overview` | `--year`, `--player-id` | Require both flags. |
 | `fbs player returning` | `/player/returning` -> `returning_production` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
-| `fbs player portal` | `/player/portal` -> `transfers` | `--year`, `--origin`, `--destination`, `--position`, `--eligibility`, `--min-rating`, `--min-stars`, `--from-date`, `--to-date` | Require `--year`. |
+| `fbs player portal` | `/player/portal` -> `transfers` | `--year`, `--origin`, `--destination`, `--position`, `--eligibility`, `--min-rating`, `--max-rating`, `--min-stars`, `--max-stars`, `--from-date`, `--to-date` | Require `--year`. |
+
+Use `player portal --year YEAR` with `--min-rating`/`--max-rating` and `--min-stars`/`--max-stars` for inclusive transfer cohorts. Ratings accept finite numbers without rounding; star bounds require non-negative safe integers. Reversed ranges fail before a request. These local bounds compose with origin, destination, position, eligibility and transfer dates; only `year` enters the single `/player/portal` request. Missing ratings or stars fail only an active bound for that field, reported zero values remain usable, and provider order is preserved. Read the bounds from `filters` and the filtered total from `count`; omitting bounds preserves existing output.
+
 
 ### PPA and probability metrics
 
