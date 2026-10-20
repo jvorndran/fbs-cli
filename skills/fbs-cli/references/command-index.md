@@ -63,7 +63,7 @@ PROE, player, and adjusted-rank analysis.
 | `fbs player search` | `--search-term`, `--year`, `--team`, `--position` |
 | `fbs player season overview` | `--year`, `--player-id` |
 | `fbs player returning` | `--year`, `--team`, `--conference` |
-| `fbs player portal` | `--year`, `--origin`, `--destination`, `--position`, `--eligibility`, `--min-rating`, `--min-stars`, `--from-date`, `--to-date` |
+| `fbs player portal` | `--year`, `--origin`, `--destination`, `--position`, `--eligibility`, `--min-rating`, `--max-rating`, `--min-stars`, `--max-stars`, `--from-date`, `--to-date` |
 | `fbs ppa predicted` | `--down`, `--distance` |
 | `fbs ppa teams` | `--year`, `--team`, `--conference`, `--classification`, `--exclude-garbage-time` |
 | `fbs ppa games` | `--year`, `--week`, `--team`, `--conference`, `--season-type`, `--classification`, `--exclude-garbage-time`, `--game-id`, `--opponent` |
