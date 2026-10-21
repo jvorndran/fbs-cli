@@ -146,7 +146,7 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 | `fbs conferences` | `/conferences` -> `conferences` | None | No filters. |
 | `fbs talent` | `/talent` -> `talent` | `--year`, `--team`, `--min-talent`, `--max-talent` | Require `--year`; team and inclusive talent bounds filter locally. |
 | `fbs venues` | `/venues` -> `venues` | `--city`, `--state`, `--dome`, `--grass`, `--min-capacity`, `--max-capacity` | Optional local filters; inclusive seating capacity bounds. |
-| `fbs records` | `/records` -> `records` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
+| `fbs records` | `/records` -> `records` | `--year`, `--team`, `--conference`, `--min-wins`, `--max-wins`, `--min-losses`, `--max-losses` | Require `--year` or `--team`. |
 | `fbs calendar` | `/calendar` -> `calendar` | `--year`, `--min-week`, `--max-week` | Require `--year`; inclusive local week bounds across season types. |
 | `fbs scoreboard` | `/scoreboard` -> `scoreboard` | `--conference`, `--classification`, `--team`, `--status`, `--venue` | Optional; may require an eligible CFBD tier and includes embedded betting fields when supplied by CFBD. |
 | `fbs teams` | `/teams` -> `teams` | `--conference`, `--year`, `--classification`, `--city`, `--state` | Optional; local exact venue geography. |
@@ -273,6 +273,8 @@ Use `fbs venues --min-capacity 50000 --max-capacity 90000` to inspect venues wit
 Recruiting player ranges support inclusive star, rating, and numerical national-ranking bounds. For example, `fbs recruiting players --year 2026 --min-stars 3 --max-stars 3 --min-ranking 100 --max-ranking 500` selects three-star recruits ranked 100 through 500. Star and ranking bounds accept non-negative safe integers; rating bounds accept finite numbers without rounding. A minimum cannot exceed its maximum. An unknown value is excluded only when that field has a supplied bound. These filters leave the provider query and result ordering unchanged.
 
 Roster measurement filters accept non-negative safe integers: `--min-height` and `--max-height` use inches; `--min-weight` and `--max-weight` use pounds. Bounds are inclusive and each minimum must not exceed its maximum. Players with unavailable measurements are excluded only when that measurement is filtered. Combine these flags with `--position` to inspect a position group, for example `fbs roster --year 2026 --team "Florida State" --position OL --min-weight 300`.
+
+Use `records --year 2026 --min-wins 5 --max-losses 1` to inspect season-record cohorts. `--min-wins`, `--max-wins`, `--min-losses`, and `--max-losses` are local inclusive bounds on `total.wins` and `total.losses`; split records remain unchanged. Bounds accept non-negative safe integers and each minimum must not exceed its maximum. Missing values are excluded only when that measurement is filtered. CFBD still receives only year/team/conference; `filters` records local values and `count` reflects matching rows. These are current/full-season records, not a cutoff-safe historical snapshot.
 
 Flags described as **Local filter** in executable help are applied after CFBD responds and after the endpoint transformer runs. They are never sent to CFBD: `query` remains the exact provider request and an additive `filters` object records the supplied local filter values. String matching is case-insensitive exact matching, numeric bounds are inclusive, and local boolean values must be `true` or `false`.
 

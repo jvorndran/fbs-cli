@@ -20,7 +20,7 @@ PROE, player, and adjusted-rank analysis.
 | `fbs conferences` | None. |
 | `fbs talent` | `--year`, `--team`, `--min-talent`, `--max-talent` |
 | `fbs venues` | `--city`, `--state`, `--dome`, `--grass`, `--min-capacity`, `--max-capacity` |
-| `fbs records` | `--year`, `--team`, `--conference` |
+| `fbs records` | `--year`, `--team`, `--conference`, `--min-wins`, `--max-wins`, `--min-losses`, `--max-losses` |
 | `fbs calendar` | `--year`, `--min-week`, `--max-week` |
 | `fbs scoreboard` | `--conference`, `--classification`, `--team`, `--status`, `--venue` |
 | `fbs teams` | `--conference`, `--year`, `--classification`, `--city`, `--state` |
@@ -101,3 +101,5 @@ PROE, player, and adjusted-rank analysis.
 | `fbs coaches profile` | `--coach-id` |
 | `fbs coaches seasons` | `--coach-id`, `--min-year`, `--max-year`, `--team`, `--year` |
 | `fbs coaches tenures` | `--active`, `--coach-id`, `--team`, `--year` |
+
+Use `records --year 2026 --min-wins 5 --max-losses 1` to inspect season-record cohorts. `--min-wins`, `--max-wins`, `--min-losses`, and `--max-losses` are local inclusive bounds on `total.wins` and `total.losses`; split records remain unchanged. Bounds accept non-negative safe integers and each minimum must not exceed its maximum. Missing values are excluded only when that measurement is filtered. CFBD still receives only year/team/conference; `filters` records local values and `count` reflects matching rows. These are current/full-season records, not a cutoff-safe historical snapshot.
