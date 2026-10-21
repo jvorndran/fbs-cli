@@ -165,15 +165,26 @@ function registerRecordsCommand(program: Command, runtime: CommandRuntime): void
     .option("--year <number>", "Season year", parseInteger)
     .option("--team <name>", "Team name")
     .option("--conference <value>", "Conference abbreviation")
+    .option("--min-wins <number>", "Local filter: minimum total-record wins (inclusive)", parseNonNegativeInteger)
+    .option("--max-wins <number>", "Local filter: maximum total-record wins (inclusive)", parseNonNegativeInteger)
+    .option("--min-losses <number>", "Local filter: minimum total-record losses (inclusive)", parseNonNegativeInteger)
+    .option("--max-losses <number>", "Local filter: maximum total-record losses (inclusive)", parseNonNegativeInteger)
     .addHelpText(
       "after",
       "\nSupply --year or --team.\n\nExamples:\n  fbs records --year 2026\n  fbs records --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<RecordsQuery>>(command);
+      const { minWins, maxWins, minLosses, maxLosses, ...options } = suppliedOptions<
+        Partial<RecordsQuery> & {
+          minWins?: number; maxWins?: number; minLosses?: number; maxLosses?: number;
+        }
+      >(command);
+      const filters = localFilters({ minWins, maxWins, minLosses, maxLosses });
       const rawQuery = buildRecordsQuery(options);
 
       await withCommandContext("records", rawQuery, async () => {
+        validateOrderedRange(minWins, maxWins, "min-wins", "max-wins");
+        validateOrderedRange(minLosses, maxLosses, "min-losses", "max-losses");
         const query = validateRecordsQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "records",
@@ -182,6 +193,10 @@ function registerRecordsCommand(program: Command, runtime: CommandRuntime): void
           resultKey: "records",
           request: (api) => asReferenceCfbdApi(api).records(query),
           transform: transformRecords,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) => filterRows(rows, (row) =>
+            numberMatches(valueAt(row, "total.wins"), minWins, maxWins) &&
+            numberMatches(valueAt(row, "total.losses"), minLosses, maxLosses)),
         });
       });
     });
