@@ -13,9 +13,9 @@ const rows = [
   { id: "5", firstName: null, lastName: null },
 ] as RosterPlayer[];
 
-async function invoke(flags: string[]) {
+async function invoke(flags: string[], data = rows) {
   const requests: unknown[] = [];
-  const mock = await createMockApi({ async roster(query) { requests.push(query); return rows; } });
+  const mock = await createMockApi({ async roster(query) { requests.push(query); return data; } });
   let stdout = "";
   let stderr = "";
   const exitCode = await runCli(["roster", "--year", "2026", "--team", "Example", ...flags], {
@@ -65,6 +65,20 @@ describe("roster name search", () => {
     expect(result.exitCode).toBe(0);
     expect(parse(result.stdout).count).toBe(5);
     expect(parse(result.stdout).filters).toBeUndefined();
+  });
+
+  test("unavailable name parts never become searchable null or undefined text", async () => {
+    const data = [
+      rows[4]!,
+      { id: "6", firstName: undefined, lastName: "Smith" },
+      { id: "7", firstName: "Actual", lastName: "Null" },
+    ] as RosterPlayer[];
+    const nullSearch = await invoke(["--name", "null"], data);
+    expect(nullSearch.exitCode).toBe(0);
+    expect(parse(nullSearch.stdout).players.map((p: { id: string }) => p.id)).toEqual(["7"]);
+    expect(parse((await invoke(["--name", "undefined"], data)).stdout).count).toBe(0);
+    const partialName = parse((await invoke(["--name", "smith"], data)).stdout);
+    expect(partialName.players).toEqual([{ id: "6", name: "Smith" }]);
   });
 
   test("blank search fails before a provider call", async () => {
