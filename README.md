@@ -153,7 +153,7 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 | `fbs teams fbs` | `/teams/fbs` -> `teams` | `--year`, `--conference`, `--city`, `--state` | Optional; local exact venue geography. |
 | `fbs teams matchup` | `/teams/matchup` -> `matchup` | `--team1`, `--team2`, `--min-year`, `--max-year` | Require both teams; `min-year <= max-year`. |
 | `fbs teams ats` | `/teams/ats` -> `team_ats` | `--year`, `--team`, `--conference` | Require `--year`; returns historical ATS records. |
-| `fbs roster` | `/roster` -> `players` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--country`, `--jersey`, `--class-year`, `--min-height`, `--max-height`, `--min-weight`, `--max-weight` | Optional. |
+| `fbs roster` | `/roster` -> `players` | `--year`, `--team`, `--classification`, `--name`, `--position`, `--state`, `--country`, `--jersey`, `--class-year`, `--min-height`, `--max-height`, `--min-weight`, `--max-weight` | Optional. |
 
 ### Games, box scores, and live data
 
@@ -276,7 +276,9 @@ Roster measurement filters accept non-negative safe integers: `--min-height` and
 
 Use `records --year 2026 --min-wins 5 --max-losses 1` to inspect season-record cohorts. `--min-wins`, `--max-wins`, `--min-losses`, and `--max-losses` are local inclusive bounds on `total.wins` and `total.losses`; split records remain unchanged. Bounds accept non-negative safe integers and each minimum must not exceed its maximum. Missing values are excluded only when that measurement is filtered. CFBD still receives only year/team/conference; `filters` records local values and `count` reflects matching rows. These are current/full-season records, not a cutoff-safe historical snapshot.
 
-Flags described as **Local filter** in executable help are applied after CFBD responds and after the endpoint transformer runs. They are never sent to CFBD: `query` remains the exact provider request and an additive `filters` object records the supplied local filter values. String matching is case-insensitive exact matching, numeric bounds are inclusive, and local boolean values must be `true` or `false`.
+Flags described as **Local filter** in executable help are applied after CFBD responds and after the endpoint transformer runs. They are never sent to CFBD: `query` remains the exact provider request and an additive `filters` object records the supplied local filter values. String matching is case-insensitive exact matching except for the roster name search below, numeric bounds are inclusive, and local boolean values must be `true` or `false`.
+
+Use `fbs roster --year 2026 --team "Florida State" --name "smith"` to search the combined player name by a trimmed, case-insensitive literal substring. It supports partial first or last names and composes with position, class-year, hometown, and measurement filters. Blank searches fail before a request; unavailable names do not match. The single `/roster` query, provider order, IDs, and measurements stay unchanged. Read the applied search from `filters.name` and the filtered total from `count`.
 
 Every endpoint success document is limited to `25,000` Unicode code points by default, including its final newline. Configure `FBS_MAX_OUTPUT_CHARS` in the process environment first, then the current-directory `.env`; set it to a non-negative safe integer, or to `0` to explicitly disable the limit. `auth`, help, version output, and provider errors are unaffected.
 

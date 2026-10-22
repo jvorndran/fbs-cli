@@ -27,7 +27,9 @@ PROE, player, and adjusted-rank analysis.
 | `fbs teams fbs` | `--year`, `--conference`, `--city`, `--state` |
 | `fbs teams matchup` | `--team1`, `--team2`, `--min-year`, `--max-year` |
 | `fbs teams ats` | `--year`, `--team`, `--conference` |
-| `fbs roster` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--country`, `--jersey`, `--class-year`, `--min-height`, `--max-height`, `--min-weight`, `--max-weight` |
+| `fbs roster` | `--year`, `--team`, `--classification`, `--name`, `--position`, `--state`, `--country`, `--jersey`, `--class-year`, `--min-height`, `--max-height`, `--min-weight`, `--max-weight` |
+
+Roster `--name TEXT` searches the combined player name by a trimmed, case-insensitive literal substring. It composes with existing local filters, rejects blank searches before a request, and excludes unavailable names. The one `/roster` query, provider order, IDs, and precision are unchanged; `filters.name` and `count` describe the local result. Other string filters retain exact matching.
 
 ## Games, drives, and plays
 
