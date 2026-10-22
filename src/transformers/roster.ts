@@ -1,7 +1,6 @@
 import type { RosterPlayer } from "cfbd";
 
 import {
-  combineName,
   compactObject,
   nonEmptyObject,
   type AgentObject,
@@ -20,7 +19,10 @@ export function transformRoster(players: readonly RosterPlayer[]): AgentObject[]
 
     return compactObject({
       id: player.id,
-      name: combineName(player.firstName, player.lastName),
+      name: [player.firstName, player.lastName]
+        .filter((part) => typeof part === "string")
+        .join(" ")
+        .trim(),
       team: player.team,
       position: player.position,
       jersey: player.jersey,

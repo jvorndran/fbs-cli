@@ -26,6 +26,7 @@ export function registerRosterCommand(program: Command, runtime: CommandRuntime)
     .description("Retrieve historical team rosters")
     .option("--year <number>", "Season year", parseInteger)
     .option("--team <name>", "Team name")
+    .option("--name <text>", "Local filter: case-insensitive player name substring")
     .option("--position <value>", "Local filter: position")
     .option("--state <value>", "Local filter: hometown state")
     .option("--country <value>", "Local filter: hometown country")
@@ -43,8 +44,9 @@ export function registerRosterCommand(program: Command, runtime: CommandRuntime)
       "\nExamples:\n  fbs roster --year 2026 --team \"Florida State\"\n  fbs roster --classification fbs\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { position, state, country, jersey, classYear, minHeight, maxHeight, minWeight, maxWeight, ...options } = suppliedOptions<
+      const { name, position, state, country, jersey, classYear, minHeight, maxHeight, minWeight, maxWeight, ...options } = suppliedOptions<
         Partial<RosterQuery> & {
+          name?: string;
           position?: string;
           state?: string;
           country?: string;
@@ -56,7 +58,8 @@ export function registerRosterCommand(program: Command, runtime: CommandRuntime)
           maxWeight?: number;
         }
       >(command);
-      const filters = localFilters({ position, state, country, jersey, classYear, minHeight, maxHeight, minWeight, maxWeight });
+      const filters = localFilters({ name, position, state, country, jersey, classYear, minHeight, maxHeight, minWeight, maxWeight });
+      const nameSearch = (filters?.name as string | undefined)?.toLowerCase();
       const rawQuery = buildRosterQuery(options);
 
       await withCommandContext("roster", rawQuery, async () => {
@@ -75,6 +78,8 @@ export function registerRosterCommand(program: Command, runtime: CommandRuntime)
             filterRows(
               rows,
               (row) =>
+                (nameSearch === undefined ||
+                  (typeof row.name === "string" && row.name.toLowerCase().includes(nameSearch))) &&
                 stringMatches(valueAt(row, "position"), filters?.position as string | undefined) &&
                 stringMatches(valueAt(row, "hometown.state", "state"), filters?.state as string | undefined) &&
                 stringMatches(valueAt(row, "hometown.country", "country"), filters?.country as string | undefined) &&
