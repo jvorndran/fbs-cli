@@ -119,6 +119,31 @@ try {
     },
   });
 
+  for (const code of ["EPIPE", "ENOTCONN", "EIO"]) {
+    const stdoutErrorPreload = `
+      process.stdout.write = () => {
+        process.nextTick(() => process.stdout.emit("error", Object.assign(
+          new Error("injected stdout failure"), { code: ${JSON.stringify(code)}, syscall: "write" }
+        )));
+        return true;
+      };
+    `;
+    const stdoutError = runCli(["--help"], {
+      cwd: temporaryRoot,
+      env: cleanEnvironment,
+      nodeArgs: ["--import", `data:text/javascript,${encodeURIComponent(stdoutErrorPreload)}`],
+    });
+    assert.equal(stdoutError.signal, null);
+    assert.equal(stdoutError.stdout, "");
+    assert.equal(stdoutError.status, code === "EIO" ? 1 : 0, stdoutError.stderr);
+    if (code === "EIO") {
+      assert.match(stdoutError.stderr, /injected stdout failure/u);
+      assert.match(stdoutError.stderr, /EIO/u);
+    } else {
+      assert.equal(stdoutError.stderr, "");
+    }
+  }
+
   const sentinel = "node-smoke-auth-key";
   const authRequestLog = join(temporaryRoot, "auth-requests.log");
   writeFileSync(
