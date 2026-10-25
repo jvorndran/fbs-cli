@@ -81,9 +81,11 @@ Roster `--name TEXT` searches the combined player name by a trimmed, case-insens
 
 ## Recruiting, ratings, playoffs, draft, and coaches
 
+Recruiting players `--name TEXT` is a trimmed, case-insensitive literal substring search on provider names, applied locally after the single `/recruiting/players` request. It composes with star/rating/ranking ranges and provider scopes; blank text fails before a request, unavailable names do not match. `filters.name` and `count` describe the result; query, provider order, IDs, and precision stay unchanged.
+
 | Command | Filters |
 |---|---|
-| `fbs recruiting players` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--min-stars`, `--max-stars`, `--min-rating`, `--max-rating`, `--min-ranking`, `--max-ranking` |
+| `fbs recruiting players` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--name`, `--min-stars`, `--max-stars`, `--min-rating`, `--max-rating`, `--min-ranking`, `--max-ranking` |
 | `fbs recruiting teams` | `--year`, `--team`, `--max-rank` |
 | `fbs recruiting groups` | `--conference`, `--start-year`, `--end-year`, `--recruit-type`, `--team`, `--position-group`, `--min-commits`, `--min-average-stars` |
 | `fbs ratings sp` | `--year`, `--team` |

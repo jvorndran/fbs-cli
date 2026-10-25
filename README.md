@@ -225,7 +225,7 @@ Use `player portal --year YEAR` with `--min-rating`/`--max-rating` and `--min-st
 
 | Command | Endpoint -> result key | Accepted flags | Required rule |
 |---|---|---|---|
-| `fbs recruiting players` | `/recruiting/players` -> `recruits` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--min-stars`, `--max-stars`, `--min-rating`, `--max-rating`, `--min-ranking`, `--max-ranking` | Require `--year` or `--team`. |
+| `fbs recruiting players` | `/recruiting/players` -> `recruits` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--name`, `--min-stars`, `--max-stars`, `--min-rating`, `--max-rating`, `--min-ranking`, `--max-ranking` | Require `--year` or `--team`. |
 | `fbs recruiting teams` | `/recruiting/teams` -> `team_rankings` | `--year`, `--team`, `--max-rank` | Optional. |
 | `fbs recruiting groups` | `/recruiting/groups` -> `recruiting_groups` | `--conference`, `--start-year`, `--end-year`, `--recruit-type`, `--team`, `--position-group`, `--min-commits`, `--min-average-stars` | Optional; `start-year <= end-year`. |
 | `fbs ratings sp` | `/ratings/sp` -> `sp_ratings` | `--year`, `--team` | Require `--year` or `--team`. |
@@ -268,6 +268,8 @@ Kebab-case provider flags map directly to the corresponding CFBD camelCase query
 
 ### Local filters and output budget
 
+Use `fbs recruiting players --year 2026 --name "smith"` to search provider player names by a trimmed, case-insensitive literal substring. Combine it with provider filters and local star, rating, or ranking ranges. Blank searches fail before a request; unavailable names do not match. The single `/recruiting/players` query, provider order, IDs, and precision stay unchanged. The applied search appears in `filters.name` and the filtered total in `count`.
+
 Use `fbs venues --min-capacity 50000 --max-capacity 90000` to inspect venues within an inclusive seating capacity range. Bounds must be non-negative safe integers and the minimum cannot exceed the maximum. Combine them with city, state, dome, or grass filters. Venues with unavailable capacity are excluded only when a capacity bound is supplied; zero capacity remains a valid value. These filters do not change the one query-free `/venues` request.
 
 Recruiting player ranges support inclusive star, rating, and numerical national-ranking bounds. For example, `fbs recruiting players --year 2026 --min-stars 3 --max-stars 3 --min-ranking 100 --max-ranking 500` selects three-star recruits ranked 100 through 500. Star and ranking bounds accept non-negative safe integers; rating bounds accept finite numbers without rounding. A minimum cannot exceed its maximum. An unknown value is excluded only when that field has a supplied bound. These filters leave the provider query and result ordering unchanged.
@@ -276,7 +278,7 @@ Roster measurement filters accept non-negative safe integers: `--min-height` and
 
 Use `records --year 2026 --min-wins 5 --max-losses 1` to inspect season-record cohorts. `--min-wins`, `--max-wins`, `--min-losses`, and `--max-losses` are local inclusive bounds on `total.wins` and `total.losses`; split records remain unchanged. Bounds accept non-negative safe integers and each minimum must not exceed its maximum. Missing values are excluded only when that measurement is filtered. CFBD still receives only year/team/conference; `filters` records local values and `count` reflects matching rows. These are current/full-season records, not a cutoff-safe historical snapshot.
 
-Flags described as **Local filter** in executable help are applied after CFBD responds and after the endpoint transformer runs. They are never sent to CFBD: `query` remains the exact provider request and an additive `filters` object records the supplied local filter values. String matching is case-insensitive exact matching except for the roster name search below, numeric bounds are inclusive, and local boolean values must be `true` or `false`.
+Flags described as **Local filter** in executable help are applied after CFBD responds and after the endpoint transformer runs. They are never sent to CFBD: `query` remains the exact provider request and an additive `filters` object records the supplied local filter values. String matching is case-insensitive exact matching except for the roster and recruiting name searches below, numeric bounds are inclusive, and local boolean values must be `true` or `false`.
 
 Use `fbs roster --year 2026 --team "Florida State" --name "smith"` to search the combined player name by a trimmed, case-insensitive literal substring. It supports partial first or last names and composes with position, class-year, hometown, and measurement filters. Blank searches fail before a request; unavailable names do not match. The single `/roster` query, provider order, IDs, and measurements stay unchanged. Read the applied search from `filters.name` and the filtered total from `count`.
 

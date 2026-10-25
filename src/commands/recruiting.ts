@@ -47,6 +47,7 @@ function registerPlayers(recruiting: Command, runtime: CommandRuntime): void {
     .option("--state <value>", "State or province")
     .option("--team <name>", "Committed team")
     .option("--year <number>", "Recruiting class year", parseInteger)
+    .option("--name <text>", "Local filter: case-insensitive player name substring")
     .option("--min-stars <number>", "Local filter: minimum stars", parseNonNegativeInteger)
     .option("--max-stars <number>", "Local filter: maximum stars", parseNonNegativeInteger)
     .option("--min-rating <number>", "Local filter: minimum rating", parseNumber)
@@ -59,8 +60,9 @@ function registerPlayers(recruiting: Command, runtime: CommandRuntime): void {
       "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs recruiting players --year 2026\n  fbs recruiting players --team \"Florida State\" --position QB\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { minStars, maxStars, minRating, maxRating, minRanking, maxRanking, ...options } = suppliedOptions<
+      const { name, minStars, maxStars, minRating, maxRating, minRanking, maxRanking, ...options } = suppliedOptions<
         Partial<RecruitingPlayersQuery> & {
+          name?: string;
           minStars?: number;
           maxStars?: number;
           minRating?: number;
@@ -69,7 +71,8 @@ function registerPlayers(recruiting: Command, runtime: CommandRuntime): void {
           maxRanking?: number;
         }
       >(command);
-      const filters = localFilters({ minStars, maxStars, minRating, maxRating, minRanking, maxRanking });
+      const filters = localFilters({ name, minStars, maxStars, minRating, maxRating, minRanking, maxRanking });
+      const nameSearch = (filters?.name as string | undefined)?.toLowerCase();
       const rawQuery = buildRecruitingPlayersQuery(options);
       await withCommandContext("recruiting players", rawQuery, async () => {
         validateOrderedRange(minStars, maxStars, "min-stars", "max-stars");
@@ -88,6 +91,8 @@ function registerPlayers(recruiting: Command, runtime: CommandRuntime): void {
             filterRows(
               rows,
               (row) =>
+                (nameSearch === undefined ||
+                  (typeof row.name === "string" && row.name.toLowerCase().includes(nameSearch))) &&
                 numberMatches(valueAt(row, "stars"), minStars, maxStars) &&
                 numberMatches(valueAt(row, "rating"), minRating, maxRating) &&
                 numberMatches(valueAt(row, "ranking"), minRanking, maxRanking),
