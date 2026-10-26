@@ -109,19 +109,22 @@ function registerTeams(recruiting: Command, runtime: CommandRuntime): void {
     .description("Retrieve team recruiting rankings")
     .option("--team <name>", "Team name")
     .option("--year <number>", "Recruiting class year", parseInteger)
-    .option("--max-rank <number>", "Local filter: maximum rank", parseNonNegativeInteger);
+    .option("--max-rank <number>", "Local filter: maximum rank", parseNonNegativeInteger)
+    .option("--min-points <number>", "Local filter: minimum recruiting points (inclusive)", parseNumber)
+    .option("--max-points <number>", "Local filter: maximum recruiting points (inclusive)", parseNumber);
   teams
     .addHelpText(
       "after",
       "\nAll filters are optional.\n\nExamples:\n  fbs recruiting teams --year 2026\n  fbs recruiting teams --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { maxRank, ...options } = suppliedOptions<
-        Partial<RecruitingTeamsQuery> & { maxRank?: number }
+      const { maxRank, minPoints, maxPoints, ...options } = suppliedOptions<
+        Partial<RecruitingTeamsQuery> & { maxRank?: number; minPoints?: number; maxPoints?: number }
       >(command);
-      const filters = localFilters({ maxRank });
+      const filters = localFilters({ maxRank, minPoints, maxPoints });
       const rawQuery = buildRecruitingTeamsQuery(options);
       await withCommandContext("recruiting teams", rawQuery, async () => {
+        validateOrderedRange(minPoints, maxPoints, "min-points", "max-points");
         const query = validateRecruitingTeamsQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "recruiting teams",
@@ -132,7 +135,9 @@ function registerTeams(recruiting: Command, runtime: CommandRuntime): void {
           transform: transformRecruitingTeams,
           ...(filters === undefined ? {} : { filters }),
           filter: (rows) =>
-            filterRows(rows, (row) => numberMatches(valueAt(row, "rank"), undefined, filters?.maxRank as number | undefined)),
+            filterRows(rows, (row) =>
+              numberMatches(valueAt(row, "rank"), undefined, maxRank) &&
+              numberMatches(valueAt(row, "points"), minPoints, maxPoints)),
         });
       });
     })
