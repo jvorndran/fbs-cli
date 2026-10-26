@@ -86,8 +86,8 @@ Recruiting players `--name TEXT` is a trimmed, case-insensitive literal substrin
 | Command | Filters |
 |---|---|
 | `fbs recruiting players` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--name`, `--min-stars`, `--max-stars`, `--min-rating`, `--max-rating`, `--min-ranking`, `--max-ranking` |
-| `fbs recruiting teams` | `--year`, `--team`, `--max-rank` |
-| `fbs recruiting groups` | `--conference`, `--start-year`, `--end-year`, `--recruit-type`, `--team`, `--position-group`, `--min-commits`, `--min-average-stars` |
+| `fbs recruiting teams` | `--year`, `--team`, `--max-rank`, `--min-points`, `--max-points` |
+| `fbs recruiting groups` | `--conference`, `--start-year`, `--end-year`, `--recruit-type`, `--team`, `--position-group`, `--min-commits`, `--max-commits`, `--min-average-stars`, `--max-average-stars` |
 | `fbs ratings sp` | `--year`, `--team` |
 | `fbs ratings sp conferences` | `--year`, `--conference`, `--classification` |
 | `fbs ratings srs` | `--year`, `--team`, `--conference` |
