@@ -152,23 +152,29 @@ function registerGroups(recruiting: Command, runtime: CommandRuntime): void {
     .option("--team <name>", "Team name")
     .option("--position-group <value>", "Local filter: position group")
     .option("--min-commits <number>", "Local filter: minimum commits", parseNonNegativeInteger)
-    .option("--min-average-stars <number>", "Local filter: minimum average stars", parseNumber);
+    .option("--max-commits <number>", "Local filter: maximum commits (inclusive)", parseNonNegativeInteger)
+    .option("--min-average-stars <number>", "Local filter: minimum average stars", parseNumber)
+    .option("--max-average-stars <number>", "Local filter: maximum average stars (inclusive)", parseNumber);
   groups
     .addHelpText(
       "after",
       "\nAll filters are optional. --start-year must not exceed --end-year.\n\nExamples:\n  fbs recruiting groups --team \"Florida State\"\n  fbs recruiting groups --conference ACC --start-year 2020 --end-year 2025\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { positionGroup, minCommits, minAverageStars, ...options } = suppliedOptions<
+      const { positionGroup, minCommits, maxCommits, minAverageStars, maxAverageStars, ...options } = suppliedOptions<
         Partial<RecruitingGroupsQuery> & {
           positionGroup?: string;
           minCommits?: number;
+          maxCommits?: number;
           minAverageStars?: number;
+          maxAverageStars?: number;
         }
       >(command);
-      const filters = localFilters({ positionGroup, minCommits, minAverageStars });
+      const filters = localFilters({ positionGroup, minCommits, maxCommits, minAverageStars, maxAverageStars });
       const rawQuery = buildRecruitingGroupsQuery(options);
       await withCommandContext("recruiting groups", rawQuery, async () => {
+        validateOrderedRange(minCommits, maxCommits, "min-commits", "max-commits");
+        validateOrderedRange(minAverageStars, maxAverageStars, "min-average-stars", "max-average-stars");
         const query = validateRecruitingGroupsQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "recruiting groups",
@@ -186,11 +192,11 @@ function registerGroups(recruiting: Command, runtime: CommandRuntime): void {
                   valueAt(row, "position_group"),
                   filters?.positionGroup as string | undefined,
                 ) &&
-                numberMatches(valueAt(row, "commits"), filters?.minCommits as number | undefined, undefined) &&
+                numberMatches(valueAt(row, "commits"), minCommits, maxCommits) &&
                 numberMatches(
                   valueAt(row, "average_stars"),
-                  filters?.minAverageStars as number | undefined,
-                  undefined,
+                  minAverageStars,
+                  maxAverageStars,
                 ),
             ),
         });

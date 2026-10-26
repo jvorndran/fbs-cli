@@ -227,7 +227,7 @@ Use `player portal --year YEAR` with `--min-rating`/`--max-rating` and `--min-st
 |---|---|---|---|
 | `fbs recruiting players` | `/recruiting/players` -> `recruits` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--name`, `--min-stars`, `--max-stars`, `--min-rating`, `--max-rating`, `--min-ranking`, `--max-ranking` | Require `--year` or `--team`. |
 | `fbs recruiting teams` | `/recruiting/teams` -> `team_rankings` | `--year`, `--team`, `--max-rank` | Optional. |
-| `fbs recruiting groups` | `/recruiting/groups` -> `recruiting_groups` | `--conference`, `--start-year`, `--end-year`, `--recruit-type`, `--team`, `--position-group`, `--min-commits`, `--min-average-stars` | Optional; `start-year <= end-year`. |
+| `fbs recruiting groups` | `/recruiting/groups` -> `recruiting_groups` | `--conference`, `--start-year`, `--end-year`, `--recruit-type`, `--team`, `--position-group`, `--min-commits`, `--max-commits`, `--min-average-stars`, `--max-average-stars` | Optional; `start-year <= end-year`. |
 | `fbs ratings sp` | `/ratings/sp` -> `sp_ratings` | `--year`, `--team` | Require `--year` or `--team`. |
 | `fbs ratings sp conferences` | `/ratings/sp/conferences` -> `conference_sp_ratings` | `--year`, `--conference`, `--classification` | Optional. |
 | `fbs ratings srs` | `/ratings/srs` -> `srs_ratings` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
@@ -235,6 +235,8 @@ Use `player portal --year YEAR` with `--min-rating`/`--max-rating` and `--min-st
 | `fbs ratings elo` | `/ratings/elo` -> `elo_ratings` | `--year`, `--week`, `--team`, `--conference`, `--season-type` | Optional. |
 | `fbs ratings fpi` | `/ratings/fpi` -> `fpi_ratings` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
 | `fbs rankings` | `/rankings` -> `rankings` | `--year`, `--week`, `--poll`, `--season-type`, `--latest`, `--final` | Require `--year`. |
+
+Recruiting group cohorts support inclusive `--min-commits`/`--max-commits` and `--min-average-stars`/`--max-average-stars`. Commit bounds require non-negative safe integers; average-star bounds accept finite numbers. Reversed ranges fail before the single provider request. These local bounds combine with position-group and provider scopes, exclude unavailable values only for active bounds, and preserve provider order and precision. Read applied values from `filters` and the filtered total from `count`.
 
 For `fbs ratings sp`, supplying both `--year` and `--team` makes one full-year provider request and filters that response locally. This preserves CFBD's national overall, offense, and defense ranking fields instead of the rank-within-filter values returned by a team-filtered request. The YAML `query` still records both user-supplied filters, and `count` reflects the locally filtered result. A team-only query is forwarded unchanged because there is no bounded season comparison set.
 
