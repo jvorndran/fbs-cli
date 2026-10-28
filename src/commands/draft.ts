@@ -70,6 +70,7 @@ function registerPicks(draft: Command, runtime: CommandRuntime): void {
   const picks = draft
     .command("picks")
     .description("Retrieve historical NFL draft picks")
+    .option("--name <text>", "Local filter: case-insensitive player name substring")
     .option("--conference <value>", "College conference")
     .option("--position <value>", "Position category")
     .option("--school <name>", "College team")
@@ -84,15 +85,17 @@ function registerPicks(draft: Command, runtime: CommandRuntime): void {
       "\nAll filters are optional.\n\nExamples:\n  fbs draft picks --year 2025\n  fbs draft picks --school \"Florida State\" --position QB\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { round, minOverall, maxOverall, ...options } = suppliedOptions<
+      const { name, round, minOverall, maxOverall, ...options } = suppliedOptions<
         Partial<DraftPicksQuery> & {
+          name?: string;
           round?: number;
           minOverall?: number;
           maxOverall?: number;
         }
       >(command);
       validateOrderedRange(minOverall, maxOverall, "min-overall", "max-overall");
-      const filters = localFilters({ round, minOverall, maxOverall });
+      const filters = localFilters({ name, round, minOverall, maxOverall });
+      const nameSearch = (filters?.name as string | undefined)?.toLowerCase();
       const rawQuery = buildDraftPicksQuery(options);
       await withCommandContext("draft picks", rawQuery, async () => {
         const query = validateDraftPicksQuery(rawQuery);
@@ -108,6 +111,8 @@ function registerPicks(draft: Command, runtime: CommandRuntime): void {
             filterRows(
               rows,
               (row) =>
+                (nameSearch === undefined ||
+                  (typeof row.name === "string" && row.name.toLowerCase().includes(nameSearch))) &&
                 (filters?.round === undefined || valueAt(row, "round") === filters.round) &&
                 numberMatches(
                   valueAt(row, "overall"),

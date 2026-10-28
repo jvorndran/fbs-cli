@@ -253,7 +253,7 @@ For `fbs ratings sp`, supplying both `--year` and `--team` makes one full-year p
 | `fbs playoffs cfp games` | `/playoffs/cfp/games` -> `games` | `--year`, `--round` | Require `--year`. |
 | `fbs draft teams` | `/draft/teams` -> `draft_teams` | None | No filters. |
 | `fbs draft positions` | `/draft/positions` -> `draft_positions` | None | No filters. |
-| `fbs draft picks` | `/draft/picks` -> `draft_picks` | `--year`, `--team`, `--school`, `--conference`, `--position`, `--round`, `--min-overall`, `--max-overall` | Optional. |
+| `fbs draft picks` | `/draft/picks` -> `draft_picks` | `--name`, `--year`, `--team`, `--school`, `--conference`, `--position`, `--round`, `--min-overall`, `--max-overall` | Optional. |
 | `fbs coaches` | `/coaches` -> `coaches` | `--first-name`, `--last-name`, `--min-year`, `--max-year`, `--team`, `--year` | Optional; `min-year <= max-year`. |
 | `fbs coaches profile` | `/coaches/profile` -> `coach_profile` | `--coach-id` | Require `--coach-id`. |
 | `fbs coaches seasons` | `/coaches/seasons` -> `coach_seasons` | `--coach-id`, `--min-year`, `--max-year`, `--team`, `--year` | Optional; `min-year <= max-year`. |
@@ -273,6 +273,8 @@ For `fbs ratings sp`, supplying both `--year` and `--team` makes one full-year p
 Kebab-case provider flags map directly to the corresponding CFBD camelCase query fields, such as `--game-id` -> `gameId`, `--player-id` -> `playerId`, `--season-type` -> `seasonType`, and `--exclude-garbage-time` -> `excludeGarbageTime`. Do not invent aliases.
 
 ### Local filters and output budget
+
+Use `fbs draft picks --year 2025 --name "smith"` to search provider player names by a trimmed, case-insensitive literal substring. Combine it with college or NFL team scopes, position, round, and overall-pick bounds. Blank searches fail before a request; unavailable names do not match. The provider query, name fields, order, IDs, and precision are unchanged; `filters.name` and `count` describe the local result.
 
 Use `fbs recruiting players --year 2026 --name "smith"` to search provider player names by a trimmed, case-insensitive literal substring. Combine it with provider filters and local star, rating, or ranking ranges. Blank searches fail before a request; unavailable names do not match. The single `/recruiting/players` query, provider order, IDs, and precision stay unchanged. The applied search appears in `filters.name` and the filtered total in `count`.
 
