@@ -12,7 +12,7 @@ describe("stdout broken-pipe handling", () => {
     expect(exitCodes).toEqual([0]);
   });
 
-  test.each(["EIO", "EBADF", "ECONNRESET", undefined])(
+  test.each(["EIO", "ENOSPC", "EBADF", "ECONNRESET", undefined])(
     "rethrows stdout errors with code %s without exiting",
     (code) => {
       const exitCodes: number[] = [];
