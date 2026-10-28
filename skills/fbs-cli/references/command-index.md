@@ -65,7 +65,7 @@ Roster `--name TEXT` searches the combined player name by a trimmed, case-insens
 | `fbs player search` | `--search-term`, `--year`, `--team`, `--position` |
 | `fbs player season overview` | `--year`, `--player-id` |
 | `fbs player returning` | `--year`, `--team`, `--conference` |
-| `fbs player portal` | `--year`, `--origin`, `--destination`, `--position`, `--eligibility`, `--min-rating`, `--max-rating`, `--min-stars`, `--max-stars`, `--from-date`, `--to-date` |
+| `fbs player portal` | `--year`, `--name`, `--origin`, `--destination`, `--position`, `--eligibility`, `--min-rating`, `--max-rating`, `--min-stars`, `--max-stars`, `--from-date`, `--to-date` |
 | `fbs ppa predicted` | `--down`, `--distance` |
 | `fbs ppa teams` | `--year`, `--team`, `--conference`, `--classification`, `--exclude-garbage-time` |
 | `fbs ppa games` | `--year`, `--week`, `--team`, `--conference`, `--season-type`, `--classification`, `--exclude-garbage-time`, `--game-id`, `--opponent` |
@@ -107,3 +107,5 @@ Recruiting players `--name TEXT` is a trimmed, case-insensitive literal substrin
 | `fbs coaches tenures` | `--active`, `--coach-id`, `--team`, `--year` |
 
 Use `records --year 2026 --min-wins 5 --max-losses 1` to inspect season-record cohorts. `--min-wins`, `--max-wins`, `--min-losses`, and `--max-losses` are local inclusive bounds on `total.wins` and `total.losses`; split records remain unchanged. Bounds accept non-negative safe integers and each minimum must not exceed its maximum. Missing values are excluded only when that measurement is filtered. CFBD still receives only year/team/conference; `filters` records local values and `count` reflects matching rows. These are current/full-season records, not a cutoff-safe historical snapshot.
+
+Portal `--name TEXT` searches combined first and last names with a trimmed, case-insensitive literal substring. Blank searches fail before a request; unavailable names do not match. It composes with all local filters without changing the year-only provider query, name fields, order, or precision; `filters.name` and `count` describe the result.

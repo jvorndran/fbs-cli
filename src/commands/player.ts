@@ -181,6 +181,7 @@ function registerTransferPortal(player: Command, runtime: CommandRuntime): void 
     .command("portal")
     .description("Retrieve transfer portal entries")
     .option("--year <number>", "Portal season year (required)", parseInteger)
+    .option("--name <text>", "Local filter: case-insensitive player name substring")
     .option("--origin <name>", "Local filter: originating team")
     .option("--destination <name>", "Local filter: destination team")
     .option("--position <value>", "Local filter: position")
@@ -197,6 +198,7 @@ function registerTransferPortal(player: Command, runtime: CommandRuntime): void 
     )
     .action(async (_options: unknown, command: Command) => {
       const {
+        name,
         origin,
         destination,
         position,
@@ -210,6 +212,7 @@ function registerTransferPortal(player: Command, runtime: CommandRuntime): void 
         ...options
       } = suppliedOptions<
         Partial<TransferPortalQuery> & {
+          name?: string;
           origin?: string;
           destination?: string;
           position?: string;
@@ -224,6 +227,7 @@ function registerTransferPortal(player: Command, runtime: CommandRuntime): void 
       >(command);
       validateDateRange(fromDate, toDate);
       const filters = localFilters({
+        name,
         origin,
         destination,
         position,
@@ -235,6 +239,7 @@ function registerTransferPortal(player: Command, runtime: CommandRuntime): void 
         fromDate,
         toDate,
       });
+      const nameSearch = (filters?.name as string | undefined)?.toLowerCase();
       const rawQuery = buildTransferPortalQuery(options);
 
       await withCommandContext("player portal", rawQuery, async () => {
@@ -256,7 +261,12 @@ function registerTransferPortal(player: Command, runtime: CommandRuntime): void 
                 if (!isObject(row)) return false;
                 const transferDate = valueAt(row, "transfer_date");
                 const date = typeof transferDate === "string" ? transferDate.slice(0, 10) : undefined;
+                const playerName = [valueAt(row, "first_name"), valueAt(row, "last_name")]
+                  .filter((part): part is string => typeof part === "string" && part.trim() !== "")
+                  .map((part) => part.trim())
+                  .join(" ");
                 return (
+                  (nameSearch === undefined || playerName.toLowerCase().includes(nameSearch)) &&
                   stringMatches(valueAt(row, "origin"), filters?.origin as string | undefined) &&
                   stringMatches(
                     valueAt(row, "destination"),
