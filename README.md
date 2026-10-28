@@ -194,7 +194,9 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 | `fbs player search` | `/player/search` -> `players` | `--search-term`, `--year`, `--team`, `--position` | Require `--search-term`. |
 | `fbs player season overview` | `/player/season/overview` -> `player_season_overview` | `--year`, `--player-id` | Require both flags. |
 | `fbs player returning` | `/player/returning` -> `returning_production` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
-| `fbs player portal` | `/player/portal` -> `transfers` | `--year`, `--origin`, `--destination`, `--position`, `--eligibility`, `--min-rating`, `--max-rating`, `--min-stars`, `--max-stars`, `--from-date`, `--to-date` | Require `--year`. |
+| `fbs player portal` | `/player/portal` -> `transfers` | `--year`, `--name`, `--origin`, `--destination`, `--position`, `--eligibility`, `--min-rating`, `--max-rating`, `--min-stars`, `--max-stars`, `--from-date`, `--to-date` | Require `--year`. |
+
+Use `fbs player portal --year 2026 --name "smith"` to search combined first and last names by a trimmed, case-insensitive literal substring. It composes with all existing local filters and keeps the year-only provider query, original name fields, order, and precision. Blank searches fail before a request; unavailable names do not match. Read the search from `filters.name` and the filtered total from `count`.
 
 Use `player portal --year YEAR` with `--min-rating`/`--max-rating` and `--min-stars`/`--max-stars` for inclusive transfer cohorts. Ratings accept finite numbers without rounding; star bounds require non-negative safe integers. Reversed ranges fail before a request. These local bounds compose with origin, destination, position, eligibility and transfer dates; only `year` enters the single `/player/portal` request. Missing ratings or stars fail only an active bound for that field, reported zero values remain usable, and provider order is preserved. Read the bounds from `filters` and the filtered total from `count`; omitting bounds preserves existing output.
 
@@ -251,7 +253,7 @@ For `fbs ratings sp`, supplying both `--year` and `--team` makes one full-year p
 | `fbs playoffs cfp games` | `/playoffs/cfp/games` -> `games` | `--year`, `--round` | Require `--year`. |
 | `fbs draft teams` | `/draft/teams` -> `draft_teams` | None | No filters. |
 | `fbs draft positions` | `/draft/positions` -> `draft_positions` | None | No filters. |
-| `fbs draft picks` | `/draft/picks` -> `draft_picks` | `--year`, `--team`, `--school`, `--conference`, `--position`, `--round`, `--min-overall`, `--max-overall` | Optional. |
+| `fbs draft picks` | `/draft/picks` -> `draft_picks` | `--name`, `--year`, `--team`, `--school`, `--conference`, `--position`, `--round`, `--min-overall`, `--max-overall` | Optional. |
 | `fbs coaches` | `/coaches` -> `coaches` | `--first-name`, `--last-name`, `--min-year`, `--max-year`, `--team`, `--year` | Optional; `min-year <= max-year`. |
 | `fbs coaches profile` | `/coaches/profile` -> `coach_profile` | `--coach-id` | Require `--coach-id`. |
 | `fbs coaches seasons` | `/coaches/seasons` -> `coach_seasons` | `--coach-id`, `--min-year`, `--max-year`, `--team`, `--year` | Optional; `min-year <= max-year`. |
@@ -271,6 +273,8 @@ For `fbs ratings sp`, supplying both `--year` and `--team` makes one full-year p
 Kebab-case provider flags map directly to the corresponding CFBD camelCase query fields, such as `--game-id` -> `gameId`, `--player-id` -> `playerId`, `--season-type` -> `seasonType`, and `--exclude-garbage-time` -> `excludeGarbageTime`. Do not invent aliases.
 
 ### Local filters and output budget
+
+Use `fbs draft picks --year 2025 --name "smith"` to search provider player names by a trimmed, case-insensitive literal substring. Combine it with college or NFL team scopes, position, round, and overall-pick bounds. Blank searches fail before a request; unavailable names do not match. The provider query, name fields, order, IDs, and precision are unchanged; `filters.name` and `count` describe the local result.
 
 Use `fbs recruiting players --year 2026 --name "smith"` to search provider player names by a trimmed, case-insensitive literal substring. Combine it with provider filters and local star, rating, or ranking ranges. Blank searches fail before a request; unavailable names do not match. The single `/recruiting/players` query, provider order, IDs, and precision stay unchanged. The applied search appears in `filters.name` and the filtered total in `count`.
 
