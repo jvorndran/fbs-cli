@@ -149,8 +149,8 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 | `fbs records` | `/records` -> `records` | `--year`, `--team`, `--conference`, `--min-wins`, `--max-wins`, `--min-losses`, `--max-losses` | Require `--year` or `--team`. |
 | `fbs calendar` | `/calendar` -> `calendar` | `--year`, `--min-week`, `--max-week` | Require `--year`; inclusive local week bounds across season types. |
 | `fbs scoreboard` | `/scoreboard` -> `scoreboard` | `--conference`, `--classification`, `--team`, `--status`, `--venue` | Optional; may require an eligible CFBD tier and includes embedded betting fields when supplied by CFBD. |
-| `fbs teams` | `/teams` -> `teams` | `--conference`, `--year`, `--classification`, `--city`, `--state` | Optional; local exact venue geography. |
-| `fbs teams fbs` | `/teams/fbs` -> `teams` | `--year`, `--conference`, `--city`, `--state` | Optional; local exact venue geography. |
+| `fbs teams` | `/teams` -> `teams` | `--conference`, `--year`, `--classification`, `--city`, `--state`, `--min-capacity`, `--max-capacity` | Optional; local venue geography and inclusive capacity bounds. |
+| `fbs teams fbs` | `/teams/fbs` -> `teams` | `--year`, `--conference`, `--city`, `--state`, `--min-capacity`, `--max-capacity` | Optional; local venue geography and inclusive capacity bounds. |
 | `fbs teams matchup` | `/teams/matchup` -> `matchup` | `--team1`, `--team2`, `--min-year`, `--max-year` | Require both teams; `min-year <= max-year`. |
 | `fbs teams ats` | `/teams/ats` -> `team_ats` | `--year`, `--team`, `--conference` | Require `--year`; returns historical ATS records. |
 | `fbs roster` | `/roster` -> `players` | `--year`, `--team`, `--classification`, `--name`, `--position`, `--state`, `--country`, `--jersey`, `--class-year`, `--min-height`, `--max-height`, `--min-weight`, `--max-weight` | Optional. |
@@ -273,6 +273,8 @@ For `fbs ratings sp`, supplying both `--year` and `--team` makes one full-year p
 Kebab-case provider flags map directly to the corresponding CFBD camelCase query fields, such as `--game-id` -> `gameId`, `--player-id` -> `playerId`, `--season-type` -> `seasonType`, and `--exclude-garbage-time` -> `excludeGarbageTime`. Do not invent aliases.
 
 ### Local filters and output budget
+
+Use `teams fbs --year 2026 --min-capacity 50000 --max-capacity 90000` to inspect teams by their venue's seating capacity. Both `teams` and `teams fbs` accept these inclusive local bounds alongside geography and conference filters. Values must be non-negative safe integers with minimum no greater than maximum. An active bound excludes unavailable capacity or location; a reported zero remains valid. Each command still makes one unchanged provider request and preserves team order, IDs, and measurements. Read the bounds from `filters` and the matching total from `count`.
 
 Use `fbs draft picks --year 2025 --name "smith"` to search provider player names by a trimmed, case-insensitive literal substring. Combine it with college or NFL team scopes, position, round, and overall-pick bounds. Blank searches fail before a request; unavailable names do not match. The provider query, name fields, order, IDs, and precision are unchanged; `filters.name` and `count` describe the local result.
 

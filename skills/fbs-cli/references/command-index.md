@@ -23,8 +23,8 @@ PROE, player, and adjusted-rank analysis.
 | `fbs records` | `--year`, `--team`, `--conference`, `--min-wins`, `--max-wins`, `--min-losses`, `--max-losses` |
 | `fbs calendar` | `--year`, `--min-week`, `--max-week` |
 | `fbs scoreboard` | `--conference`, `--classification`, `--team`, `--status`, `--venue` |
-| `fbs teams` | `--conference`, `--year`, `--classification`, `--city`, `--state` |
-| `fbs teams fbs` | `--year`, `--conference`, `--city`, `--state` |
+| `fbs teams` | `--conference`, `--year`, `--classification`, `--city`, `--state`, `--min-capacity`, `--max-capacity` |
+| `fbs teams fbs` | `--year`, `--conference`, `--city`, `--state`, `--min-capacity`, `--max-capacity` |
 | `fbs teams matchup` | `--team1`, `--team2`, `--min-year`, `--max-year` |
 | `fbs teams ats` | `--year`, `--team`, `--conference` |
 | `fbs roster` | `--year`, `--team`, `--classification`, `--name`, `--position`, `--state`, `--country`, `--jersey`, `--class-year`, `--min-height`, `--max-height`, `--min-weight`, `--max-weight` |
