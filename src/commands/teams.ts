@@ -29,7 +29,10 @@ import {
   suppliedLeafOptions,
   suppliedOptions,
 } from "./options";
-import { filterRows, localFilters, stringMatches, valueAt } from "./local-filters";
+import {
+  filterRows, localFilters, numberMatches, parseNonNegativeInteger, parseNumber,
+  stringMatches, validateOrderedRange, valueAt,
+} from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 export function registerTeamsCommand(program: Command, runtime: CommandRuntime): void {
@@ -41,18 +44,24 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
     .option("--classification <value>", "Local filter: division classification")
     .option("--city <value>", "Local filter: exact venue city (case-insensitive)")
     .option("--state <value>", "Local filter: exact venue state (case-insensitive)")
+    .option("--min-capacity <number>", "Local filter: minimum venue capacity (inclusive)", parseNonNegativeInteger)
+    .option("--max-capacity <number>", "Local filter: maximum venue capacity (inclusive)", parseNonNegativeInteger)
     .addHelpText(
       "after",
       "\nExamples:\n  fbs teams\n  fbs teams --conference ACC --year 2026\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { classification, city, state, ...options } = suppliedOptions<
-        Partial<TeamsQuery> & { classification?: string; city?: string; state?: string }
+      const { classification, city, state, minCapacity, maxCapacity, ...options } = suppliedOptions<
+        Partial<TeamsQuery> & {
+          classification?: string; city?: string; state?: string;
+          minCapacity?: number; maxCapacity?: number;
+        }
       >(command);
-      const filters = localFilters({ classification, city, state });
+      const filters = localFilters({ classification, city, state, minCapacity, maxCapacity });
       const rawQuery = buildTeamsQuery(options);
 
       await withCommandContext("teams", rawQuery, async () => {
+        validateOrderedRange(minCapacity, maxCapacity, "min-capacity", "max-capacity");
         const query = validateTeamsQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "teams",
@@ -66,7 +75,8 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
             filterRows(rows, (row) =>
               stringMatches(valueAt(row, "classification"), filters?.classification as string | undefined) &&
               stringMatches(valueAt(row, "location.city"), filters?.city as string | undefined) &&
-              stringMatches(valueAt(row, "location.state"), filters?.state as string | undefined),
+              stringMatches(valueAt(row, "location.state"), filters?.state as string | undefined) &&
+              numberMatches(valueAt(row, "location.capacity"), minCapacity, maxCapacity),
             ),
         });
       });
@@ -79,15 +89,21 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
     .option("--conference <value>", "Local filter: conference abbreviation")
     .option("--city <value>", "Local filter: exact venue city (case-insensitive)")
     .option("--state <value>", "Local filter: exact venue state (case-insensitive)")
+    .option("--min-capacity <number>", "Local filter: minimum venue capacity (inclusive)", parseNonNegativeInteger)
+    .option("--max-capacity <number>", "Local filter: maximum venue capacity (inclusive)", parseNonNegativeInteger)
     .addHelpText("after", "\nExample:\n  fbs teams fbs --year 2026\n")
     .action(async (_options: unknown, command: Command) => {
-      const { conference, city, state, ...options } = suppliedLeafOptions<
-        Partial<FbsTeamsQuery> & { conference?: string; city?: string; state?: string }
+      const { conference, city, state, minCapacity, maxCapacity, ...options } = suppliedLeafOptions<
+        Partial<FbsTeamsQuery> & {
+          conference?: string; city?: string; state?: string;
+          minCapacity?: number; maxCapacity?: number;
+        }
       >(command);
-      const filters = localFilters({ conference, city, state });
+      const filters = localFilters({ conference, city, state, minCapacity, maxCapacity });
       const rawQuery = buildFbsTeamsQuery(options);
 
       await withCommandContext("teams fbs", rawQuery, async () => {
+        validateOrderedRange(minCapacity, maxCapacity, "min-capacity", "max-capacity");
         const query = validateFbsTeamsQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "teams fbs",
@@ -101,7 +117,8 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
             filterRows(rows, (row) =>
               stringMatches(valueAt(row, "conference"), filters?.conference as string | undefined) &&
               stringMatches(valueAt(row, "location.city"), filters?.city as string | undefined) &&
-              stringMatches(valueAt(row, "location.state"), filters?.state as string | undefined),
+              stringMatches(valueAt(row, "location.state"), filters?.state as string | undefined) &&
+              numberMatches(valueAt(row, "location.capacity"), minCapacity, maxCapacity),
             ),
         });
       });
@@ -145,15 +162,27 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
     .option("--year <number>", "Season year (required)", parseInteger)
     .option("--team <name>", "Team name")
     .option("--conference <value>", "Conference abbreviation")
+    .option("--min-games <number>", "Local filter: minimum reported games (inclusive)", parseNonNegativeInteger)
+    .option("--max-games <number>", "Local filter: maximum reported games (inclusive)", parseNonNegativeInteger)
+    .option("--min-avg-cover-margin <number>", "Local filter: minimum average cover margin (inclusive)", parseNumber)
+    .option("--max-avg-cover-margin <number>", "Local filter: maximum average cover margin (inclusive)", parseNumber)
     .addHelpText(
       "after",
       "\nHistorical, read-only data.\n\nExample:\n  fbs teams ats --year 2024 --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedLeafOptions<Partial<TeamAtsQuery>>(command);
+      const { minGames, maxGames, minAvgCoverMargin, maxAvgCoverMargin, ...options } = suppliedLeafOptions<
+        Partial<TeamAtsQuery> & {
+          minGames?: number; maxGames?: number;
+          minAvgCoverMargin?: number; maxAvgCoverMargin?: number;
+        }
+      >(command);
+      const filters = localFilters({ minGames, maxGames, minAvgCoverMargin, maxAvgCoverMargin });
       const rawQuery = buildTeamAtsQuery(options);
 
       await withCommandContext("teams ats", rawQuery, async () => {
+        validateOrderedRange(minGames, maxGames, "min-games", "max-games");
+        validateOrderedRange(minAvgCoverMargin, maxAvgCoverMargin, "min-avg-cover-margin", "max-avg-cover-margin");
         const query = validateTeamAtsQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "teams ats",
@@ -162,6 +191,10 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
           resultKey: "team_ats",
           request: (api) => asReferenceCfbdApi(api).teamAts(query),
           transform: transformTeamAts,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) => filterRows(rows, (row) =>
+            numberMatches(valueAt(row, "games"), minGames, maxGames) &&
+            numberMatches(valueAt(row, "avg_cover_margin"), minAvgCoverMargin, maxAvgCoverMargin)),
         });
       });
     });
