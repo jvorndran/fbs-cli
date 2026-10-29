@@ -30,7 +30,7 @@ import {
   suppliedOptions,
 } from "./options";
 import {
-  filterRows, localFilters, numberMatches, parseNonNegativeInteger,
+  filterRows, localFilters, numberMatches, parseNonNegativeInteger, parseNumber,
   stringMatches, validateOrderedRange, valueAt,
 } from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
@@ -162,15 +162,27 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
     .option("--year <number>", "Season year (required)", parseInteger)
     .option("--team <name>", "Team name")
     .option("--conference <value>", "Conference abbreviation")
+    .option("--min-games <number>", "Local filter: minimum reported games (inclusive)", parseNonNegativeInteger)
+    .option("--max-games <number>", "Local filter: maximum reported games (inclusive)", parseNonNegativeInteger)
+    .option("--min-avg-cover-margin <number>", "Local filter: minimum average cover margin (inclusive)", parseNumber)
+    .option("--max-avg-cover-margin <number>", "Local filter: maximum average cover margin (inclusive)", parseNumber)
     .addHelpText(
       "after",
       "\nHistorical, read-only data.\n\nExample:\n  fbs teams ats --year 2024 --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedLeafOptions<Partial<TeamAtsQuery>>(command);
+      const { minGames, maxGames, minAvgCoverMargin, maxAvgCoverMargin, ...options } = suppliedLeafOptions<
+        Partial<TeamAtsQuery> & {
+          minGames?: number; maxGames?: number;
+          minAvgCoverMargin?: number; maxAvgCoverMargin?: number;
+        }
+      >(command);
+      const filters = localFilters({ minGames, maxGames, minAvgCoverMargin, maxAvgCoverMargin });
       const rawQuery = buildTeamAtsQuery(options);
 
       await withCommandContext("teams ats", rawQuery, async () => {
+        validateOrderedRange(minGames, maxGames, "min-games", "max-games");
+        validateOrderedRange(minAvgCoverMargin, maxAvgCoverMargin, "min-avg-cover-margin", "max-avg-cover-margin");
         const query = validateTeamAtsQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "teams ats",
@@ -179,6 +191,10 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
           resultKey: "team_ats",
           request: (api) => asReferenceCfbdApi(api).teamAts(query),
           transform: transformTeamAts,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) => filterRows(rows, (row) =>
+            numberMatches(valueAt(row, "games"), minGames, maxGames) &&
+            numberMatches(valueAt(row, "avg_cover_margin"), minAvgCoverMargin, maxAvgCoverMargin)),
         });
       });
     });

@@ -26,10 +26,12 @@ PROE, player, and adjusted-rank analysis.
 | `fbs teams` | `--conference`, `--year`, `--classification`, `--city`, `--state`, `--min-capacity`, `--max-capacity` |
 | `fbs teams fbs` | `--year`, `--conference`, `--city`, `--state`, `--min-capacity`, `--max-capacity` |
 | `fbs teams matchup` | `--team1`, `--team2`, `--min-year`, `--max-year` |
-| `fbs teams ats` | `--year`, `--team`, `--conference` |
+| `fbs teams ats` | `--year`, `--team`, `--conference`, `--min-games`, `--max-games`, `--min-avg-cover-margin`, `--max-avg-cover-margin` |
 | `fbs roster` | `--year`, `--team`, `--classification`, `--name`, `--position`, `--state`, `--country`, `--jersey`, `--class-year`, `--min-height`, `--max-height`, `--min-weight`, `--max-weight` |
 
 Roster `--name TEXT` searches the combined player name by a trimmed, case-insensitive literal substring. It composes with existing local filters, rejects blank searches before a request, and excludes unavailable names. The one `/roster` query, provider order, IDs, and precision are unchanged; `filters.name` and `count` describe the local result. Other string filters retain exact matching.
+
+For historical ATS cohorts, use `teams ats --year YEAR --min-games 10 --min-avg-cover-margin 0`. Games bounds accept non-negative safe integers; average-cover-margin bounds accept finite signed numbers. Bounds are inclusive and reject reversed ranges before a request. Missing values fail only an active bound. The provider query stays year/team/conference; order, IDs, and full precision are preserved. Read local bounds from `filters` and matches from `count`. These are full-season summaries, not cutoff-safe historical snapshots or betting recommendations.
 
 ## Games, drives, and plays
 

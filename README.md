@@ -152,7 +152,7 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 | `fbs teams` | `/teams` -> `teams` | `--conference`, `--year`, `--classification`, `--city`, `--state`, `--min-capacity`, `--max-capacity` | Optional; local venue geography and inclusive capacity bounds. |
 | `fbs teams fbs` | `/teams/fbs` -> `teams` | `--year`, `--conference`, `--city`, `--state`, `--min-capacity`, `--max-capacity` | Optional; local venue geography and inclusive capacity bounds. |
 | `fbs teams matchup` | `/teams/matchup` -> `matchup` | `--team1`, `--team2`, `--min-year`, `--max-year` | Require both teams; `min-year <= max-year`. |
-| `fbs teams ats` | `/teams/ats` -> `team_ats` | `--year`, `--team`, `--conference` | Require `--year`; returns historical ATS records. |
+| `fbs teams ats` | `/teams/ats` -> `team_ats` | `--year`, `--team`, `--conference`, `--min-games`, `--max-games`, `--min-avg-cover-margin`, `--max-avg-cover-margin` | Require `--year`; returns historical ATS records with optional local cohorts. |
 | `fbs roster` | `/roster` -> `players` | `--year`, `--team`, `--classification`, `--name`, `--position`, `--state`, `--country`, `--jersey`, `--class-year`, `--min-height`, `--max-height`, `--min-weight`, `--max-weight` | Optional. |
 
 ### Games, box scores, and live data
@@ -273,6 +273,8 @@ For `fbs ratings sp`, supplying both `--year` and `--team` makes one full-year p
 Kebab-case provider flags map directly to the corresponding CFBD camelCase query fields, such as `--game-id` -> `gameId`, `--player-id` -> `playerId`, `--season-type` -> `seasonType`, and `--exclude-garbage-time` -> `excludeGarbageTime`. Do not invent aliases.
 
 ### Local filters and output budget
+
+Use `teams ats --year 2025 --min-games 10 --min-avg-cover-margin 0` to inspect historical ATS cohorts. `--min-games`/`--max-games` bound the provider's reported `games` using non-negative safe integers; `--min-avg-cover-margin`/`--max-avg-cover-margin` accept finite numbers, including negative values. Bounds are inclusive, each minimum must not exceed its maximum, and unavailable values fail only an active bound. The single provider request still contains only year/team/conference. Record values, precision, and order remain unchanged; `filters` records local bounds and `count` reflects matches. These full-season summaries do not establish an earlier cutoff or a betting edge.
 
 Use `teams fbs --year 2026 --min-capacity 50000 --max-capacity 90000` to inspect teams by their venue's seating capacity. Both `teams` and `teams fbs` accept these inclusive local bounds alongside geography and conference filters. Values must be non-negative safe integers with minimum no greater than maximum. An active bound excludes unavailable capacity or location; a reported zero remains valid. Each command still makes one unchanged provider request and preserves team order, IDs, and measurements. Read the bounds from `filters` and the matching total from `count`.
 
