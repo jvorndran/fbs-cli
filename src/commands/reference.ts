@@ -111,6 +111,7 @@ function registerVenuesCommand(program: Command, runtime: CommandRuntime): void 
   const venues = program
     .command("venues")
     .description("List college football venues")
+    .option("--name <text>", "Local filter: case-insensitive venue name substring")
     .option("--city <value>", "Local filter: city")
     .option("--state <value>", "Local filter: state")
     .option("--dome <boolean>", "Local filter: dome", parseBoolean)
@@ -120,6 +121,7 @@ function registerVenuesCommand(program: Command, runtime: CommandRuntime): void 
     .addHelpText("after", "\nExample:\n  fbs venues\n")
     .action(async (_options: unknown, command: Command) => {
       const options = suppliedOptions<{
+        name?: string;
         city?: string;
         state?: string;
         dome?: boolean;
@@ -128,6 +130,7 @@ function registerVenuesCommand(program: Command, runtime: CommandRuntime): void 
         maxCapacity?: number;
       }>(command);
       const filters = localFilters(options);
+      const nameSearch = (filters?.name as string | undefined)?.toLowerCase();
       const rawQuery = buildNoQuery();
 
       await withCommandContext("venues", rawQuery, async () => {
@@ -145,6 +148,8 @@ function registerVenuesCommand(program: Command, runtime: CommandRuntime): void 
             filterRows(
               rows,
               (row) =>
+                (nameSearch === undefined ||
+                  (typeof row.name === "string" && row.name.toLowerCase().includes(nameSearch))) &&
                 stringMatches(valueAt(row, "city"), filters?.city as string | undefined) &&
                 stringMatches(valueAt(row, "state"), filters?.state as string | undefined) &&
                 booleanMatches(valueAt(row, "dome"), filters?.dome as boolean | undefined) &&

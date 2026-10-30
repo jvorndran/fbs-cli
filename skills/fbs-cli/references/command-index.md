@@ -19,7 +19,7 @@ PROE, player, and adjusted-rank analysis.
 | `fbs info usage` | `--api`, `--days`, `--limit` |
 | `fbs conferences` | None. |
 | `fbs talent` | `--year`, `--team`, `--min-talent`, `--max-talent` |
-| `fbs venues` | `--city`, `--state`, `--dome`, `--grass`, `--min-capacity`, `--max-capacity` |
+| `fbs venues` | `--name`, `--city`, `--state`, `--dome`, `--grass`, `--min-capacity`, `--max-capacity` |
 | `fbs records` | `--year`, `--team`, `--conference`, `--min-wins`, `--max-wins`, `--min-losses`, `--max-losses` |
 | `fbs calendar` | `--year`, `--min-week`, `--max-week` |
 | `fbs scoreboard` | `--conference`, `--classification`, `--team`, `--status`, `--venue` |
@@ -115,3 +115,5 @@ Portal `--name TEXT` searches combined first and last names with a trimmed, case
 Use `fbs draft picks --year 2025 --name "smith"` to search provider player names by a trimmed, case-insensitive literal substring. Combine it with college or NFL team scopes, position, round, and overall-pick bounds. Blank searches fail before a request; unavailable names do not match. The provider query, name fields, order, IDs, and precision are unchanged; `filters.name` and `count` describe the local result.
 
 Use `teams --name "state"` or `teams fbs --name "noles"` to discover teams by a trimmed, case-insensitive literal substring of any reported school, mascot, abbreviation, or alternate name. Combine the search with existing scopes and local filters. Blank searches fail before a request; unavailable labels do not match. The provider query, team order, IDs, and original labels stay unchanged; `filters.name` and `count` describe the result.
+
+Use `venues --name "campbell"` to search provider venue names by a trimmed, case-insensitive literal substring. Combine it with city, state, dome, grass, or capacity filters. Blank searches fail before a request; unavailable names do not match. The single query-free `/venues` request, row order, IDs, and measurements remain unchanged. Read the applied search from `filters.name` and the matching total from `count`.

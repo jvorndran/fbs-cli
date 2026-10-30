@@ -145,7 +145,7 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 | `fbs info usage` | `/info/usage` -> `usage` | `--api`, `--days`, `--limit` | Optional; `days` is 1-31 and `limit` is 1-50. |
 | `fbs conferences` | `/conferences` -> `conferences` | None | No filters. |
 | `fbs talent` | `/talent` -> `talent` | `--year`, `--team`, `--min-talent`, `--max-talent` | Require `--year`; team and inclusive talent bounds filter locally. |
-| `fbs venues` | `/venues` -> `venues` | `--city`, `--state`, `--dome`, `--grass`, `--min-capacity`, `--max-capacity` | Optional local filters; inclusive seating capacity bounds. |
+| `fbs venues` | `/venues` -> `venues` | `--name`, `--city`, `--state`, `--dome`, `--grass`, `--min-capacity`, `--max-capacity` | Optional local filters; inclusive seating capacity bounds. |
 | `fbs records` | `/records` -> `records` | `--year`, `--team`, `--conference`, `--min-wins`, `--max-wins`, `--min-losses`, `--max-losses` | Require `--year` or `--team`. |
 | `fbs calendar` | `/calendar` -> `calendar` | `--year`, `--min-week`, `--max-week` | Require `--year`; inclusive local week bounds across season types. |
 | `fbs scoreboard` | `/scoreboard` -> `scoreboard` | `--conference`, `--classification`, `--team`, `--status`, `--venue` | Optional; may require an eligible CFBD tier and includes embedded betting fields when supplied by CFBD. |
@@ -290,7 +290,7 @@ Roster measurement filters accept non-negative safe integers: `--min-height` and
 
 Use `records --year 2026 --min-wins 5 --max-losses 1` to inspect season-record cohorts. `--min-wins`, `--max-wins`, `--min-losses`, and `--max-losses` are local inclusive bounds on `total.wins` and `total.losses`; split records remain unchanged. Bounds accept non-negative safe integers and each minimum must not exceed its maximum. Missing values are excluded only when that measurement is filtered. CFBD still receives only year/team/conference; `filters` records local values and `count` reflects matching rows. These are current/full-season records, not a cutoff-safe historical snapshot.
 
-Flags described as **Local filter** in executable help are applied after CFBD responds and after the endpoint transformer runs. They are never sent to CFBD: `query` remains the exact provider request and an additive `filters` object records the supplied local filter values. String matching is case-insensitive exact matching except for the roster and recruiting name searches below, numeric bounds are inclusive, and local boolean values must be `true` or `false`.
+Flags described as **Local filter** in executable help are applied after CFBD responds and after the endpoint transformer runs. They are never sent to CFBD: `query` remains the exact provider request and an additive `filters` object records the supplied local filter values. String matching is case-insensitive exact matching except for the documented name substring searches, numeric bounds are inclusive, and local boolean values must be `true` or `false`.
 
 Use `fbs roster --year 2026 --team "Florida State" --name "smith"` to search the combined player name by a trimmed, case-insensitive literal substring. It supports partial first or last names and composes with position, class-year, hometown, and measurement filters. Blank searches fail before a request; unavailable names do not match. The single `/roster` query, provider order, IDs, and measurements stay unchanged. Read the applied search from `filters.name` and the filtered total from `count`.
 
@@ -461,3 +461,5 @@ Bundled dependency licenses are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY
 FBS CLI is available under the [MIT License](LICENSE).
 
 Use `teams --name "state"` or `teams fbs --name "noles"` to discover teams by a trimmed, case-insensitive literal substring of any reported school, mascot, abbreviation, or alternate name. Combine the search with existing scopes and local filters. Blank searches fail before a request; unavailable labels do not match. The provider query, team order, IDs, and original labels stay unchanged; `filters.name` and `count` describe the result.
+
+Use `venues --name "campbell"` to search provider venue names by a trimmed, case-insensitive literal substring. Combine it with city, state, dome, grass, or capacity filters. Blank searches fail before a request; unavailable names do not match. The single query-free `/venues` request, row order, IDs, and measurements remain unchanged. Read the applied search from `filters.name` and the matching total from `count`.
