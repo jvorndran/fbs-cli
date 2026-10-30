@@ -149,8 +149,8 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 | `fbs records` | `/records` -> `records` | `--year`, `--team`, `--conference`, `--min-wins`, `--max-wins`, `--min-losses`, `--max-losses` | Require `--year` or `--team`. |
 | `fbs calendar` | `/calendar` -> `calendar` | `--year`, `--min-week`, `--max-week` | Require `--year`; inclusive local week bounds across season types. |
 | `fbs scoreboard` | `/scoreboard` -> `scoreboard` | `--conference`, `--classification`, `--team`, `--status`, `--venue` | Optional; may require an eligible CFBD tier and includes embedded betting fields when supplied by CFBD. |
-| `fbs teams` | `/teams` -> `teams` | `--conference`, `--year`, `--classification`, `--city`, `--state`, `--min-capacity`, `--max-capacity` | Optional; local venue geography and inclusive capacity bounds. |
-| `fbs teams fbs` | `/teams/fbs` -> `teams` | `--year`, `--conference`, `--city`, `--state`, `--min-capacity`, `--max-capacity` | Optional; local venue geography and inclusive capacity bounds. |
+| `fbs teams` | `/teams` -> `teams` | `--conference`, `--year`, `--name`, `--classification`, `--city`, `--state`, `--min-capacity`, `--max-capacity` | Optional; local venue geography and inclusive capacity bounds. |
+| `fbs teams fbs` | `/teams/fbs` -> `teams` | `--year`, `--name`, `--conference`, `--city`, `--state`, `--min-capacity`, `--max-capacity` | Optional; local venue geography and inclusive capacity bounds. |
 | `fbs teams matchup` | `/teams/matchup` -> `matchup` | `--team1`, `--team2`, `--min-year`, `--max-year` | Require both teams; `min-year <= max-year`. |
 | `fbs teams ats` | `/teams/ats` -> `team_ats` | `--year`, `--team`, `--conference`, `--min-games`, `--max-games`, `--min-avg-cover-margin`, `--max-avg-cover-margin` | Require `--year`; returns historical ATS records with optional local cohorts. |
 | `fbs roster` | `/roster` -> `players` | `--year`, `--team`, `--classification`, `--name`, `--position`, `--state`, `--country`, `--jersey`, `--class-year`, `--min-height`, `--max-height`, `--min-weight`, `--max-weight` | Optional. |
@@ -459,3 +459,5 @@ Bundled dependency licenses are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY
 ## License
 
 FBS CLI is available under the [MIT License](LICENSE).
+
+Use `teams --name "state"` or `teams fbs --name "noles"` to discover teams by a trimmed, case-insensitive literal substring of any reported school, mascot, abbreviation, or alternate name. Combine the search with existing scopes and local filters. Blank searches fail before a request; unavailable labels do not match. The provider query, team order, IDs, and original labels stay unchanged; `filters.name` and `count` describe the result.

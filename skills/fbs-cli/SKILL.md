@@ -97,7 +97,7 @@ Use `talent --year YEAR --min-talent N --max-talent N` for an inclusive cohort o
 
 Use `calendar --year YEAR --min-week N --max-week N` for inclusive week-number bounds, including Week 0. Bounds must be non-negative safe integers and reject reversed ranges before the one year-only `/calendar` request. Matching week numbers from all season types remain in provider order; `filters` and `count` describe the local result. Omitting bounds retains the full calendar.
 
-Use `teams --state FL --city Tallahassee` or `teams fbs --year YEAR --state FL` to filter provider-reported venue geography locally. City/state match trimmed exact strings case-insensitively and combine with existing filters, without changing the single provider query. Missing fields fail only active geography filters; order/precision remain unchanged. Read `filters` and filtered `count`; blank values fail before requests. Venue location is not a recruiting or hometown filter.
+Use `teams --state FL --city Tallahassee` or `teams fbs --year YEAR --state FL` to filter provider-reported venue geography locally. City/state match trimmed exact strings case-insensitively and combine with existing filters, without changing the single provider query. Missing fields fail only active geography filters; order/precision remain unchanged. Read `filters` and filtered `count`; blank values fail before requests. Venue location is not a recruiting or hometown filter. For school, mascot, abbreviation, or alias substring discovery, use `teams --name TEXT` or `teams fbs --name TEXT`; see [command-index.md](references/command-index.md).
 
 ## Recruiting player ranges
 

@@ -23,8 +23,8 @@ PROE, player, and adjusted-rank analysis.
 | `fbs records` | `--year`, `--team`, `--conference`, `--min-wins`, `--max-wins`, `--min-losses`, `--max-losses` |
 | `fbs calendar` | `--year`, `--min-week`, `--max-week` |
 | `fbs scoreboard` | `--conference`, `--classification`, `--team`, `--status`, `--venue` |
-| `fbs teams` | `--conference`, `--year`, `--classification`, `--city`, `--state`, `--min-capacity`, `--max-capacity` |
-| `fbs teams fbs` | `--year`, `--conference`, `--city`, `--state`, `--min-capacity`, `--max-capacity` |
+| `fbs teams` | `--conference`, `--year`, `--name`, `--classification`, `--city`, `--state`, `--min-capacity`, `--max-capacity` |
+| `fbs teams fbs` | `--year`, `--name`, `--conference`, `--city`, `--state`, `--min-capacity`, `--max-capacity` |
 | `fbs teams matchup` | `--team1`, `--team2`, `--min-year`, `--max-year` |
 | `fbs teams ats` | `--year`, `--team`, `--conference`, `--min-games`, `--max-games`, `--min-avg-cover-margin`, `--max-avg-cover-margin` |
 | `fbs roster` | `--year`, `--team`, `--classification`, `--name`, `--position`, `--state`, `--country`, `--jersey`, `--class-year`, `--min-height`, `--max-height`, `--min-weight`, `--max-weight` |
@@ -113,3 +113,5 @@ Use `records --year 2026 --min-wins 5 --max-losses 1` to inspect season-record c
 Portal `--name TEXT` searches combined first and last names with a trimmed, case-insensitive literal substring. Blank searches fail before a request; unavailable names do not match. It composes with all local filters without changing the year-only provider query, name fields, order, or precision; `filters.name` and `count` describe the result.
 
 Use `fbs draft picks --year 2025 --name "smith"` to search provider player names by a trimmed, case-insensitive literal substring. Combine it with college or NFL team scopes, position, round, and overall-pick bounds. Blank searches fail before a request; unavailable names do not match. The provider query, name fields, order, IDs, and precision are unchanged; `filters.name` and `count` describe the local result.
+
+Use `teams --name "state"` or `teams fbs --name "noles"` to discover teams by a trimmed, case-insensitive literal substring of any reported school, mascot, abbreviation, or alternate name. Combine the search with existing scopes and local filters. Blank searches fail before a request; unavailable labels do not match. The provider query, team order, IDs, and original labels stay unchanged; `filters.name` and `count` describe the result.

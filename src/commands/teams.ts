@@ -35,10 +35,18 @@ import {
 } from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
 
+function teamNameMatches(row: Record<string, unknown>, search: string | undefined): boolean {
+  if (search === undefined) return true;
+  const labels = [row.school, row.mascot, row.abbreviation,
+    ...(Array.isArray(row.alternate_names) ? row.alternate_names : [])];
+  return labels.some((label) => typeof label === "string" && label.toLowerCase().includes(search));
+}
+
 export function registerTeamsCommand(program: Command, runtime: CommandRuntime): void {
   const teams = program
     .command("teams")
     .description("Retrieve college football teams")
+    .option("--name <text>", "Local filter: case-insensitive school, mascot, abbreviation or alias substring")
     .option("--conference <value>", "Conference abbreviation")
     .option("--year <number>", "Historical affiliation year", parseInteger)
     .option("--classification <value>", "Local filter: division classification")
@@ -51,13 +59,14 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
       "\nExamples:\n  fbs teams\n  fbs teams --conference ACC --year 2026\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { classification, city, state, minCapacity, maxCapacity, ...options } = suppliedOptions<
+      const { name, classification, city, state, minCapacity, maxCapacity, ...options } = suppliedOptions<
         Partial<TeamsQuery> & {
-          classification?: string; city?: string; state?: string;
+          name?: string; classification?: string; city?: string; state?: string;
           minCapacity?: number; maxCapacity?: number;
         }
       >(command);
-      const filters = localFilters({ classification, city, state, minCapacity, maxCapacity });
+      const filters = localFilters({ name, classification, city, state, minCapacity, maxCapacity });
+      const nameSearch = (filters?.name as string | undefined)?.toLowerCase();
       const rawQuery = buildTeamsQuery(options);
 
       await withCommandContext("teams", rawQuery, async () => {
@@ -73,6 +82,7 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
           ...(filters === undefined ? {} : { filters }),
           filter: (rows) =>
             filterRows(rows, (row) =>
+              teamNameMatches(row, nameSearch) &&
               stringMatches(valueAt(row, "classification"), filters?.classification as string | undefined) &&
               stringMatches(valueAt(row, "location.city"), filters?.city as string | undefined) &&
               stringMatches(valueAt(row, "location.state"), filters?.state as string | undefined) &&
@@ -85,6 +95,7 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
   const fbs = teams
     .command("fbs")
     .description("Retrieve current or historical FBS teams")
+    .option("--name <text>", "Local filter: case-insensitive school, mascot, abbreviation or alias substring")
     .option("--year <number>", "Season year", parseInteger)
     .option("--conference <value>", "Local filter: conference abbreviation")
     .option("--city <value>", "Local filter: exact venue city (case-insensitive)")
@@ -93,13 +104,14 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
     .option("--max-capacity <number>", "Local filter: maximum venue capacity (inclusive)", parseNonNegativeInteger)
     .addHelpText("after", "\nExample:\n  fbs teams fbs --year 2026\n")
     .action(async (_options: unknown, command: Command) => {
-      const { conference, city, state, minCapacity, maxCapacity, ...options } = suppliedLeafOptions<
+      const { name, conference, city, state, minCapacity, maxCapacity, ...options } = suppliedLeafOptions<
         Partial<FbsTeamsQuery> & {
-          conference?: string; city?: string; state?: string;
+          name?: string; conference?: string; city?: string; state?: string;
           minCapacity?: number; maxCapacity?: number;
         }
       >(command);
-      const filters = localFilters({ conference, city, state, minCapacity, maxCapacity });
+      const filters = localFilters({ name, conference, city, state, minCapacity, maxCapacity });
+      const nameSearch = (filters?.name as string | undefined)?.toLowerCase();
       const rawQuery = buildFbsTeamsQuery(options);
 
       await withCommandContext("teams fbs", rawQuery, async () => {
@@ -115,6 +127,7 @@ export function registerTeamsCommand(program: Command, runtime: CommandRuntime):
           ...(filters === undefined ? {} : { filters }),
           filter: (rows) =>
             filterRows(rows, (row) =>
+              teamNameMatches(row, nameSearch) &&
               stringMatches(valueAt(row, "conference"), filters?.conference as string | undefined) &&
               stringMatches(valueAt(row, "location.city"), filters?.city as string | undefined) &&
               stringMatches(valueAt(row, "location.state"), filters?.state as string | undefined) &&
