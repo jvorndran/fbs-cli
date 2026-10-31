@@ -32,6 +32,14 @@ import {
 } from "../transformers/analytics-ratings";
 import { asAnalyticsApi } from "./analytics-shared";
 import {
+  filterRows,
+  localFilters,
+  numberMatches,
+  parseNumber,
+  validateOrderedRange,
+  valueAt,
+} from "./local-filters";
+import {
   addClassificationOption,
   addSeasonTypeOption,
   parseInteger,
@@ -189,7 +197,9 @@ function registerElo(ratings: Command, runtime: CommandRuntime): void {
     .option("--conference <value>", "Conference abbreviation")
     .option("--team <name>", "Team name")
     .option("--week <number>", "Week, including 0", parseInteger)
-    .option("--year <number>", "Season year", parseInteger);
+    .option("--year <number>", "Season year", parseInteger)
+    .option("--min-elo <number>", "Local filter: minimum Elo (inclusive)", parseNumber)
+    .option("--max-elo <number>", "Local filter: maximum Elo (inclusive)", parseNumber);
   addSeasonTypeOption(elo);
   elo
     .addHelpText(
@@ -197,9 +207,13 @@ function registerElo(ratings: Command, runtime: CommandRuntime): void {
       "\nAll filters are optional.\n\nExamples:\n  fbs ratings elo --year 2025\n  fbs ratings elo --team \"Florida State\" --week 1\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<EloRatingsQuery>>(command);
+      const { minElo, maxElo, ...options } = suppliedOptions<
+        Partial<EloRatingsQuery> & { minElo?: number; maxElo?: number }
+      >(command);
+      const filters = localFilters({ minElo, maxElo });
       const rawQuery = buildEloRatingsQuery(options);
       await withCommandContext("ratings elo", rawQuery, async () => {
+        validateOrderedRange(minElo, maxElo, "min-elo", "max-elo");
         const query = validateEloRatingsQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "ratings elo",
@@ -208,6 +222,9 @@ function registerElo(ratings: Command, runtime: CommandRuntime): void {
           resultKey: "elo_ratings",
           request: (api) => asAnalyticsApi(api).eloRatings(query),
           transform: transformEloRatings,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(rows, (row) => numberMatches(valueAt(row, "elo"), minElo, maxElo)),
         });
       });
     })

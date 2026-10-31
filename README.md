@@ -234,7 +234,7 @@ Use `player portal --year YEAR` with `--min-rating`/`--max-rating` and `--min-st
 | `fbs ratings sp conferences` | `/ratings/sp/conferences` -> `conference_sp_ratings` | `--year`, `--conference`, `--classification` | Optional. |
 | `fbs ratings srs` | `/ratings/srs` -> `srs_ratings` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
 | `fbs ratings srs expanded` | `/ratings/srs/expanded` -> `expanded_srs_ratings` | `--year`, `--team`, `--conference`, `--classification` | Require `--year` or `--team`. |
-| `fbs ratings elo` | `/ratings/elo` -> `elo_ratings` | `--year`, `--week`, `--team`, `--conference`, `--season-type` | Optional. |
+| `fbs ratings elo` | `/ratings/elo` -> `elo_ratings` | `--year`, `--week`, `--team`, `--conference`, `--season-type`, `--min-elo`, `--max-elo` | Optional; inclusive local Elo bounds. |
 | `fbs ratings fpi` | `/ratings/fpi` -> `fpi_ratings` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
 | `fbs rankings` | `/rankings` -> `rankings` | `--year`, `--week`, `--poll`, `--season-type`, `--latest`, `--final` | Require `--year`. |
 
@@ -273,6 +273,8 @@ For `fbs ratings sp`, supplying both `--year` and `--team` makes one full-year p
 Kebab-case provider flags map directly to the corresponding CFBD camelCase query fields, such as `--game-id` -> `gameId`, `--player-id` -> `playerId`, `--season-type` -> `seasonType`, and `--exclude-garbage-time` -> `excludeGarbageTime`. Do not invent aliases.
 
 ### Local filters and output budget
+
+Use `fbs ratings elo --year 2026 --min-elo 1500 --max-elo 1800` to select an inclusive cohort of reported Elo ratings. Bounds accept finite numbers, including zero and negative values, and reject reversed ranges before requesting data. They compose with year, week, team, conference, and season type without entering the single provider query. Missing Elo ratings fail an active bound. Results retain provider order and precision; `filters` records the bounds and `count` describes the filtered cohort. These are provider-reported ratings, not a derived pregame forecast.
 
 Use `teams ats --year 2025 --min-games 10 --min-avg-cover-margin 0` to inspect historical ATS cohorts. `--min-games`/`--max-games` bound the provider's reported `games` using non-negative safe integers; `--min-avg-cover-margin`/`--max-avg-cover-margin` accept finite numbers, including negative values. Bounds are inclusive, each minimum must not exceed its maximum, and unavailable values fail only an active bound. The single provider request still contains only year/team/conference. Record values, precision, and order remain unchanged; `filters` records local bounds and `count` reflects matches. These full-season summaries do not establish an earlier cutoff or a betting edge.
 
