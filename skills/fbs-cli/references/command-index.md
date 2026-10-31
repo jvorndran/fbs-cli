@@ -94,7 +94,7 @@ Recruiting players `--name TEXT` is a trimmed, case-insensitive literal substrin
 | `fbs ratings sp conferences` | `--year`, `--conference`, `--classification` |
 | `fbs ratings srs` | `--year`, `--team`, `--conference` |
 | `fbs ratings srs expanded` | `--year`, `--team`, `--conference`, `--classification` |
-| `fbs ratings elo` | `--year`, `--week`, `--team`, `--conference`, `--season-type` |
+| `fbs ratings elo` | `--year`, `--week`, `--team`, `--conference`, `--season-type`, `--min-elo`, `--max-elo` |
 | `fbs ratings fpi` | `--year`, `--team`, `--conference` |
 | `fbs rankings` | `--year`, `--week`, `--poll`, `--season-type`, `--latest`, `--final` |
 | `fbs playoffs cfp` | `--year` |
