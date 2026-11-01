@@ -95,7 +95,7 @@ Recruiting players `--name TEXT` is a trimmed, case-insensitive literal substrin
 | `fbs ratings srs` | `--year`, `--team`, `--conference`, `--min-rating`, `--max-rating` |
 | `fbs ratings srs expanded` | `--year`, `--team`, `--conference`, `--min-rating`, `--max-rating`, `--classification` |
 | `fbs ratings elo` | `--year`, `--week`, `--team`, `--conference`, `--season-type`, `--min-elo`, `--max-elo` |
-| `fbs ratings fpi` | `--year`, `--team`, `--conference` |
+| `fbs ratings fpi` | `--year`, `--team`, `--conference`, `--min-fpi`, `--max-fpi` |
 | `fbs rankings` | `--year`, `--week`, `--poll`, `--season-type`, `--latest`, `--final` |
 | `fbs playoffs cfp` | `--year` |
 | `fbs playoffs cfp participants` | `--year` |
@@ -119,3 +119,5 @@ Use `teams --name "state"` or `teams fbs --name "noles"` to discover teams by a 
 Use `venues --name "campbell"` to search provider venue names by a trimmed, case-insensitive literal substring. Combine it with city, state, dome, grass, or capacity filters. Blank searches fail before a request; unavailable names do not match. The single query-free `/venues` request, row order, IDs, and measurements remain unchanged. Read the applied search from `filters.name` and the matching total from `count`.
 
 Use `ratings srs --year 2026 --min-rating 0 --max-rating 15` to select an inclusive cohort of provider SRS ratings; `ratings srs expanded` supports the same bounds plus its existing classification scope. Bounds accept finite signed numbers, reject reversed ranges before the single request, and preserve provider order, national rankings, and precision. A year or team is still required. Read the bounds from `filters` and the filtered total from `count`; local bounds never enter `query`.
+
+Use `ratings fpi --year 2026 --min-fpi 0 --max-fpi 20` for inclusive local bounds on the reported top-level FPI rating. These finite signed bounds do not filter the nested FPI resume rank. A year or team remains required, and reversed ranges fail before a request. Missing ratings fail active bounds; provider order, nested metrics, and precision are retained. Bounds appear in `filters`, never the single provider `query`, and `count` reflects the filtered result.

@@ -253,16 +253,22 @@ function registerFpi(ratings: Command, runtime: CommandRuntime): void {
     .description("Retrieve Football Power Index ratings")
     .option("--conference <value>", "Conference abbreviation")
     .option("--team <name>", "Team name")
-    .option("--year <number>", "Season year", parseInteger);
+    .option("--year <number>", "Season year", parseInteger)
+    .option("--min-fpi <number>", "Local filter: minimum FPI (inclusive)", parseNumber)
+    .option("--max-fpi <number>", "Local filter: maximum FPI (inclusive)", parseNumber);
   fpi
     .addHelpText(
       "after",
       "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs ratings fpi --year 2025\n  fbs ratings fpi --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<FpiRatingsQuery>>(command);
+      const { minFpi, maxFpi, ...options } = suppliedOptions<
+        Partial<FpiRatingsQuery> & { minFpi?: number; maxFpi?: number }
+      >(command);
+      const filters = localFilters({ minFpi, maxFpi });
       const rawQuery = buildFpiRatingsQuery(options);
       await withCommandContext("ratings fpi", rawQuery, async () => {
+        validateOrderedRange(minFpi, maxFpi, "min-fpi", "max-fpi");
         const query = validateFpiRatingsQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "ratings fpi",
@@ -271,6 +277,8 @@ function registerFpi(ratings: Command, runtime: CommandRuntime): void {
           resultKey: "fpi_ratings",
           request: (api) => asAnalyticsApi(api).fpiRatings(query),
           transform: transformFpiRatings,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) => filterRows(rows, (row) => numberMatches(row.fpi, minFpi, maxFpi)),
         });
       });
     })
