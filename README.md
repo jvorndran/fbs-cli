@@ -232,8 +232,8 @@ Use `player portal --year YEAR` with `--min-rating`/`--max-rating` and `--min-st
 | `fbs recruiting groups` | `/recruiting/groups` -> `recruiting_groups` | `--conference`, `--start-year`, `--end-year`, `--recruit-type`, `--team`, `--position-group`, `--min-commits`, `--max-commits`, `--min-average-stars`, `--max-average-stars` | Optional; `start-year <= end-year`. |
 | `fbs ratings sp` | `/ratings/sp` -> `sp_ratings` | `--year`, `--team` | Require `--year` or `--team`. |
 | `fbs ratings sp conferences` | `/ratings/sp/conferences` -> `conference_sp_ratings` | `--year`, `--conference`, `--classification` | Optional. |
-| `fbs ratings srs` | `/ratings/srs` -> `srs_ratings` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
-| `fbs ratings srs expanded` | `/ratings/srs/expanded` -> `expanded_srs_ratings` | `--year`, `--team`, `--conference`, `--classification` | Require `--year` or `--team`. |
+| `fbs ratings srs` | `/ratings/srs` -> `srs_ratings` | `--year`, `--team`, `--conference`, `--min-rating`, `--max-rating` | Require `--year` or `--team`; inclusive local SRS rating bounds. |
+| `fbs ratings srs expanded` | `/ratings/srs/expanded` -> `expanded_srs_ratings` | `--year`, `--team`, `--conference`, `--min-rating`, `--max-rating`, `--classification` | Require `--year` or `--team`; inclusive local SRS rating bounds. |
 | `fbs ratings elo` | `/ratings/elo` -> `elo_ratings` | `--year`, `--week`, `--team`, `--conference`, `--season-type`, `--min-elo`, `--max-elo` | Optional; inclusive local Elo bounds. |
 | `fbs ratings fpi` | `/ratings/fpi` -> `fpi_ratings` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
 | `fbs rankings` | `/rankings` -> `rankings` | `--year`, `--week`, `--poll`, `--season-type`, `--latest`, `--final` | Require `--year`. |
@@ -465,3 +465,5 @@ FBS CLI is available under the [MIT License](LICENSE).
 Use `teams --name "state"` or `teams fbs --name "noles"` to discover teams by a trimmed, case-insensitive literal substring of any reported school, mascot, abbreviation, or alternate name. Combine the search with existing scopes and local filters. Blank searches fail before a request; unavailable labels do not match. The provider query, team order, IDs, and original labels stay unchanged; `filters.name` and `count` describe the result.
 
 Use `venues --name "campbell"` to search provider venue names by a trimmed, case-insensitive literal substring. Combine it with city, state, dome, grass, or capacity filters. Blank searches fail before a request; unavailable names do not match. The single query-free `/venues` request, row order, IDs, and measurements remain unchanged. Read the applied search from `filters.name` and the matching total from `count`.
+
+Use `ratings srs --year 2026 --min-rating 0 --max-rating 15` to select an inclusive cohort of provider SRS ratings; `ratings srs expanded` supports the same bounds plus its existing classification scope. Bounds accept finite signed numbers, reject reversed ranges before the single request, and preserve provider order, national rankings, and precision. A year or team is still required. Read the bounds from `filters` and the filtered total from `count`; local bounds never enter `query`.

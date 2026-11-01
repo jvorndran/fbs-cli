@@ -92,8 +92,8 @@ Recruiting players `--name TEXT` is a trimmed, case-insensitive literal substrin
 | `fbs recruiting groups` | `--conference`, `--start-year`, `--end-year`, `--recruit-type`, `--team`, `--position-group`, `--min-commits`, `--max-commits`, `--min-average-stars`, `--max-average-stars` |
 | `fbs ratings sp` | `--year`, `--team` |
 | `fbs ratings sp conferences` | `--year`, `--conference`, `--classification` |
-| `fbs ratings srs` | `--year`, `--team`, `--conference` |
-| `fbs ratings srs expanded` | `--year`, `--team`, `--conference`, `--classification` |
+| `fbs ratings srs` | `--year`, `--team`, `--conference`, `--min-rating`, `--max-rating` |
+| `fbs ratings srs expanded` | `--year`, `--team`, `--conference`, `--min-rating`, `--max-rating`, `--classification` |
 | `fbs ratings elo` | `--year`, `--week`, `--team`, `--conference`, `--season-type`, `--min-elo`, `--max-elo` |
 | `fbs ratings fpi` | `--year`, `--team`, `--conference` |
 | `fbs rankings` | `--year`, `--week`, `--poll`, `--season-type`, `--latest`, `--final` |
@@ -117,3 +117,5 @@ Use `fbs draft picks --year 2025 --name "smith"` to search provider player names
 Use `teams --name "state"` or `teams fbs --name "noles"` to discover teams by a trimmed, case-insensitive literal substring of any reported school, mascot, abbreviation, or alternate name. Combine the search with existing scopes and local filters. Blank searches fail before a request; unavailable labels do not match. The provider query, team order, IDs, and original labels stay unchanged; `filters.name` and `count` describe the result.
 
 Use `venues --name "campbell"` to search provider venue names by a trimmed, case-insensitive literal substring. Combine it with city, state, dome, grass, or capacity filters. Blank searches fail before a request; unavailable names do not match. The single query-free `/venues` request, row order, IDs, and measurements remain unchanged. Read the applied search from `filters.name` and the matching total from `count`.
+
+Use `ratings srs --year 2026 --min-rating 0 --max-rating 15` to select an inclusive cohort of provider SRS ratings; `ratings srs expanded` supports the same bounds plus its existing classification scope. Bounds accept finite signed numbers, reject reversed ranges before the single request, and preserve provider order, national rankings, and precision. A year or team is still required. Read the bounds from `filters` and the filtered total from `count`; local bounds never enter `query`.

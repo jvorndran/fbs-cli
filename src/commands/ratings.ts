@@ -134,7 +134,9 @@ function registerExpandedSrs(srs: Command, runtime: CommandRuntime): void {
     .description("Retrieve expanded SRS ratings, including FCS")
     .option("--conference <value>", "Conference abbreviation")
     .option("--team <name>", "Team name")
-    .option("--year <number>", "Season year", parseInteger);
+    .option("--year <number>", "Season year", parseInteger)
+    .option("--min-rating <number>", "Local filter: minimum SRS rating (inclusive)", parseNumber)
+    .option("--max-rating <number>", "Local filter: maximum SRS rating (inclusive)", parseNumber);
   addClassificationOption(expanded);
   expanded
     .addHelpText(
@@ -142,9 +144,13 @@ function registerExpandedSrs(srs: Command, runtime: CommandRuntime): void {
       "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs ratings srs expanded --year 2025\n  fbs ratings srs expanded --team \"Florida State\" --classification fbs\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedLeafOptions<Partial<ExpandedSrsRatingsQuery>>(command);
+      const { minRating, maxRating, ...options } = suppliedLeafOptions<
+        Partial<ExpandedSrsRatingsQuery> & { minRating?: number; maxRating?: number }
+      >(command);
+      const filters = localFilters({ minRating, maxRating });
       const rawQuery = buildExpandedSrsRatingsQuery(options);
       await withCommandContext("ratings srs expanded", rawQuery, async () => {
+        validateOrderedRange(minRating, maxRating, "min-rating", "max-rating");
         const query = validateExpandedSrsRatingsQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "ratings srs expanded",
@@ -153,6 +159,8 @@ function registerExpandedSrs(srs: Command, runtime: CommandRuntime): void {
           resultKey: "expanded_srs_ratings",
           request: (api) => asAnalyticsApi(api).expandedSrsRatings(query),
           transform: transformExpandedSrsRatings,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) => filterRows(rows, (row) => numberMatches(row.rating, minRating, maxRating)),
         });
       });
     })
@@ -165,16 +173,22 @@ function registerSrs(ratings: Command, runtime: CommandRuntime): void {
     .description("Retrieve Simple Rating System ratings")
     .option("--conference <value>", "Conference abbreviation")
     .option("--team <name>", "Team name")
-    .option("--year <number>", "Season year", parseInteger);
+    .option("--year <number>", "Season year", parseInteger)
+    .option("--min-rating <number>", "Local filter: minimum SRS rating (inclusive)", parseNumber)
+    .option("--max-rating <number>", "Local filter: maximum SRS rating (inclusive)", parseNumber);
   srs
     .addHelpText(
       "after",
       "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs ratings srs --year 2025\n  fbs ratings srs --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<SrsRatingsQuery>>(command);
+      const { minRating, maxRating, ...options } = suppliedOptions<
+        Partial<SrsRatingsQuery> & { minRating?: number; maxRating?: number }
+      >(command);
+      const filters = localFilters({ minRating, maxRating });
       const rawQuery = buildSrsRatingsQuery(options);
       await withCommandContext("ratings srs", rawQuery, async () => {
+        validateOrderedRange(minRating, maxRating, "min-rating", "max-rating");
         const query = validateSrsRatingsQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "ratings srs",
@@ -183,6 +197,8 @@ function registerSrs(ratings: Command, runtime: CommandRuntime): void {
           resultKey: "srs_ratings",
           request: (api) => asAnalyticsApi(api).srsRatings(query),
           transform: transformSrsRatings,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) => filterRows(rows, (row) => numberMatches(row.rating, minRating, maxRating)),
         });
       });
     })
