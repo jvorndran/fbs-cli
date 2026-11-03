@@ -90,16 +90,22 @@ function registerSp(ratings: Command, runtime: CommandRuntime): void {
     .command("sp")
     .description("Retrieve SP+ ratings")
     .option("--team <name>", "Team name")
-    .option("--year <number>", "Season year", parseInteger);
+    .option("--year <number>", "Season year", parseInteger)
+    .option("--min-rating <number>", "Local filter: minimum SP+ rating (inclusive)", parseNumber)
+    .option("--max-rating <number>", "Local filter: maximum SP+ rating (inclusive)", parseNumber);
   sp
     .addHelpText(
       "after",
       "\nAt least one of --year or --team is required. When both are supplied, fbs filters the full-year response locally so provider ranking fields remain national.\n\nExamples:\n  fbs ratings sp --year 2025\n  fbs ratings sp --year 2025 --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<SpRatingsQuery>>(command);
+      const { minRating, maxRating, ...options } = suppliedOptions<
+        Partial<SpRatingsQuery> & { minRating?: number; maxRating?: number }
+      >(command);
+      const filters = localFilters({ minRating, maxRating });
       const rawQuery = buildSpRatingsQuery(options);
       await withCommandContext("ratings sp", rawQuery, async () => {
+        validateOrderedRange(minRating, maxRating, "min-rating", "max-rating");
         const query = validateSpRatingsQuery(rawQuery);
         const preserveNationalRanks = query.year !== undefined && query.team !== undefined;
         const requestQuery: SpRatingsQuery =
@@ -121,6 +127,8 @@ function registerSp(ratings: Command, runtime: CommandRuntime): void {
                 : response,
             ),
           count: (_response, output) => output.length,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) => filterRows(rows, (row) => numberMatches(row.rating, minRating, maxRating)),
         });
       });
     })
