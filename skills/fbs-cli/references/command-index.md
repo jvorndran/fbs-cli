@@ -63,7 +63,7 @@ For historical ATS cohorts, use `teams ats --year YEAR --min-games 10 --min-avg-
 | `fbs stats player success` | `--year`, `--player-id`, `--team`, `--conference`, `--start-week`, `--end-week`, `--threshold`, `--season-type`, `--exclude-garbage-time`, `--player` |
 | `fbs stats player success game` | `--year`, `--week`, `--player-id`, `--team`, `--conference`, `--threshold`, `--season-type`, `--exclude-garbage-time`, `--player` |
 | `fbs stats categories` | None. |
-| `fbs player usage` | `--year`, `--team`, `--conference`, `--player-id`, `--position`, `--exclude-garbage-time` |
+| `fbs player usage` | `--year`, `--team`, `--conference`, `--player-id`, `--position`, `--exclude-garbage-time`, `--min-usage`, `--max-usage` |
 | `fbs player search` | `--search-term`, `--year`, `--team`, `--position` |
 | `fbs player season overview` | `--year`, `--player-id` |
 | `fbs player returning` | `--year`, `--team`, `--conference` |
@@ -121,3 +121,7 @@ Use `venues --name "campbell"` to search provider venue names by a trimmed, case
 Use `ratings srs --year 2026 --min-rating 0 --max-rating 15` to select an inclusive cohort of provider SRS ratings; `ratings srs expanded` supports the same bounds plus its existing classification scope. Bounds accept finite signed numbers, reject reversed ranges before the single request, and preserve provider order, national rankings, and precision. A year or team is still required. Read the bounds from `filters` and the filtered total from `count`; local bounds never enter `query`.
 
 Use `ratings fpi --year 2026 --min-fpi 0 --max-fpi 20` for inclusive local bounds on the reported top-level FPI rating. These finite signed bounds do not filter the nested FPI resume rank. A year or team remains required, and reversed ranges fail before a request. Missing ratings fail active bounds; provider order, nested metrics, and precision are retained. Bounds appear in `filters`, never the single provider `query`, and `count` reflects the filtered result.
+
+Conference SP+ cohorts: `ratings sp conferences` accepts inclusive finite `--min-rating`/`--max-rating` bounds, including zero and negatives. Bounds stay local, compose with year/conference/classification, reject reversed ranges before requesting, and preserve provider order and precision. Read applied bounds from `filters` and the matching total from `count`.
+
+Use `fbs player usage --year 2026 --min-usage 0.5` for an overall usage-share cohort. `--min-usage`/`--max-usage` are inclusive finite bounds from 0 to 1 on `usage.overall`, not snap counts or percentages. Invalid or reversed ranges fail before a request. Missing overall shares fail active bounds; zero is valid. Bounds compose with the provider options but stay out of the single provider query. Shares, IDs, order and precision are unchanged; `filters` records the bounds and `count` reflects matches.
