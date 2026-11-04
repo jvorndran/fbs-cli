@@ -60,7 +60,9 @@ function registerConferenceSp(sp: Command, runtime: CommandRuntime): void {
     .command("conferences")
     .description("Retrieve historical conference SP+ ratings")
     .option("--conference <value>", "Conference abbreviation")
-    .option("--year <number>", "Season year", parseInteger);
+    .option("--year <number>", "Season year", parseInteger)
+    .option("--min-rating <number>", "Local filter: minimum conference SP+ rating (inclusive)", parseNumber)
+    .option("--max-rating <number>", "Local filter: maximum conference SP+ rating (inclusive)", parseNumber);
   addClassificationOption(conferences);
   conferences
     .addHelpText(
@@ -68,9 +70,13 @@ function registerConferenceSp(sp: Command, runtime: CommandRuntime): void {
       "\nAll filters are optional.\n\nExamples:\n  fbs ratings sp conferences --year 2025\n  fbs ratings sp conferences --conference ACC --classification fbs\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedLeafOptions<Partial<ConferenceSpRatingsQuery>>(command);
+      const { minRating, maxRating, ...options } = suppliedLeafOptions<
+        Partial<ConferenceSpRatingsQuery> & { minRating?: number; maxRating?: number }
+      >(command);
+      const filters = localFilters({ minRating, maxRating });
       const rawQuery = buildConferenceSpRatingsQuery(options);
       await withCommandContext("ratings sp conferences", rawQuery, async () => {
+        validateOrderedRange(minRating, maxRating, "min-rating", "max-rating");
         const query = validateConferenceSpRatingsQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "ratings sp conferences",
@@ -79,6 +85,8 @@ function registerConferenceSp(sp: Command, runtime: CommandRuntime): void {
           resultKey: "conference_sp_ratings",
           request: (api) => asAnalyticsApi(api).conferenceSpRatings(query),
           transform: transformConferenceSpRatings,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) => filterRows(rows, (row) => numberMatches(row.rating, minRating, maxRating)),
         });
       });
     })
