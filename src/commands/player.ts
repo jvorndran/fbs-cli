@@ -22,6 +22,7 @@ import {
 } from "../cfbd/query-builders";
 import type { CommandRuntime } from "../runtime";
 import { runEndpoint } from "../runtime";
+import { QueryValidationError } from "../errors";
 import { transformPlayerUsage } from "../transformers/player-usage.ts";
 import {
   transformPlayerSearch,
@@ -55,17 +56,26 @@ function registerPlayerUsage(player: Command, runtime: CommandRuntime): void {
     .option("--player-id <number>", "Player ID", parseInteger)
     .option("--position <value>", "Position abbreviation")
     .option("--exclude-garbage-time", "Exclude garbage-time plays")
+    .option("--min-usage <number>", "Local filter: minimum overall usage share (0-1, inclusive)", parseNumber)
+    .option("--max-usage <number>", "Local filter: maximum overall usage share (0-1, inclusive)", parseNumber)
     .addHelpText(
       "after",
       "\nExamples:\n  fbs player usage --year 2026 --team \"Florida State\"\n  fbs player usage --year 2026 --player-id 4433971 --exclude-garbage-time\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<PlayerUsageQuery>>(command, [
+      const { minUsage, maxUsage, ...options } = suppliedOptions<
+        Partial<PlayerUsageQuery> & { minUsage?: number; maxUsage?: number }
+      >(command, [
         "excludeGarbageTime",
       ]);
+      const filters = localFilters({ minUsage, maxUsage });
       const rawQuery = buildPlayerUsageQuery(options);
 
       await withCommandContext("player usage", rawQuery, async () => {
+        if ([minUsage, maxUsage].some((value) => value !== undefined && (value < 0 || value > 1))) {
+          throw new QueryValidationError("Usage bounds must be between 0 and 1 inclusive.");
+        }
+        validateOrderedRange(minUsage, maxUsage, "min-usage", "max-usage");
         const query = validatePlayerUsageQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "player usage",
@@ -74,6 +84,9 @@ function registerPlayerUsage(player: Command, runtime: CommandRuntime): void {
           resultKey: "player_usage",
           request: (api) => api.playerUsage(query),
           transform: transformPlayerUsage,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) => filterRows(rows, (row) =>
+            numberMatches(valueAt(row, "usage.overall"), minUsage, maxUsage)),
         });
       });
     })

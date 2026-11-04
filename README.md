@@ -190,7 +190,7 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 | `fbs stats player success` | `/stats/player/success` -> `player_success_rates` | `--year`, `--player-id`, `--team`, `--conference`, `--start-week`, `--end-week`, `--threshold`, `--season-type`, `--exclude-garbage-time`, `--player` | Require `--year` or `--player-id`; `start-week <= end-week`. |
 | `fbs stats player success game` | `/stats/player/success/game` -> `player_game_success_rates` | `--year`, `--week`, `--player-id`, `--team`, `--conference`, `--threshold`, `--season-type`, `--exclude-garbage-time`, `--player` | Require `--year` plus one of `--week`, `--team`, `--player-id`. |
 | `fbs stats categories` | `/stats/categories` -> `categories` | None | No filters. |
-| `fbs player usage` | `/player/usage` -> `player_usage` | `--year`, `--team`, `--conference`, `--player-id`, `--position`, `--exclude-garbage-time` | Require `--year`. |
+| `fbs player usage` | `/player/usage` -> `player_usage` | `--year`, `--team`, `--conference`, `--player-id`, `--position`, `--exclude-garbage-time`, `--min-usage`, `--max-usage` | Require `--year`. |
 | `fbs player search` | `/player/search` -> `players` | `--search-term`, `--year`, `--team`, `--position` | Require `--search-term`. |
 | `fbs player season overview` | `/player/season/overview` -> `player_season_overview` | `--year`, `--player-id` | Require both flags. |
 | `fbs player returning` | `/player/returning` -> `returning_production` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
@@ -231,7 +231,7 @@ Use `player portal --year YEAR` with `--min-rating`/`--max-rating` and `--min-st
 | `fbs recruiting teams` | `/recruiting/teams` -> `team_rankings` | `--year`, `--team`, `--max-rank`, `--min-points`, `--max-points` | Optional. |
 | `fbs recruiting groups` | `/recruiting/groups` -> `recruiting_groups` | `--conference`, `--start-year`, `--end-year`, `--recruit-type`, `--team`, `--position-group`, `--min-commits`, `--max-commits`, `--min-average-stars`, `--max-average-stars` | Optional; `start-year <= end-year`. |
 | `fbs ratings sp` | `/ratings/sp` -> `sp_ratings` | `--year`, `--team`, `--min-rating`, `--max-rating` | Require `--year` or `--team`; rating bounds are local. |
-| `fbs ratings sp conferences` | `/ratings/sp/conferences` -> `conference_sp_ratings` | `--year`, `--conference`, `--classification` | Optional. |
+| `fbs ratings sp conferences` | `/ratings/sp/conferences` -> `conference_sp_ratings` | `--year`, `--conference`, `--classification`, `--min-rating`, `--max-rating` | Optional. |
 | `fbs ratings srs` | `/ratings/srs` -> `srs_ratings` | `--year`, `--team`, `--conference`, `--min-rating`, `--max-rating` | Require `--year` or `--team`; inclusive local SRS rating bounds. |
 | `fbs ratings srs expanded` | `/ratings/srs/expanded` -> `expanded_srs_ratings` | `--year`, `--team`, `--conference`, `--min-rating`, `--max-rating`, `--classification` | Require `--year` or `--team`; inclusive local SRS rating bounds. |
 | `fbs ratings elo` | `/ratings/elo` -> `elo_ratings` | `--year`, `--week`, `--team`, `--conference`, `--season-type`, `--min-elo`, `--max-elo` | Optional; inclusive local Elo bounds. |
@@ -471,3 +471,7 @@ Use `ratings srs --year 2026 --min-rating 0 --max-rating 15` to select an inclus
 Use `ratings fpi --year 2026 --min-fpi 0 --max-fpi 20` for inclusive local bounds on the reported top-level FPI rating. These finite signed bounds do not filter the nested FPI resume rank. A year or team remains required, and reversed ranges fail before a request. Missing ratings fail active bounds; provider order, nested metrics, and precision are retained. Bounds appear in `filters`, never the single provider `query`, and `count` reflects the filtered result.
 
 Use `ratings sp --year YEAR --min-rating N --max-rating N` for inclusive bounds on the overall SP+ rating. Bounds accept finite signed numbers and reject reversed ranges before requesting data. They compose with team selection without changing the provider request, national ranks, row order, or precision. Read the applied bounds in `filters` and the filtered total in `count`; the offense and defense ratings are not used for these bounds.
+
+Use `fbs ratings sp conferences --year 2026 --min-rating 0` to select conference SP+ cohorts. `--min-rating` and `--max-rating` are inclusive finite signed bounds on the reported overall rating. Reversed ranges fail before the single unchanged provider request. Results retain provider order and precision; `filters` records the local bounds and `count` reflects matches.
+
+Use `fbs player usage --year 2026 --min-usage 0.5` for an overall usage-share cohort. `--min-usage`/`--max-usage` are inclusive finite bounds from 0 to 1 on `usage.overall`, not snap counts or percentages. Invalid or reversed ranges fail before a request. Missing overall shares fail active bounds; zero is valid. Bounds compose with the provider options but stay out of the single provider query. Shares, IDs, order and precision are unchanged; `filters` records the bounds and `count` reflects matches.
