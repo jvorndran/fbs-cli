@@ -36,7 +36,7 @@ Stop when another endpoint would only repeat a CFBD-derived dimension. Several F
 - Include only games completed before the target kickoff. Record their IDs; do not trust `end-week: N-1` until the schedule proves it matches that set.
 - Use week-bounded season/player endpoints for historical pregame aggregates. Reconstruct from eligible game rows when Week 0, postponements, or rescheduling break the week boundary.
 - Treat team PPA, WEPA, SP/SRS/FPI, records, player usage, player season overview, and returning production as current/full-season views unless an archived snapshot establishes the historical state.
-- `player returning` reports retained PPA and usage, not returning snaps. `player usage` reports usage shares, not snaps, routes, depth charts, or availability. It supports inclusive local `--min-usage`/`--max-usage` bounds on `usage.overall` from 0 to 1; see [command-index.md](references/command-index.md).
+- `player returning` reports retained PPA and usage, not returning snaps; local `--min-usage`/`--max-usage` bounds select top-level returning usage shares from 0 to 1. `player usage` reports usage shares, not snaps, routes, depth charts, or availability. It supports inclusive local `--min-usage`/`--max-usage` bounds on `usage.overall` from 0 to 1; see [command-index.md](references/command-index.md).
 - Scope `plays stats` narrowly; CFBD caps it at 2,000 rows and the CLI does not page.
 - Preserve tier, authorization, timeout, rate, and provider failures as errors. Never convert them into an empty collection.
 - Treat `lines`, ATS, and scoreboard betting fields as historical read-only context. They do not establish a current executable quote, attached spread/total price, provider observation time, or settlement rules.

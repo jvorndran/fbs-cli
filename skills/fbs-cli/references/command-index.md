@@ -66,7 +66,7 @@ For historical ATS cohorts, use `teams ats --year YEAR --min-games 10 --min-avg-
 | `fbs player usage` | `--year`, `--team`, `--conference`, `--player-id`, `--position`, `--exclude-garbage-time`, `--min-usage`, `--max-usage` |
 | `fbs player search` | `--search-term`, `--year`, `--team`, `--position` |
 | `fbs player season overview` | `--year`, `--player-id` |
-| `fbs player returning` | `--year`, `--team`, `--conference` |
+| `fbs player returning` | `--year`, `--team`, `--conference`, `--min-usage`, `--max-usage` |
 | `fbs player portal` | `--year`, `--name`, `--origin`, `--destination`, `--position`, `--eligibility`, `--min-rating`, `--max-rating`, `--min-stars`, `--max-stars`, `--from-date`, `--to-date` |
 | `fbs ppa predicted` | `--down`, `--distance` |
 | `fbs ppa teams` | `--year`, `--team`, `--conference`, `--classification`, `--exclude-garbage-time` |
@@ -125,3 +125,5 @@ Use `ratings fpi --year 2026 --min-fpi 0 --max-fpi 20` for inclusive local bound
 Conference SP+ cohorts: `ratings sp conferences` accepts inclusive finite `--min-rating`/`--max-rating` bounds, including zero and negatives. Bounds stay local, compose with year/conference/classification, reject reversed ranges before requesting, and preserve provider order and precision. Read applied bounds from `filters` and the matching total from `count`.
 
 Use `fbs player usage --year 2026 --min-usage 0.5` for an overall usage-share cohort. `--min-usage`/`--max-usage` are inclusive finite bounds from 0 to 1 on `usage.overall`, not snap counts or percentages. Invalid or reversed ranges fail before a request. Missing overall shares fail active bounds; zero is valid. Bounds compose with the provider options but stay out of the single provider query. Shares, IDs, order and precision are unchanged; `filters` records the bounds and `count` reflects matches.
+
+Use `fbs player returning --year 2026 --min-usage 0.5` to select teams by their returning usage share. Inclusive `--min-usage`/`--max-usage` bounds accept finite values from 0 to 1 and apply to the top-level `usage`, not retained PPA or snaps. Missing usage fails an active bound; zero is valid. Bounds stay out of the single provider query and preserve row order, precision and all returned metrics. `filters` records the bounds and `count` reflects matches. Invalid or reversed bounds fail before a request; `--year` or `--team` is still required.
