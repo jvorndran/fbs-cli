@@ -66,7 +66,7 @@ For historical ATS cohorts, use `teams ats --year YEAR --min-games 10 --min-avg-
 | `fbs player usage` | `--year`, `--team`, `--conference`, `--player-id`, `--position`, `--exclude-garbage-time`, `--min-usage`, `--max-usage` |
 | `fbs player search` | `--search-term`, `--year`, `--team`, `--position` |
 | `fbs player season overview` | `--year`, `--player-id` |
-| `fbs player returning` | `--year`, `--team`, `--conference` |
+| `fbs player returning` | `--year`, `--team`, `--conference`, `--min-usage`, `--max-usage` |
 | `fbs player portal` | `--year`, `--name`, `--origin`, `--destination`, `--position`, `--eligibility`, `--min-rating`, `--max-rating`, `--min-stars`, `--max-stars`, `--from-date`, `--to-date` |
 | `fbs ppa predicted` | `--down`, `--distance` |
 | `fbs ppa teams` | `--year`, `--team`, `--conference`, `--classification`, `--exclude-garbage-time` |
@@ -74,7 +74,7 @@ For historical ATS cohorts, use `teams ats --year YEAR --min-games 10 --min-avg-
 | `fbs ppa players games` | `--year`, `--week`, `--team`, `--position`, `--player-id`, `--threshold`, `--season-type`, `--exclude-garbage-time`, `--game-id`, `--player`, `--opponent` |
 | `fbs ppa players season` | `--year`, `--team`, `--conference`, `--position`, `--player-id`, `--threshold`, `--exclude-garbage-time`, `--player` |
 | `fbs metrics wp` | `--game-id`, `--period` |
-| `fbs metrics wp pregame` | `--year`, `--week`, `--team`, `--season-type`, `--home`, `--away` |
+| `fbs metrics wp pregame` | `--year`, `--week`, `--team`, `--season-type`, `--home`, `--away`, `--min-home-win-probability`, `--max-home-win-probability` |
 | `fbs metrics fg ep` | None. |
 | `fbs wepa team season` | `--year`, `--team`, `--conference` |
 | `fbs wepa players passing` | `--year`, `--team`, `--conference`, `--position`, `--player`, `--min-plays` |
@@ -125,3 +125,7 @@ Use `ratings fpi --year 2026 --min-fpi 0 --max-fpi 20` for inclusive local bound
 Conference SP+ cohorts: `ratings sp conferences` accepts inclusive finite `--min-rating`/`--max-rating` bounds, including zero and negatives. Bounds stay local, compose with year/conference/classification, reject reversed ranges before requesting, and preserve provider order and precision. Read applied bounds from `filters` and the matching total from `count`.
 
 Use `fbs player usage --year 2026 --min-usage 0.5` for an overall usage-share cohort. `--min-usage`/`--max-usage` are inclusive finite bounds from 0 to 1 on `usage.overall`, not snap counts or percentages. Invalid or reversed ranges fail before a request. Missing overall shares fail active bounds; zero is valid. Bounds compose with the provider options but stay out of the single provider query. Shares, IDs, order and precision are unchanged; `filters` records the bounds and `count` reflects matches.
+
+Use `fbs player returning --year 2026 --min-usage 0.5` to select teams by their returning usage share. Inclusive `--min-usage`/`--max-usage` bounds accept finite values from 0 to 1 and apply to the top-level `usage`, not retained PPA or snaps. Missing usage fails an active bound; zero is valid. Bounds stay out of the single provider query and preserve row order, precision and all returned metrics. `filters` records the bounds and `count` reflects matches. Invalid or reversed bounds fail before a request; `--year` or `--team` is still required.
+
+Use `fbs metrics wp pregame --year 2026 --min-home-win-probability 0.4 --max-home-win-probability 0.6` to select a home-probability cohort. Both bounds are inclusive finite shares from 0 to 1 on the provider's `homeWinProbability`. They compose with local home/away filters and optional provider scopes. Missing probabilities fail active bounds; zero is valid. No probability is calculated or inverted for the requested team. Bounds stay out of the single provider query; `filters` records them and `count` reflects matches. Provider spreads, precision and row order are unchanged. Invalid or reversed bounds fail before a request.

@@ -193,7 +193,7 @@ Only provider-completed games before the cutoff are analyzed; future and incompl
 | `fbs player usage` | `/player/usage` -> `player_usage` | `--year`, `--team`, `--conference`, `--player-id`, `--position`, `--exclude-garbage-time`, `--min-usage`, `--max-usage` | Require `--year`. |
 | `fbs player search` | `/player/search` -> `players` | `--search-term`, `--year`, `--team`, `--position` | Require `--search-term`. |
 | `fbs player season overview` | `/player/season/overview` -> `player_season_overview` | `--year`, `--player-id` | Require both flags. |
-| `fbs player returning` | `/player/returning` -> `returning_production` | `--year`, `--team`, `--conference` | Require `--year` or `--team`. |
+| `fbs player returning` | `/player/returning` -> `returning_production` | `--year`, `--team`, `--conference`, `--min-usage`, `--max-usage` | Require `--year` or `--team`. |
 | `fbs player portal` | `/player/portal` -> `transfers` | `--year`, `--name`, `--origin`, `--destination`, `--position`, `--eligibility`, `--min-rating`, `--max-rating`, `--min-stars`, `--max-stars`, `--from-date`, `--to-date` | Require `--year`. |
 
 Use `fbs player portal --year 2026 --name "smith"` to search combined first and last names by a trimmed, case-insensitive literal substring. It composes with all existing local filters and keeps the year-only provider query, original name fields, order, and precision. Blank searches fail before a request; unavailable names do not match. Read the search from `filters.name` and the filtered total from `count`.
@@ -211,7 +211,7 @@ Use `player portal --year YEAR` with `--min-rating`/`--max-rating` and `--min-st
 | `fbs ppa players games` | `/ppa/players/games` -> `player_game_ppa` | `--year`, `--week`, `--team`, `--position`, `--player-id`, `--threshold`, `--season-type`, `--exclude-garbage-time`, `--game-id`, `--player`, `--opponent` | Require `--year` plus `--week` or `--team`. |
 | `fbs ppa players season` | `/ppa/players/season` -> `player_season_ppa` | `--year`, `--team`, `--conference`, `--position`, `--player-id`, `--threshold`, `--exclude-garbage-time`, `--player` | Require `--year` or `--player-id`. |
 | `fbs metrics wp` | `/metrics/wp` -> `win_probability` | `--game-id`, `--period` | Require `--game-id`. |
-| `fbs metrics wp pregame` | `/metrics/wp/pregame` -> `pregame_win_probabilities` | `--year`, `--week`, `--team`, `--season-type`, `--home`, `--away` | Optional. |
+| `fbs metrics wp pregame` | `/metrics/wp/pregame` -> `pregame_win_probabilities` | `--year`, `--week`, `--team`, `--season-type`, `--home`, `--away`, `--min-home-win-probability`, `--max-home-win-probability` | Optional. |
 | `fbs metrics fg ep` | `/metrics/fg/ep` -> `field_goal_expected_points` | None | No filters. |
 
 ### Opponent-adjusted metrics
@@ -475,3 +475,7 @@ Use `ratings sp --year YEAR --min-rating N --max-rating N` for inclusive bounds 
 Use `fbs ratings sp conferences --year 2026 --min-rating 0` to select conference SP+ cohorts. `--min-rating` and `--max-rating` are inclusive finite signed bounds on the reported overall rating. Reversed ranges fail before the single unchanged provider request. Results retain provider order and precision; `filters` records the local bounds and `count` reflects matches.
 
 Use `fbs player usage --year 2026 --min-usage 0.5` for an overall usage-share cohort. `--min-usage`/`--max-usage` are inclusive finite bounds from 0 to 1 on `usage.overall`, not snap counts or percentages. Invalid or reversed ranges fail before a request. Missing overall shares fail active bounds; zero is valid. Bounds compose with the provider options but stay out of the single provider query. Shares, IDs, order and precision are unchanged; `filters` records the bounds and `count` reflects matches.
+
+Use `fbs player returning --year 2026 --min-usage 0.5` to select teams by their returning usage share. Inclusive `--min-usage`/`--max-usage` bounds accept finite values from 0 to 1 and apply to the top-level `usage`, not retained PPA or snaps. Missing usage fails an active bound; zero is valid. Bounds stay out of the single provider query and preserve row order, precision and all returned metrics. `filters` records the bounds and `count` reflects matches. Invalid or reversed bounds fail before a request; `--year` or `--team` is still required.
+
+Use `fbs metrics wp pregame --year 2026 --min-home-win-probability 0.4 --max-home-win-probability 0.6` to select a home-probability cohort. Both bounds are inclusive finite shares from 0 to 1 on the provider's `homeWinProbability`. They compose with local home/away filters and optional provider scopes. Missing probabilities fail active bounds; zero is valid. No probability is calculated or inverted for the requested team. Bounds stay out of the single provider query; `filters` records them and `count` reflects matches. Provider spreads, precision and row order are unchanged. Invalid or reversed bounds fail before a request.

@@ -166,15 +166,24 @@ function registerReturningProduction(
     .option("--year <number>", "Season year", parseInteger)
     .option("--team <name>", "Team name")
     .option("--conference <value>", "Conference abbreviation")
+    .option("--min-usage <number>", "Local filter: minimum returning usage share (0-1, inclusive)", parseNumber)
+    .option("--max-usage <number>", "Local filter: maximum returning usage share (0-1, inclusive)", parseNumber)
     .addHelpText(
       "after",
       "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs player returning --year 2026\n  fbs player returning --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<ReturningProductionQuery>>(command);
+      const { minUsage, maxUsage, ...options } = suppliedOptions<
+        Partial<ReturningProductionQuery> & { minUsage?: number; maxUsage?: number }
+      >(command);
+      const filters = localFilters({ minUsage, maxUsage });
       const rawQuery = buildReturningProductionQuery(options);
 
       await withCommandContext("player returning", rawQuery, async () => {
+        if ([minUsage, maxUsage].some((value) => value !== undefined && (value < 0 || value > 1))) {
+          throw new QueryValidationError("Usage bounds must be between 0 and 1 inclusive.");
+        }
+        validateOrderedRange(minUsage, maxUsage, "min-usage", "max-usage");
         const query = validateReturningProductionQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "player returning",
@@ -183,6 +192,9 @@ function registerReturningProduction(
           resultKey: "returning_production",
           request: (api) => asStatisticsCfbdApi(api).returningProduction(query),
           transform: transformReturningProduction,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) => filterRows(rows, (row) =>
+            isObject(row) && numberMatches(valueAt(row, "usage"), minUsage, maxUsage)),
         });
       });
     })

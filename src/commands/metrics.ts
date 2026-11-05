@@ -10,6 +10,7 @@ import {
   validateWinProbabilityQuery,
 } from "../cfbd/query-builders-statistics";
 import type { CommandRuntime } from "../runtime";
+import { QueryValidationError } from "../errors";
 import { runEndpoint } from "../runtime";
 import {
   transformFieldGoalExpectedPoints,
@@ -26,8 +27,11 @@ import {
   filterRows,
   isObject,
   localFilters,
+  numberMatches,
   parseNonNegativeInteger,
+  parseNumber,
   stringMatches,
+  validateOrderedRange,
   valueAt,
 } from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
@@ -43,7 +47,9 @@ function registerPregameWinProbabilities(
     .option("--week <number>", "Week, including 0", parseInteger)
     .option("--team <name>", "Team name")
     .option("--home <name>", "Local filter: home team")
-    .option("--away <name>", "Local filter: away team");
+    .option("--away <name>", "Local filter: away team")
+    .option("--min-home-win-probability <number>", "Local filter: minimum home win probability (0-1, inclusive)", parseNumber)
+    .option("--max-home-win-probability <number>", "Local filter: maximum home win probability (0-1, inclusive)", parseNumber);
 
   addSeasonTypeOption(pregame);
   pregame
@@ -52,13 +58,21 @@ function registerPregameWinProbabilities(
       "\nAll filters are optional.\n\nExamples:\n  fbs metrics wp pregame\n  fbs metrics wp pregame --year 2026 --week 1 --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { home, away, ...options } = suppliedLeafOptions<
-        Partial<PregameWinProbabilitiesQuery> & { home?: string; away?: string }
+      const { home, away, minHomeWinProbability, maxHomeWinProbability, ...options } = suppliedLeafOptions<
+        Partial<PregameWinProbabilitiesQuery> & {
+          home?: string; away?: string; minHomeWinProbability?: number; maxHomeWinProbability?: number;
+        }
       >(command);
-      const filters = localFilters({ home, away });
+      const filters = localFilters({ home, away, minHomeWinProbability, maxHomeWinProbability });
       const rawQuery = buildPregameWinProbabilitiesQuery(options);
 
       await withCommandContext("metrics wp pregame", rawQuery, async () => {
+        if ([minHomeWinProbability, maxHomeWinProbability].some((value) =>
+          value !== undefined && (value < 0 || value > 1))) {
+          throw new QueryValidationError("Home win probability bounds must be between 0 and 1 inclusive.");
+        }
+        validateOrderedRange(minHomeWinProbability, maxHomeWinProbability,
+          "min-home-win-probability", "max-home-win-probability");
         const query = validatePregameWinProbabilitiesQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "metrics wp pregame",
@@ -75,7 +89,8 @@ function registerPregameWinProbabilities(
               (row) =>
                 isObject(row) &&
                 stringMatches(valueAt(row, "home_team"), filters?.home as string | undefined) &&
-                stringMatches(valueAt(row, "away_team"), filters?.away as string | undefined),
+                stringMatches(valueAt(row, "away_team"), filters?.away as string | undefined) &&
+                numberMatches(valueAt(row, "home_win_probability"), minHomeWinProbability, maxHomeWinProbability),
             ),
         });
       });
