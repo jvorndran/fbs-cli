@@ -77,9 +77,13 @@ For historical ATS cohorts, use `teams ats --year YEAR --min-games 10 --min-avg-
 | `fbs metrics wp pregame` | `--year`, `--week`, `--team`, `--season-type`, `--home`, `--away`, `--min-home-win-probability`, `--max-home-win-probability` |
 | `fbs metrics fg ep` | None. |
 | `fbs wepa team season` | `--year`, `--team`, `--conference` |
-| `fbs wepa players passing` | `--year`, `--team`, `--conference`, `--position`, `--player`, `--min-plays` |
-| `fbs wepa players rushing` | `--year`, `--team`, `--conference`, `--position`, `--player`, `--min-plays` |
-| `fbs wepa players kicking` | `--year`, `--team`, `--conference`, `--player`, `--min-attempts` |
+| `fbs wepa players passing` | `--year`, `--team`, `--conference`, `--position`, `--player`, `--min-plays`, `--min-wepa`, `--max-wepa` |
+| `fbs wepa players rushing` | `--year`, `--team`, `--conference`, `--position`, `--player`, `--min-plays`, `--min-wepa`, `--max-wepa` |
+| `fbs wepa players kicking` | `--year`, `--team`, `--conference`, `--player`, `--min-attempts`, `--min-paar`, `--max-paar` |
+
+For `wepa players passing` and `wepa players rushing`, use `--min-wepa` or `--max-wepa` to filter the reported weighted EPA. Bounds are inclusive and accept finite signed numbers. They compose with the player and play-count filters. Missing WEPA values are excluded when either bound is active.
+
+For `wepa players kicking`, use `--min-paar` or `--max-paar` to filter the reported PAAR. Bounds are inclusive and accept finite signed numbers. They compose with `--player` and `--min-attempts`. Missing PAAR values are excluded when either bound is active.
 
 ## Recruiting, ratings, playoffs, draft, and coaches
 

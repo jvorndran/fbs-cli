@@ -29,7 +29,9 @@ import {
   localFilters,
   numberMatches,
   parseNonNegativeInteger,
+  parseNumber,
   stringMatches,
+  validateOrderedRange,
   valueAt,
 } from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
@@ -74,19 +76,22 @@ function registerPassing(players: Command, runtime: CommandRuntime): void {
   )
     .option("--position <value>", "Position abbreviation")
     .option("--player <name>", "Local filter: player")
-    .option("--min-plays <number>", "Local filter: minimum plays", parseNonNegativeInteger);
+    .option("--min-plays <number>", "Local filter: minimum plays", parseNonNegativeInteger)
+    .option("--min-wepa <number>", "Local filter: minimum weighted EPA (inclusive)", parseNumber)
+    .option("--max-wepa <number>", "Local filter: maximum weighted EPA (inclusive)", parseNumber);
   passing
     .addHelpText(
       "after",
       "\nAll filters are optional.\n\nExamples:\n  fbs wepa players passing --year 2025\n  fbs wepa players passing --team \"Florida State\" --position QB\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { player, minPlays, ...options } = suppliedOptions<
-        Partial<WepaPassingQuery> & { player?: string; minPlays?: number }
+      const { player, minPlays, minWepa, maxWepa, ...options } = suppliedOptions<
+        Partial<WepaPassingQuery> & { player?: string; minPlays?: number; minWepa?: number; maxWepa?: number }
       >(command);
-      const filters = localFilters({ player, minPlays });
+      const filters = localFilters({ player, minPlays, minWepa, maxWepa });
       const rawQuery = buildWepaPassingQuery(options);
       await withCommandContext("wepa players passing", rawQuery, async () => {
+        validateOrderedRange(minWepa, maxWepa, "min-wepa", "max-wepa");
         const query = validateWepaPassingQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "wepa players passing",
@@ -101,7 +106,8 @@ function registerPassing(players: Command, runtime: CommandRuntime): void {
               rows,
               (row) =>
                 stringMatches(valueAt(row, "athlete_name", "player"), filters?.player as string | undefined) &&
-                numberMatches(valueAt(row, "plays"), filters?.minPlays as number | undefined, undefined),
+                numberMatches(valueAt(row, "plays"), minPlays, undefined) &&
+                numberMatches(valueAt(row, "wepa"), minWepa, maxWepa),
             ),
         });
       });
@@ -115,19 +121,22 @@ function registerRushing(players: Command, runtime: CommandRuntime): void {
   )
     .option("--position <value>", "Position abbreviation")
     .option("--player <name>", "Local filter: player")
-    .option("--min-plays <number>", "Local filter: minimum plays", parseNonNegativeInteger);
+    .option("--min-plays <number>", "Local filter: minimum plays", parseNonNegativeInteger)
+    .option("--min-wepa <number>", "Local filter: minimum weighted EPA (inclusive)", parseNumber)
+    .option("--max-wepa <number>", "Local filter: maximum weighted EPA (inclusive)", parseNumber);
   rushing
     .addHelpText(
       "after",
       "\nAll filters are optional.\n\nExamples:\n  fbs wepa players rushing --year 2025\n  fbs wepa players rushing --team \"Florida State\" --position RB\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { player, minPlays, ...options } = suppliedOptions<
-        Partial<WepaRushingQuery> & { player?: string; minPlays?: number }
+      const { player, minPlays, minWepa, maxWepa, ...options } = suppliedOptions<
+        Partial<WepaRushingQuery> & { player?: string; minPlays?: number; minWepa?: number; maxWepa?: number }
       >(command);
-      const filters = localFilters({ player, minPlays });
+      const filters = localFilters({ player, minPlays, minWepa, maxWepa });
       const rawQuery = buildWepaRushingQuery(options);
       await withCommandContext("wepa players rushing", rawQuery, async () => {
+        validateOrderedRange(minWepa, maxWepa, "min-wepa", "max-wepa");
         const query = validateWepaRushingQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "wepa players rushing",
@@ -142,7 +151,8 @@ function registerRushing(players: Command, runtime: CommandRuntime): void {
               rows,
               (row) =>
                 stringMatches(valueAt(row, "athlete_name", "player"), filters?.player as string | undefined) &&
-                numberMatches(valueAt(row, "plays"), filters?.minPlays as number | undefined, undefined),
+                numberMatches(valueAt(row, "plays"), minPlays, undefined) &&
+                numberMatches(valueAt(row, "wepa"), minWepa, maxWepa),
             ),
         });
       });
@@ -155,19 +165,22 @@ function registerKicking(players: Command, runtime: CommandRuntime): void {
     players.command("kicking").description("Retrieve kicker PAAR ratings"),
   )
     .option("--player <name>", "Local filter: player")
-    .option("--min-attempts <number>", "Local filter: minimum attempts", parseNonNegativeInteger);
+    .option("--min-attempts <number>", "Local filter: minimum attempts", parseNonNegativeInteger)
+    .option("--min-paar <number>", "Local filter: minimum PAAR (inclusive)", parseNumber)
+    .option("--max-paar <number>", "Local filter: maximum PAAR (inclusive)", parseNumber);
   kicking
     .addHelpText(
       "after",
       "\nAll filters are optional.\n\nExamples:\n  fbs wepa players kicking --year 2025\n  fbs wepa players kicking --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { player, minAttempts, ...options } = suppliedOptions<
-        Partial<WepaKickingQuery> & { player?: string; minAttempts?: number }
+      const { player, minAttempts, minPaar, maxPaar, ...options } = suppliedOptions<
+        Partial<WepaKickingQuery> & { player?: string; minAttempts?: number; minPaar?: number; maxPaar?: number }
       >(command);
-      const filters = localFilters({ player, minAttempts });
+      const filters = localFilters({ player, minAttempts, minPaar, maxPaar });
       const rawQuery = buildWepaKickingQuery(options);
       await withCommandContext("wepa players kicking", rawQuery, async () => {
+        validateOrderedRange(minPaar, maxPaar, "min-paar", "max-paar");
         const query = validateWepaKickingQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "wepa players kicking",
@@ -182,11 +195,8 @@ function registerKicking(players: Command, runtime: CommandRuntime): void {
               rows,
               (row) =>
                 stringMatches(valueAt(row, "player", "athlete_name"), filters?.player as string | undefined) &&
-                numberMatches(
-                  valueAt(row, "attempts"),
-                  filters?.minAttempts as number | undefined,
-                  undefined,
-                ),
+                numberMatches(valueAt(row, "attempts"), minAttempts, undefined) &&
+                numberMatches(valueAt(row, "paar"), minPaar, maxPaar),
             ),
         });
       });
