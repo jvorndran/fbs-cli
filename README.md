@@ -221,7 +221,7 @@ Use `player portal --year YEAR` with `--min-rating`/`--max-rating` and `--min-st
 | `fbs wepa team season` | `/wepa/team/season` -> `team_metrics` | `--year`, `--team`, `--conference` | Optional. |
 | `fbs wepa players passing` | `/wepa/players/passing` -> `player_metrics` | `--year`, `--team`, `--conference`, `--position`, `--player`, `--min-plays`, `--min-wepa`, `--max-wepa` | Optional. |
 | `fbs wepa players rushing` | `/wepa/players/rushing` -> `player_metrics` | `--year`, `--team`, `--conference`, `--position`, `--player`, `--min-plays`, `--min-wepa`, `--max-wepa` | Optional. |
-| `fbs wepa players kicking` | `/wepa/players/kicking` -> `kicker_ratings` | `--year`, `--team`, `--conference`, `--player`, `--min-attempts` | Optional. |
+| `fbs wepa players kicking` | `/wepa/players/kicking` -> `kicker_ratings` | `--year`, `--team`, `--conference`, `--player`, `--min-attempts`, `--min-paar`, `--max-paar` | Optional. |
 
 ### Recruiting, ratings, and rankings
 
@@ -275,6 +275,8 @@ Kebab-case provider flags map directly to the corresponding CFBD camelCase query
 ### Local filters and output budget
 
 For `wepa players passing` and `wepa players rushing`, use `--min-wepa` or `--max-wepa` to filter the reported weighted EPA. Bounds are inclusive and accept finite signed numbers. They compose with the player and play-count filters. Missing WEPA values are excluded when either bound is active.
+
+For `wepa players kicking`, use `--min-paar` or `--max-paar` to filter the reported PAAR. Bounds are inclusive and accept finite signed numbers. They compose with `--player` and `--min-attempts`. Missing PAAR values are excluded when either bound is active.
 
 Use `fbs ratings elo --year 2026 --min-elo 1500 --max-elo 1800` to select an inclusive cohort of reported Elo ratings. Bounds accept finite numbers, including zero and negative values, and reject reversed ranges before requesting data. They compose with year, week, team, conference, and season type without entering the single provider query. Missing Elo ratings fail an active bound. Results retain provider order and precision; `filters` records the bounds and `count` describes the filtered cohort. These are provider-reported ratings, not a derived pregame forecast.
 

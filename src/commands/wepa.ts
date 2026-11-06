@@ -165,19 +165,22 @@ function registerKicking(players: Command, runtime: CommandRuntime): void {
     players.command("kicking").description("Retrieve kicker PAAR ratings"),
   )
     .option("--player <name>", "Local filter: player")
-    .option("--min-attempts <number>", "Local filter: minimum attempts", parseNonNegativeInteger);
+    .option("--min-attempts <number>", "Local filter: minimum attempts", parseNonNegativeInteger)
+    .option("--min-paar <number>", "Local filter: minimum PAAR (inclusive)", parseNumber)
+    .option("--max-paar <number>", "Local filter: maximum PAAR (inclusive)", parseNumber);
   kicking
     .addHelpText(
       "after",
       "\nAll filters are optional.\n\nExamples:\n  fbs wepa players kicking --year 2025\n  fbs wepa players kicking --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { player, minAttempts, ...options } = suppliedOptions<
-        Partial<WepaKickingQuery> & { player?: string; minAttempts?: number }
+      const { player, minAttempts, minPaar, maxPaar, ...options } = suppliedOptions<
+        Partial<WepaKickingQuery> & { player?: string; minAttempts?: number; minPaar?: number; maxPaar?: number }
       >(command);
-      const filters = localFilters({ player, minAttempts });
+      const filters = localFilters({ player, minAttempts, minPaar, maxPaar });
       const rawQuery = buildWepaKickingQuery(options);
       await withCommandContext("wepa players kicking", rawQuery, async () => {
+        validateOrderedRange(minPaar, maxPaar, "min-paar", "max-paar");
         const query = validateWepaKickingQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "wepa players kicking",
@@ -192,11 +195,8 @@ function registerKicking(players: Command, runtime: CommandRuntime): void {
               rows,
               (row) =>
                 stringMatches(valueAt(row, "player", "athlete_name"), filters?.player as string | undefined) &&
-                numberMatches(
-                  valueAt(row, "attempts"),
-                  filters?.minAttempts as number | undefined,
-                  undefined,
-                ),
+                numberMatches(valueAt(row, "attempts"), minAttempts, undefined) &&
+                numberMatches(valueAt(row, "paar"), minPaar, maxPaar),
             ),
         });
       });
