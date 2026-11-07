@@ -76,10 +76,12 @@ For historical ATS cohorts, use `teams ats --year YEAR --min-games 10 --min-avg-
 | `fbs metrics wp` | `--game-id`, `--period` |
 | `fbs metrics wp pregame` | `--year`, `--week`, `--team`, `--season-type`, `--home`, `--away`, `--min-home-win-probability`, `--max-home-win-probability` |
 | `fbs metrics fg ep` | None. |
-| `fbs wepa team season` | `--year`, `--team`, `--conference` |
+| `fbs wepa team season` | `--year`, `--team`, `--conference`, `--min-epa`, `--max-epa`, `--min-epa-allowed`, `--max-epa-allowed` |
 | `fbs wepa players passing` | `--year`, `--team`, `--conference`, `--position`, `--player`, `--min-plays`, `--min-wepa`, `--max-wepa` |
 | `fbs wepa players rushing` | `--year`, `--team`, `--conference`, `--position`, `--player`, `--min-plays`, `--min-wepa`, `--max-wepa` |
 | `fbs wepa players kicking` | `--year`, `--team`, `--conference`, `--player`, `--min-attempts`, `--min-paar`, `--max-paar` |
+
+Use `wepa team season --year 2026 --min-epa 0 --max-epa-allowed 0` to select teams by reported total EPA and total EPA allowed. The inclusive `--min-epa`/`--max-epa` bounds apply to `epa.total`; `--min-epa-allowed`/`--max-epa-allowed` apply to `epa_allowed.total`. Bounds accept finite signed numbers and reject reversed ranges before requesting data. They combine locally after the single year/team/conference query. Missing totals fail only an active bound for that field. Results preserve provider order and precision; `filters` records the bounds and `count` reports matches. These are full-season provider metrics; the CLI does not derive a net rating or pregame forecast.
 
 For `wepa players passing` and `wepa players rushing`, use `--min-wepa` or `--max-wepa` to filter the reported weighted EPA. Bounds are inclusive and accept finite signed numbers. They compose with the player and play-count filters. Missing WEPA values are excluded when either bound is active.
 
