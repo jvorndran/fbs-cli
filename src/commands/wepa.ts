@@ -46,16 +46,30 @@ function addTeamSeasonFilters(command: Command): Command {
 function registerTeamSeason(team: Command, runtime: CommandRuntime): void {
   const season = addTeamSeasonFilters(
     team.command("season").description("Retrieve opponent-adjusted team season metrics"),
-  );
+  )
+    .option("--min-epa <number>", "Local filter: minimum total EPA (inclusive)", parseNumber)
+    .option("--max-epa <number>", "Local filter: maximum total EPA (inclusive)", parseNumber)
+    .option("--min-epa-allowed <number>", "Local filter: minimum total EPA allowed (inclusive)", parseNumber)
+    .option("--max-epa-allowed <number>", "Local filter: maximum total EPA allowed (inclusive)", parseNumber);
   season
     .addHelpText(
       "after",
       "\nAll filters are optional.\n\nExamples:\n  fbs wepa team season --year 2025\n  fbs wepa team season --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<WepaTeamSeasonQuery>>(command);
+      const { minEpa, maxEpa, minEpaAllowed, maxEpaAllowed, ...options } = suppliedOptions<
+        Partial<WepaTeamSeasonQuery> & {
+          minEpa?: number;
+          maxEpa?: number;
+          minEpaAllowed?: number;
+          maxEpaAllowed?: number;
+        }
+      >(command);
+      const filters = localFilters({ minEpa, maxEpa, minEpaAllowed, maxEpaAllowed });
       const rawQuery = buildWepaTeamSeasonQuery(options);
       await withCommandContext("wepa team season", rawQuery, async () => {
+        validateOrderedRange(minEpa, maxEpa, "min-epa", "max-epa");
+        validateOrderedRange(minEpaAllowed, maxEpaAllowed, "min-epa-allowed", "max-epa-allowed");
         const query = validateWepaTeamSeasonQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "wepa team season",
@@ -64,6 +78,14 @@ function registerTeamSeason(team: Command, runtime: CommandRuntime): void {
           resultKey: "team_metrics",
           request: (api) => asAnalyticsApi(api).wepaTeamSeason(query),
           transform: transformWepaTeamSeason,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) =>
+            filterRows(
+              rows,
+              (row) =>
+                numberMatches(valueAt(row, "epa.total"), minEpa, maxEpa) &&
+                numberMatches(valueAt(row, "epa_allowed.total"), minEpaAllowed, maxEpaAllowed),
+            ),
         });
       });
     })
