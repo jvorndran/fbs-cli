@@ -33,7 +33,16 @@ import {
   parseInteger,
   suppliedOptions,
 } from "./options";
-import { filterRows, isObject, localFilters, stringMatches, valueAt } from "./local-filters";
+import {
+  filterRows,
+  isObject,
+  localFilters,
+  numberMatches,
+  parseNumber,
+  stringMatches,
+  validateOrderedRange,
+  valueAt,
+} from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 function registerPredictedPoints(ppa: Command, runtime: CommandRuntime): void {
@@ -224,20 +233,32 @@ function registerPlayerSeasonPpa(players: Command, runtime: CommandRuntime): voi
     .option("--threshold <number>", "Minimum credited plays", parseInteger)
     .option("--exclude-garbage-time", "Exclude garbage-time plays")
     .option("--player <name>", "Local filter: player")
+    .option("--min-average-ppa <number>", "Local filter: minimum average PPA, all plays (inclusive)", parseNumber)
+    .option("--max-average-ppa <number>", "Local filter: maximum average PPA, all plays (inclusive)", parseNumber)
+    .option("--min-total-ppa <number>", "Local filter: minimum total PPA, all plays (inclusive)", parseNumber)
+    .option("--max-total-ppa <number>", "Local filter: maximum total PPA, all plays (inclusive)", parseNumber)
     .addHelpText(
       "after",
       "\nAt least one of --year or --player-id is required.\n\nExamples:\n  fbs ppa players season --year 2026 --team \"Florida State\"\n  fbs ppa players season --player-id 4433971\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { player: playerName, ...options } = suppliedOptions<
-        Partial<PlayerSeasonPpaQuery> & { player?: string }
+      const { player: playerName, minAveragePpa, maxAveragePpa, minTotalPpa, maxTotalPpa, ...options } = suppliedOptions<
+        Partial<PlayerSeasonPpaQuery> & {
+          player?: string;
+          minAveragePpa?: number;
+          maxAveragePpa?: number;
+          minTotalPpa?: number;
+          maxTotalPpa?: number;
+        }
       >(command, [
         "excludeGarbageTime",
       ]);
-      const filters = localFilters({ player: playerName });
+      const filters = localFilters({ player: playerName, minAveragePpa, maxAveragePpa, minTotalPpa, maxTotalPpa });
       const rawQuery = buildPlayerSeasonPpaQuery(options);
 
       await withCommandContext("ppa players season", rawQuery, async () => {
+        validateOrderedRange(minAveragePpa, maxAveragePpa, "min-average-ppa", "max-average-ppa");
+        validateOrderedRange(minTotalPpa, maxTotalPpa, "min-total-ppa", "max-total-ppa");
         const query = validatePlayerSeasonPpaQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "ppa players season",
@@ -252,7 +273,9 @@ function registerPlayerSeasonPpa(players: Command, runtime: CommandRuntime): voi
               rows,
               (row) =>
                 isObject(row) &&
-                stringMatches(valueAt(row, "name", "player"), filters?.player as string | undefined),
+                stringMatches(valueAt(row, "name", "player"), filters?.player as string | undefined) &&
+                numberMatches(valueAt(row, "average_ppa.all"), minAveragePpa, maxAveragePpa) &&
+                numberMatches(valueAt(row, "total_ppa.all"), minTotalPpa, maxTotalPpa),
             ),
         });
       });
