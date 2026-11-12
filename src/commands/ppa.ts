@@ -81,7 +81,11 @@ function registerTeamPpa(ppa: Command, runtime: CommandRuntime): void {
     .option("--year <number>", "Season year", parseInteger)
     .option("--team <name>", "Team name")
     .option("--conference <value>", "Conference abbreviation")
-    .option("--exclude-garbage-time", "Exclude garbage-time plays");
+    .option("--exclude-garbage-time", "Exclude garbage-time plays")
+    .option("--min-offense-ppa <number>", "Local filter: minimum offense overall PPA (inclusive)", parseNumber)
+    .option("--max-offense-ppa <number>", "Local filter: maximum offense overall PPA (inclusive)", parseNumber)
+    .option("--min-defense-ppa <number>", "Local filter: minimum defense overall PPA (inclusive)", parseNumber)
+    .option("--max-defense-ppa <number>", "Local filter: maximum defense overall PPA (inclusive)", parseNumber);
 
   addClassificationOption(teams);
   teams
@@ -90,12 +94,22 @@ function registerTeamPpa(ppa: Command, runtime: CommandRuntime): void {
       "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs ppa teams --year 2026\n  fbs ppa teams --team \"Florida State\" --exclude-garbage-time\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<TeamPpaQuery>>(command, [
+      const { minOffensePpa, maxOffensePpa, minDefensePpa, maxDefensePpa, ...options } = suppliedOptions<
+        Partial<TeamPpaQuery> & {
+          minOffensePpa?: number;
+          maxOffensePpa?: number;
+          minDefensePpa?: number;
+          maxDefensePpa?: number;
+        }
+      >(command, [
         "excludeGarbageTime",
       ]);
+      const filters = localFilters({ minOffensePpa, maxOffensePpa, minDefensePpa, maxDefensePpa });
       const rawQuery = buildTeamPpaQuery(options);
 
       await withCommandContext("ppa teams", rawQuery, async () => {
+        validateOrderedRange(minOffensePpa, maxOffensePpa, "min-offense-ppa", "max-offense-ppa");
+        validateOrderedRange(minDefensePpa, maxDefensePpa, "min-defense-ppa", "max-defense-ppa");
         const query = validateTeamPpaQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "ppa teams",
@@ -104,6 +118,11 @@ function registerTeamPpa(ppa: Command, runtime: CommandRuntime): void {
           resultKey: "team_ppa",
           request: (api) => asStatisticsCfbdApi(api).teamPpa(query),
           transform: transformTeamPpa,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) => filterRows(rows, (row) =>
+                isObject(row) &&
+                numberMatches(valueAt(row, "offense.overall"), minOffensePpa, maxOffensePpa) &&
+                numberMatches(valueAt(row, "defense.overall"), minDefensePpa, maxDefensePpa)),
         });
       });
     })
