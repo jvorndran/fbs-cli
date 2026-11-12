@@ -81,7 +81,11 @@ function registerTeamPpa(ppa: Command, runtime: CommandRuntime): void {
     .option("--year <number>", "Season year", parseInteger)
     .option("--team <name>", "Team name")
     .option("--conference <value>", "Conference abbreviation")
-    .option("--exclude-garbage-time", "Exclude garbage-time plays");
+    .option("--exclude-garbage-time", "Exclude garbage-time plays")
+    .option("--min-offense-ppa <number>", "Local filter: minimum offense overall PPA (inclusive)", parseNumber)
+    .option("--max-offense-ppa <number>", "Local filter: maximum offense overall PPA (inclusive)", parseNumber)
+    .option("--min-defense-ppa <number>", "Local filter: minimum defense overall PPA (inclusive)", parseNumber)
+    .option("--max-defense-ppa <number>", "Local filter: maximum defense overall PPA (inclusive)", parseNumber);
 
   addClassificationOption(teams);
   teams
@@ -90,12 +94,22 @@ function registerTeamPpa(ppa: Command, runtime: CommandRuntime): void {
       "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs ppa teams --year 2026\n  fbs ppa teams --team \"Florida State\" --exclude-garbage-time\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedOptions<Partial<TeamPpaQuery>>(command, [
+      const { minOffensePpa, maxOffensePpa, minDefensePpa, maxDefensePpa, ...options } = suppliedOptions<
+        Partial<TeamPpaQuery> & {
+          minOffensePpa?: number;
+          maxOffensePpa?: number;
+          minDefensePpa?: number;
+          maxDefensePpa?: number;
+        }
+      >(command, [
         "excludeGarbageTime",
       ]);
+      const filters = localFilters({ minOffensePpa, maxOffensePpa, minDefensePpa, maxDefensePpa });
       const rawQuery = buildTeamPpaQuery(options);
 
       await withCommandContext("ppa teams", rawQuery, async () => {
+        validateOrderedRange(minOffensePpa, maxOffensePpa, "min-offense-ppa", "max-offense-ppa");
+        validateOrderedRange(minDefensePpa, maxDefensePpa, "min-defense-ppa", "max-defense-ppa");
         const query = validateTeamPpaQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "ppa teams",
@@ -104,6 +118,11 @@ function registerTeamPpa(ppa: Command, runtime: CommandRuntime): void {
           resultKey: "team_ppa",
           request: (api) => asStatisticsCfbdApi(api).teamPpa(query),
           transform: transformTeamPpa,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) => filterRows(rows, (row) =>
+                isObject(row) &&
+                numberMatches(valueAt(row, "offense.overall"), minOffensePpa, maxOffensePpa) &&
+                numberMatches(valueAt(row, "defense.overall"), minDefensePpa, maxDefensePpa)),
         });
       });
     })
@@ -119,6 +138,10 @@ function registerGamePpa(ppa: Command, runtime: CommandRuntime): void {
     .option("--team <name>", "Team name")
     .option("--conference <value>", "Conference abbreviation")
     .option("--exclude-garbage-time", "Exclude garbage-time plays")
+    .option("--min-offense-ppa <number>", "Local filter: minimum offense overall PPA (inclusive)", parseNumber)
+    .option("--max-offense-ppa <number>", "Local filter: maximum offense overall PPA (inclusive)", parseNumber)
+    .option("--min-defense-ppa <number>", "Local filter: minimum defense overall PPA (inclusive)", parseNumber)
+    .option("--max-defense-ppa <number>", "Local filter: maximum defense overall PPA (inclusive)", parseNumber)
     .option("--game-id <number>", "Local filter: game ID", parseInteger)
     .option("--opponent <name>", "Local filter: opponent");
 
@@ -130,15 +153,24 @@ function registerGamePpa(ppa: Command, runtime: CommandRuntime): void {
       "\n--year is required.\n\nExamples:\n  fbs ppa games --year 2026\n  fbs ppa games --year 2026 --week 1 --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { gameId, opponent, ...options } = suppliedOptions<
-        Partial<GamePpaQuery> & { gameId?: number; opponent?: string }
+      const { gameId, opponent, minOffensePpa, maxOffensePpa, minDefensePpa, maxDefensePpa, ...options } = suppliedOptions<
+        Partial<GamePpaQuery> & {
+          gameId?: number;
+          opponent?: string;
+          minOffensePpa?: number;
+          maxOffensePpa?: number;
+          minDefensePpa?: number;
+          maxDefensePpa?: number;
+        }
       >(command, [
         "excludeGarbageTime",
       ]);
-      const filters = localFilters({ gameId, opponent });
+      const filters = localFilters({ gameId, opponent, minOffensePpa, maxOffensePpa, minDefensePpa, maxDefensePpa });
       const rawQuery = buildGamePpaQuery(options);
 
       await withCommandContext("ppa games", rawQuery, async () => {
+        validateOrderedRange(minOffensePpa, maxOffensePpa, "min-offense-ppa", "max-offense-ppa");
+        validateOrderedRange(minDefensePpa, maxDefensePpa, "min-defense-ppa", "max-defense-ppa");
         const query = validateGamePpaQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "ppa games",
@@ -154,7 +186,9 @@ function registerGamePpa(ppa: Command, runtime: CommandRuntime): void {
               (row) =>
                 isObject(row) &&
                 (filters?.gameId === undefined || valueAt(row, "game_id") === filters.gameId) &&
-                stringMatches(valueAt(row, "opponent"), filters?.opponent as string | undefined),
+                stringMatches(valueAt(row, "opponent"), filters?.opponent as string | undefined) &&
+                numberMatches(valueAt(row, "offense.overall"), minOffensePpa, maxOffensePpa) &&
+                numberMatches(valueAt(row, "defense.overall"), minDefensePpa, maxDefensePpa),
             ),
         });
       });
@@ -173,6 +207,8 @@ function registerPlayerGamePpa(players: Command, runtime: CommandRuntime): void 
     .option("--player-id <id>", "Player ID")
     .option("--threshold <number>", "Minimum credited plays", parseInteger)
     .option("--exclude-garbage-time", "Exclude garbage-time plays")
+    .option("--min-average-ppa <number>", "Local filter: minimum average all-play PPA (inclusive)", parseNumber)
+    .option("--max-average-ppa <number>", "Local filter: maximum average all-play PPA (inclusive)", parseNumber)
     .option("--game-id <number>", "Local filter: game ID", parseInteger)
     .option("--player <name>", "Local filter: player")
     .option("--opponent <name>", "Local filter: opponent");
@@ -184,19 +220,22 @@ function registerPlayerGamePpa(players: Command, runtime: CommandRuntime): void 
       "\n--year and at least one of --week or --team are required.\n\nExamples:\n  fbs ppa players games --year 2026 --week 1\n  fbs ppa players games --year 2026 --team \"Florida State\" --player-id 4433971\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { gameId, player: playerName, opponent, ...options } = suppliedOptions<
+      const { gameId, player: playerName, opponent, minAveragePpa, maxAveragePpa, ...options } = suppliedOptions<
         Partial<PlayerGamePpaQuery> & {
           gameId?: number;
           player?: string;
           opponent?: string;
+          minAveragePpa?: number;
+          maxAveragePpa?: number;
         }
       >(command, [
         "excludeGarbageTime",
       ]);
-      const filters = localFilters({ gameId, player: playerName, opponent });
+      const filters = localFilters({ gameId, player: playerName, opponent, minAveragePpa, maxAveragePpa });
       const rawQuery = buildPlayerGamePpaQuery(options);
 
       await withCommandContext("ppa players games", rawQuery, async () => {
+        validateOrderedRange(minAveragePpa, maxAveragePpa, "min-average-ppa", "max-average-ppa");
         const query = validatePlayerGamePpaQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "ppa players games",
@@ -213,7 +252,8 @@ function registerPlayerGamePpa(players: Command, runtime: CommandRuntime): void 
                 isObject(row) &&
                 (filters?.gameId === undefined || valueAt(row, "game_id") === filters.gameId) &&
                 stringMatches(valueAt(row, "name", "player"), filters?.player as string | undefined) &&
-                stringMatches(valueAt(row, "opponent"), filters?.opponent as string | undefined),
+                stringMatches(valueAt(row, "opponent"), filters?.opponent as string | undefined) &&
+                numberMatches(valueAt(row, "average_ppa.all"), minAveragePpa, maxAveragePpa),
             ),
         });
       });
