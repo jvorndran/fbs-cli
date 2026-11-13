@@ -96,7 +96,7 @@ Recruiting players `--name TEXT` is a trimmed, case-insensitive literal substrin
 | `fbs recruiting players` | `--year`, `--team`, `--classification`, `--position`, `--state`, `--name`, `--min-stars`, `--max-stars`, `--min-rating`, `--max-rating`, `--min-ranking`, `--max-ranking` |
 | `fbs recruiting teams` | `--year`, `--team`, `--max-rank`, `--min-points`, `--max-points` |
 | `fbs recruiting groups` | `--conference`, `--start-year`, `--end-year`, `--recruit-type`, `--team`, `--position-group`, `--min-commits`, `--max-commits`, `--min-average-stars`, `--max-average-stars` |
-| `fbs ratings sp` | `--year`, `--team`, `--min-rating`, `--max-rating` |
+| `fbs ratings sp` | `--year`, `--team`, `--min-rating`, `--max-rating`, `--min-offense-rating`, `--max-offense-rating`, `--min-defense-rating`, `--max-defense-rating` |
 | `fbs ratings sp conferences` | `--year`, `--conference`, `--classification`, `--min-rating`, `--max-rating` |
 | `fbs ratings srs` | `--year`, `--team`, `--conference`, `--min-rating`, `--max-rating` |
 | `fbs ratings srs expanded` | `--year`, `--team`, `--conference`, `--min-rating`, `--max-rating`, `--classification` |
@@ -143,3 +143,5 @@ Use `fbs ppa teams --year 2026 --min-offense-ppa 0` to select PPA cohorts. The p
 Use `fbs ppa games --year 2026 --min-offense-ppa 0` to select PPA cohorts. The paired minimum and maximum bounds are inclusive finite signed numbers on `offense.overall` and `defense.overall`. Missing measurements fail only an active bound; zero is valid. Bounds compose with existing scopes, stay out of the single provider query, and preserve IDs, splits, row order and precision. `filters` records the bounds and `count` reflects matches. Reversed ranges fail before a request; existing required provider scopes still apply.
 
 Use `fbs ppa players games --year 2026 --week 0 --min-average-ppa 0` to select PPA cohorts. The paired minimum and maximum bounds are inclusive finite signed numbers on `average_ppa.all`. Missing measurements fail only an active bound; zero is valid. Bounds compose with existing scopes, stay out of the single provider query, and preserve IDs, splits, row order and precision. `filters` records the bounds and `count` reflects matches. Reversed ranges fail before a request; existing required provider scopes still apply.
+
+Use `ratings sp --year YEAR --min-offense-rating N --max-offense-rating N` or `--min-defense-rating N --max-defense-rating N` to select cohorts by the reported unit ratings. Bounds are inclusive finite signed numbers on `offense.rating` and `defense.rating`; smaller defense ratings are not inverted. They combine with overall rating bounds and team selection, preserving the single provider request, national ranks, precision, and row order. Reversed ranges fail before fetching; missing unit ratings fail only their active bounds. Local values appear in `filters`, never `query`, and `count` reflects matches.

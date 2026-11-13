@@ -100,20 +100,30 @@ function registerSp(ratings: Command, runtime: CommandRuntime): void {
     .option("--team <name>", "Team name")
     .option("--year <number>", "Season year", parseInteger)
     .option("--min-rating <number>", "Local filter: minimum SP+ rating (inclusive)", parseNumber)
-    .option("--max-rating <number>", "Local filter: maximum SP+ rating (inclusive)", parseNumber);
+    .option("--max-rating <number>", "Local filter: maximum SP+ rating (inclusive)", parseNumber)
+    .option("--min-offense-rating <number>", "Local filter: minimum offense SP+ rating (inclusive)", parseNumber)
+    .option("--max-offense-rating <number>", "Local filter: maximum offense SP+ rating (inclusive)", parseNumber)
+    .option("--min-defense-rating <number>", "Local filter: minimum defense SP+ rating (inclusive)", parseNumber)
+    .option("--max-defense-rating <number>", "Local filter: maximum defense SP+ rating (inclusive)", parseNumber);
   sp
     .addHelpText(
       "after",
       "\nAt least one of --year or --team is required. When both are supplied, fbs filters the full-year response locally so provider ranking fields remain national.\n\nExamples:\n  fbs ratings sp --year 2025\n  fbs ratings sp --year 2025 --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { minRating, maxRating, ...options } = suppliedOptions<
-        Partial<SpRatingsQuery> & { minRating?: number; maxRating?: number }
+      const { minRating, maxRating, minOffenseRating, maxOffenseRating, minDefenseRating, maxDefenseRating, ...options } = suppliedOptions<
+        Partial<SpRatingsQuery> & {
+          minRating?: number; maxRating?: number;
+          minOffenseRating?: number; maxOffenseRating?: number;
+          minDefenseRating?: number; maxDefenseRating?: number;
+        }
       >(command);
-      const filters = localFilters({ minRating, maxRating });
+      const filters = localFilters({ minRating, maxRating, minOffenseRating, maxOffenseRating, minDefenseRating, maxDefenseRating });
       const rawQuery = buildSpRatingsQuery(options);
       await withCommandContext("ratings sp", rawQuery, async () => {
         validateOrderedRange(minRating, maxRating, "min-rating", "max-rating");
+        validateOrderedRange(minOffenseRating, maxOffenseRating, "min-offense-rating", "max-offense-rating");
+        validateOrderedRange(minDefenseRating, maxDefenseRating, "min-defense-rating", "max-defense-rating");
         const query = validateSpRatingsQuery(rawQuery);
         const preserveNationalRanks = query.year !== undefined && query.team !== undefined;
         const requestQuery: SpRatingsQuery =
@@ -136,7 +146,10 @@ function registerSp(ratings: Command, runtime: CommandRuntime): void {
             ),
           count: (_response, output) => output.length,
           ...(filters === undefined ? {} : { filters }),
-          filter: (rows) => filterRows(rows, (row) => numberMatches(row.rating, minRating, maxRating)),
+          filter: (rows) => filterRows(rows, (row) =>
+              numberMatches(row.rating, minRating, maxRating) &&
+              numberMatches(valueAt(row, "offense.rating"), minOffenseRating, maxOffenseRating) &&
+              numberMatches(valueAt(row, "defense.rating"), minDefenseRating, maxDefenseRating)),
         });
       });
     })
