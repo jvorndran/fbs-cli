@@ -63,7 +63,7 @@ For historical ATS cohorts, use `teams ats --year YEAR --min-games 10 --min-avg-
 | `fbs stats player success` | `--year`, `--player-id`, `--team`, `--conference`, `--start-week`, `--end-week`, `--threshold`, `--season-type`, `--exclude-garbage-time`, `--player` |
 | `fbs stats player success game` | `--year`, `--week`, `--player-id`, `--team`, `--conference`, `--threshold`, `--season-type`, `--exclude-garbage-time`, `--player` |
 | `fbs stats categories` | None. |
-| `fbs player usage` | `--year`, `--team`, `--conference`, `--player-id`, `--position`, `--exclude-garbage-time`, `--min-usage`, `--max-usage` |
+| `fbs player usage` | `--year`, `--team`, `--conference`, `--player-id`, `--position`, `--exclude-garbage-time`, `--min-usage`, `--max-usage`, `--min-pass-usage`, `--max-pass-usage`, `--min-rush-usage`, `--max-rush-usage` |
 | `fbs player search` | `--search-term`, `--year`, `--team`, `--position` |
 | `fbs player season overview` | `--year`, `--player-id` |
 | `fbs player returning` | `--year`, `--team`, `--conference`, `--min-usage`, `--max-usage` |
@@ -145,3 +145,5 @@ Use `fbs ppa games --year 2026 --min-offense-ppa 0` to select PPA cohorts. The p
 Use `fbs ppa players games --year 2026 --week 0 --min-average-ppa 0` to select PPA cohorts. The paired minimum and maximum bounds are inclusive finite signed numbers on `average_ppa.all`. Missing measurements fail only an active bound; zero is valid. Bounds compose with existing scopes, stay out of the single provider query, and preserve IDs, splits, row order and precision. `filters` records the bounds and `count` reflects matches. Reversed ranges fail before a request; existing required provider scopes still apply.
 
 Use `ratings sp --year YEAR --min-offense-rating N --max-offense-rating N` or `--min-defense-rating N --max-defense-rating N` to select cohorts by the reported unit ratings. Bounds are inclusive finite signed numbers on `offense.rating` and `defense.rating`; smaller defense ratings are not inverted. They combine with overall rating bounds and team selection, preserving the single provider request, national ranks, precision, and row order. Reversed ranges fail before fetching; missing unit ratings fail only their active bounds. Local values appear in `filters`, never `query`, and `count` reflects matches.
+
+Use `fbs player usage --year 2026 --min-pass-usage 0.5 --max-rush-usage 0.3` to select players by the reported `usage.pass` and `usage.rush` shares. Each split accepts inclusive finite `--min-`/`--max-` bounds from 0 to 1. They combine with overall usage bounds and provider scopes. Missing split values fail only active split bounds; zero is valid. Invalid or reversed bounds fail before a request. The CLI still makes one unchanged provider query and preserves IDs, order, precision, and all returned metrics. These are usage shares, not snap counts or target shares.
