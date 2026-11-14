@@ -58,24 +58,34 @@ function registerPlayerUsage(player: Command, runtime: CommandRuntime): void {
     .option("--exclude-garbage-time", "Exclude garbage-time plays")
     .option("--min-usage <number>", "Local filter: minimum overall usage share (0-1, inclusive)", parseNumber)
     .option("--max-usage <number>", "Local filter: maximum overall usage share (0-1, inclusive)", parseNumber)
+    .option("--min-pass-usage <number>", "Local filter: minimum passing usage share (0-1, inclusive)", parseNumber)
+    .option("--max-pass-usage <number>", "Local filter: maximum passing usage share (0-1, inclusive)", parseNumber)
+    .option("--min-rush-usage <number>", "Local filter: minimum rushing usage share (0-1, inclusive)", parseNumber)
+    .option("--max-rush-usage <number>", "Local filter: maximum rushing usage share (0-1, inclusive)", parseNumber)
     .addHelpText(
       "after",
       "\nExamples:\n  fbs player usage --year 2026 --team \"Florida State\"\n  fbs player usage --year 2026 --player-id 4433971 --exclude-garbage-time\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { minUsage, maxUsage, ...options } = suppliedOptions<
-        Partial<PlayerUsageQuery> & { minUsage?: number; maxUsage?: number }
+      const { minUsage, maxUsage, minPassUsage, maxPassUsage, minRushUsage, maxRushUsage, ...options } = suppliedOptions<
+        Partial<PlayerUsageQuery> & {
+          minUsage?: number; maxUsage?: number;
+          minPassUsage?: number; maxPassUsage?: number;
+          minRushUsage?: number; maxRushUsage?: number;
+        }
       >(command, [
         "excludeGarbageTime",
       ]);
-      const filters = localFilters({ minUsage, maxUsage });
+      const filters = localFilters({ minUsage, maxUsage, minPassUsage, maxPassUsage, minRushUsage, maxRushUsage });
       const rawQuery = buildPlayerUsageQuery(options);
 
       await withCommandContext("player usage", rawQuery, async () => {
-        if ([minUsage, maxUsage].some((value) => value !== undefined && (value < 0 || value > 1))) {
+        if ([minUsage, maxUsage, minPassUsage, maxPassUsage, minRushUsage, maxRushUsage].some((value) => value !== undefined && (value < 0 || value > 1))) {
           throw new QueryValidationError("Usage bounds must be between 0 and 1 inclusive.");
         }
         validateOrderedRange(minUsage, maxUsage, "min-usage", "max-usage");
+        validateOrderedRange(minPassUsage, maxPassUsage, "min-pass-usage", "max-pass-usage");
+        validateOrderedRange(minRushUsage, maxRushUsage, "min-rush-usage", "max-rush-usage");
         const query = validatePlayerUsageQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "player usage",
@@ -86,7 +96,9 @@ function registerPlayerUsage(player: Command, runtime: CommandRuntime): void {
           transform: transformPlayerUsage,
           ...(filters === undefined ? {} : { filters }),
           filter: (rows) => filterRows(rows, (row) =>
-            numberMatches(valueAt(row, "usage.overall"), minUsage, maxUsage)),
+            numberMatches(valueAt(row, "usage.overall"), minUsage, maxUsage) &&
+            numberMatches(valueAt(row, "usage.pass"), minPassUsage, maxPassUsage) &&
+            numberMatches(valueAt(row, "usage.rush"), minRushUsage, maxRushUsage)),
         });
       });
     })
