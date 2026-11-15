@@ -207,6 +207,10 @@ function registerPlayerGamePpa(players: Command, runtime: CommandRuntime): void 
     .option("--player-id <id>", "Player ID")
     .option("--threshold <number>", "Minimum credited plays", parseInteger)
     .option("--exclude-garbage-time", "Exclude garbage-time plays")
+    .option("--min-pass-ppa <number>", "Local filter: minimum average passing PPA (inclusive)", parseNumber)
+    .option("--max-pass-ppa <number>", "Local filter: maximum average passing PPA (inclusive)", parseNumber)
+    .option("--min-rush-ppa <number>", "Local filter: minimum average rushing PPA (inclusive)", parseNumber)
+    .option("--max-rush-ppa <number>", "Local filter: maximum average rushing PPA (inclusive)", parseNumber)
     .option("--min-average-ppa <number>", "Local filter: minimum average all-play PPA (inclusive)", parseNumber)
     .option("--max-average-ppa <number>", "Local filter: maximum average all-play PPA (inclusive)", parseNumber)
     .option("--game-id <number>", "Local filter: game ID", parseInteger)
@@ -220,21 +224,25 @@ function registerPlayerGamePpa(players: Command, runtime: CommandRuntime): void 
       "\n--year and at least one of --week or --team are required.\n\nExamples:\n  fbs ppa players games --year 2026 --week 1\n  fbs ppa players games --year 2026 --team \"Florida State\" --player-id 4433971\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { gameId, player: playerName, opponent, minAveragePpa, maxAveragePpa, ...options } = suppliedOptions<
+      const { gameId, player: playerName, opponent, minAveragePpa, maxAveragePpa, minPassPpa, maxPassPpa, minRushPpa, maxRushPpa, ...options } = suppliedOptions<
         Partial<PlayerGamePpaQuery> & {
           gameId?: number;
           player?: string;
           opponent?: string;
+          minPassPpa?: number; maxPassPpa?: number;
+          minRushPpa?: number; maxRushPpa?: number;
           minAveragePpa?: number;
           maxAveragePpa?: number;
         }
       >(command, [
         "excludeGarbageTime",
       ]);
-      const filters = localFilters({ gameId, player: playerName, opponent, minAveragePpa, maxAveragePpa });
+      const filters = localFilters({ gameId, player: playerName, opponent, minAveragePpa, maxAveragePpa, minPassPpa, maxPassPpa, minRushPpa, maxRushPpa });
       const rawQuery = buildPlayerGamePpaQuery(options);
 
       await withCommandContext("ppa players games", rawQuery, async () => {
+        validateOrderedRange(minPassPpa, maxPassPpa, "min-pass-ppa", "max-pass-ppa");
+        validateOrderedRange(minRushPpa, maxRushPpa, "min-rush-ppa", "max-rush-ppa");
         validateOrderedRange(minAveragePpa, maxAveragePpa, "min-average-ppa", "max-average-ppa");
         const query = validatePlayerGamePpaQuery(rawQuery);
         await runEndpoint(runtime, {
@@ -253,6 +261,8 @@ function registerPlayerGamePpa(players: Command, runtime: CommandRuntime): void 
                 (filters?.gameId === undefined || valueAt(row, "game_id") === filters.gameId) &&
                 stringMatches(valueAt(row, "name", "player"), filters?.player as string | undefined) &&
                 stringMatches(valueAt(row, "opponent"), filters?.opponent as string | undefined) &&
+                numberMatches(valueAt(row, "average_ppa.pass"), minPassPpa, maxPassPpa) &&
+                numberMatches(valueAt(row, "average_ppa.rush"), minRushPpa, maxRushPpa) &&
                 numberMatches(valueAt(row, "average_ppa.all"), minAveragePpa, maxAveragePpa),
             ),
         });
