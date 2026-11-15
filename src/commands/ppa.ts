@@ -283,6 +283,10 @@ function registerPlayerSeasonPpa(players: Command, runtime: CommandRuntime): voi
     .option("--threshold <number>", "Minimum credited plays", parseInteger)
     .option("--exclude-garbage-time", "Exclude garbage-time plays")
     .option("--player <name>", "Local filter: player")
+    .option("--min-pass-ppa <number>", "Local filter: minimum average passing PPA (inclusive)", parseNumber)
+    .option("--max-pass-ppa <number>", "Local filter: maximum average passing PPA (inclusive)", parseNumber)
+    .option("--min-rush-ppa <number>", "Local filter: minimum average rushing PPA (inclusive)", parseNumber)
+    .option("--max-rush-ppa <number>", "Local filter: maximum average rushing PPA (inclusive)", parseNumber)
     .option("--min-average-ppa <number>", "Local filter: minimum average PPA, all plays (inclusive)", parseNumber)
     .option("--max-average-ppa <number>", "Local filter: maximum average PPA, all plays (inclusive)", parseNumber)
     .option("--min-total-ppa <number>", "Local filter: minimum total PPA, all plays (inclusive)", parseNumber)
@@ -292,9 +296,11 @@ function registerPlayerSeasonPpa(players: Command, runtime: CommandRuntime): voi
       "\nAt least one of --year or --player-id is required.\n\nExamples:\n  fbs ppa players season --year 2026 --team \"Florida State\"\n  fbs ppa players season --player-id 4433971\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { player: playerName, minAveragePpa, maxAveragePpa, minTotalPpa, maxTotalPpa, ...options } = suppliedOptions<
+      const { player: playerName, minAveragePpa, maxAveragePpa, minPassPpa, maxPassPpa, minRushPpa, maxRushPpa, minTotalPpa, maxTotalPpa, ...options } = suppliedOptions<
         Partial<PlayerSeasonPpaQuery> & {
           player?: string;
+          minPassPpa?: number; maxPassPpa?: number;
+          minRushPpa?: number; maxRushPpa?: number;
           minAveragePpa?: number;
           maxAveragePpa?: number;
           minTotalPpa?: number;
@@ -303,10 +309,12 @@ function registerPlayerSeasonPpa(players: Command, runtime: CommandRuntime): voi
       >(command, [
         "excludeGarbageTime",
       ]);
-      const filters = localFilters({ player: playerName, minAveragePpa, maxAveragePpa, minTotalPpa, maxTotalPpa });
+      const filters = localFilters({ player: playerName, minAveragePpa, maxAveragePpa, minPassPpa, maxPassPpa, minRushPpa, maxRushPpa, minTotalPpa, maxTotalPpa });
       const rawQuery = buildPlayerSeasonPpaQuery(options);
 
       await withCommandContext("ppa players season", rawQuery, async () => {
+        validateOrderedRange(minPassPpa, maxPassPpa, "min-pass-ppa", "max-pass-ppa");
+        validateOrderedRange(minRushPpa, maxRushPpa, "min-rush-ppa", "max-rush-ppa");
         validateOrderedRange(minAveragePpa, maxAveragePpa, "min-average-ppa", "max-average-ppa");
         validateOrderedRange(minTotalPpa, maxTotalPpa, "min-total-ppa", "max-total-ppa");
         const query = validatePlayerSeasonPpaQuery(rawQuery);
@@ -324,6 +332,8 @@ function registerPlayerSeasonPpa(players: Command, runtime: CommandRuntime): voi
               (row) =>
                 isObject(row) &&
                 stringMatches(valueAt(row, "name", "player"), filters?.player as string | undefined) &&
+                numberMatches(valueAt(row, "average_ppa.pass"), minPassPpa, maxPassPpa) &&
+                numberMatches(valueAt(row, "average_ppa.rush"), minRushPpa, maxRushPpa) &&
                 numberMatches(valueAt(row, "average_ppa.all"), minAveragePpa, maxAveragePpa) &&
                 numberMatches(valueAt(row, "total_ppa.all"), minTotalPpa, maxTotalPpa),
             ),
