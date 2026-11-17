@@ -62,30 +62,38 @@ function registerPlayerUsage(player: Command, runtime: CommandRuntime): void {
     .option("--max-pass-usage <number>", "Local filter: maximum passing usage share (0-1, inclusive)", parseNumber)
     .option("--min-rush-usage <number>", "Local filter: minimum rushing usage share (0-1, inclusive)", parseNumber)
     .option("--max-rush-usage <number>", "Local filter: maximum rushing usage share (0-1, inclusive)", parseNumber)
+    .option("--min-standard-downs-usage <number>", "Local filter: minimum standard-down usage share (0-1, inclusive)", parseNumber)
+    .option("--max-standard-downs-usage <number>", "Local filter: maximum standard-down usage share (0-1, inclusive)", parseNumber)
+    .option("--min-passing-downs-usage <number>", "Local filter: minimum passing-down usage share (0-1, inclusive)", parseNumber)
+    .option("--max-passing-downs-usage <number>", "Local filter: maximum passing-down usage share (0-1, inclusive)", parseNumber)
     .addHelpText(
       "after",
       "\nExamples:\n  fbs player usage --year 2026 --team \"Florida State\"\n  fbs player usage --year 2026 --player-id 4433971 --exclude-garbage-time\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { minUsage, maxUsage, minPassUsage, maxPassUsage, minRushUsage, maxRushUsage, ...options } = suppliedOptions<
+      const { minUsage, maxUsage, minPassUsage, maxPassUsage, minRushUsage, maxRushUsage, minStandardDownsUsage, maxStandardDownsUsage, minPassingDownsUsage, maxPassingDownsUsage, ...options } = suppliedOptions<
         Partial<PlayerUsageQuery> & {
           minUsage?: number; maxUsage?: number;
           minPassUsage?: number; maxPassUsage?: number;
           minRushUsage?: number; maxRushUsage?: number;
+          minStandardDownsUsage?: number; maxStandardDownsUsage?: number;
+          minPassingDownsUsage?: number; maxPassingDownsUsage?: number;
         }
       >(command, [
         "excludeGarbageTime",
       ]);
-      const filters = localFilters({ minUsage, maxUsage, minPassUsage, maxPassUsage, minRushUsage, maxRushUsage });
+      const filters = localFilters({ minUsage, maxUsage, minPassUsage, maxPassUsage, minRushUsage, maxRushUsage, minStandardDownsUsage, maxStandardDownsUsage, minPassingDownsUsage, maxPassingDownsUsage });
       const rawQuery = buildPlayerUsageQuery(options);
 
       await withCommandContext("player usage", rawQuery, async () => {
-        if ([minUsage, maxUsage, minPassUsage, maxPassUsage, minRushUsage, maxRushUsage].some((value) => value !== undefined && (value < 0 || value > 1))) {
+        if ([minUsage, maxUsage, minPassUsage, maxPassUsage, minRushUsage, maxRushUsage, minStandardDownsUsage, maxStandardDownsUsage, minPassingDownsUsage, maxPassingDownsUsage].some((value) => value !== undefined && (value < 0 || value > 1))) {
           throw new QueryValidationError("Usage bounds must be between 0 and 1 inclusive.");
         }
         validateOrderedRange(minUsage, maxUsage, "min-usage", "max-usage");
         validateOrderedRange(minPassUsage, maxPassUsage, "min-pass-usage", "max-pass-usage");
         validateOrderedRange(minRushUsage, maxRushUsage, "min-rush-usage", "max-rush-usage");
+        validateOrderedRange(minStandardDownsUsage, maxStandardDownsUsage, "min-standard-downs-usage", "max-standard-downs-usage");
+        validateOrderedRange(minPassingDownsUsage, maxPassingDownsUsage, "min-passing-downs-usage", "max-passing-downs-usage");
         const query = validatePlayerUsageQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "player usage",
@@ -98,7 +106,9 @@ function registerPlayerUsage(player: Command, runtime: CommandRuntime): void {
           filter: (rows) => filterRows(rows, (row) =>
             numberMatches(valueAt(row, "usage.overall"), minUsage, maxUsage) &&
             numberMatches(valueAt(row, "usage.pass"), minPassUsage, maxPassUsage) &&
-            numberMatches(valueAt(row, "usage.rush"), minRushUsage, maxRushUsage)),
+            numberMatches(valueAt(row, "usage.rush"), minRushUsage, maxRushUsage) &&
+            numberMatches(valueAt(row, "usage.standard_downs"), minStandardDownsUsage, maxStandardDownsUsage) &&
+            numberMatches(valueAt(row, "usage.passing_downs"), minPassingDownsUsage, maxPassingDownsUsage)),
         });
       });
     })
