@@ -16,6 +16,7 @@ import {
 } from "../cfbd/query-builders-analytics";
 import type { CommandRuntime } from "../runtime";
 import { runEndpoint } from "../runtime";
+import { QueryValidationError } from "../errors";
 import {
   transformWepaKicking,
   transformWepaPassing,
@@ -50,26 +51,46 @@ function registerTeamSeason(team: Command, runtime: CommandRuntime): void {
     .option("--min-epa <number>", "Local filter: minimum total EPA (inclusive)", parseNumber)
     .option("--max-epa <number>", "Local filter: maximum total EPA (inclusive)", parseNumber)
     .option("--min-epa-allowed <number>", "Local filter: minimum total EPA allowed (inclusive)", parseNumber)
-    .option("--max-epa-allowed <number>", "Local filter: maximum total EPA allowed (inclusive)", parseNumber);
+    .option("--max-epa-allowed <number>", "Local filter: maximum total EPA allowed (inclusive)", parseNumber)
+    .option("--min-success-rate <number>", "Local filter: minimum total success rate (0-1, inclusive)", parseNumber)
+    .option("--max-success-rate <number>", "Local filter: maximum total success rate (0-1, inclusive)", parseNumber)
+    .option("--min-success-rate-allowed <number>", "Local filter: minimum total success rate allowed (0-1, inclusive)", parseNumber)
+    .option("--max-success-rate-allowed <number>", "Local filter: maximum total success rate allowed (0-1, inclusive)", parseNumber);
   season
     .addHelpText(
       "after",
       "\nAll filters are optional.\n\nExamples:\n  fbs wepa team season --year 2025\n  fbs wepa team season --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { minEpa, maxEpa, minEpaAllowed, maxEpaAllowed, ...options } = suppliedOptions<
+      const {
+        minEpa, maxEpa, minEpaAllowed, maxEpaAllowed,
+        minSuccessRate, maxSuccessRate, minSuccessRateAllowed, maxSuccessRateAllowed, ...options
+      } = suppliedOptions<
         Partial<WepaTeamSeasonQuery> & {
           minEpa?: number;
           maxEpa?: number;
           minEpaAllowed?: number;
           maxEpaAllowed?: number;
+          minSuccessRate?: number;
+          maxSuccessRate?: number;
+          minSuccessRateAllowed?: number;
+          maxSuccessRateAllowed?: number;
         }
       >(command);
-      const filters = localFilters({ minEpa, maxEpa, minEpaAllowed, maxEpaAllowed });
+      const filters = localFilters({
+        minEpa, maxEpa, minEpaAllowed, maxEpaAllowed,
+        minSuccessRate, maxSuccessRate, minSuccessRateAllowed, maxSuccessRateAllowed,
+      });
       const rawQuery = buildWepaTeamSeasonQuery(options);
       await withCommandContext("wepa team season", rawQuery, async () => {
         validateOrderedRange(minEpa, maxEpa, "min-epa", "max-epa");
         validateOrderedRange(minEpaAllowed, maxEpaAllowed, "min-epa-allowed", "max-epa-allowed");
+        if ([minSuccessRate, maxSuccessRate, minSuccessRateAllowed, maxSuccessRateAllowed]
+          .some((value) => value !== undefined && (value < 0 || value > 1))) {
+          throw new QueryValidationError("Success rate bounds must be between 0 and 1 inclusive.");
+        }
+        validateOrderedRange(minSuccessRate, maxSuccessRate, "min-success-rate", "max-success-rate");
+        validateOrderedRange(minSuccessRateAllowed, maxSuccessRateAllowed, "min-success-rate-allowed", "max-success-rate-allowed");
         const query = validateWepaTeamSeasonQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "wepa team season",
@@ -84,7 +105,9 @@ function registerTeamSeason(team: Command, runtime: CommandRuntime): void {
               rows,
               (row) =>
                 numberMatches(valueAt(row, "epa.total"), minEpa, maxEpa) &&
-                numberMatches(valueAt(row, "epa_allowed.total"), minEpaAllowed, maxEpaAllowed),
+                numberMatches(valueAt(row, "epa_allowed.total"), minEpaAllowed, maxEpaAllowed) &&
+                numberMatches(valueAt(row, "success_rate.total"), minSuccessRate, maxSuccessRate) &&
+                numberMatches(valueAt(row, "success_rate_allowed.total"), minSuccessRateAllowed, maxSuccessRateAllowed),
             ),
         });
       });
