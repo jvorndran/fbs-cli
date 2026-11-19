@@ -11,7 +11,7 @@ Use `fbs` as a thin retrieval layer for all 71 GET routes in the pinned `cfbd` 5
 
 1. Prefer user-supplied structured data. Query CFBD only for a specific unresolved question.
 2. Set `CFBD_API_KEY` in the environment or current-directory `.env`; the environment wins. Run `fbs auth` to create or update `.env`. Never ask the user to paste a key into chat.
-3. Run `fbs <complete leaf path> --help` before guessing a flag. If the leaf command is unclear, read [command-index.md](references/command-index.md).
+3. Run `fbs <complete leaf path> --help` before guessing a flag. If the leaf command is unclear, read [command-index.md](references/command-index.md). Use `coaches seasons` with inclusive `--min-wins`/`--max-wins` and `--min-losses`/`--max-losses` for local record cohorts. Bounds are non-negative safe integers and must be ordered. See [command-index.md](references/command-index.md).
 4. Set the research `as_of` and cutoff, issue the smallest useful query, and reuse returned game, player, coach, drive, and play IDs.
 5. Parse stdout only on exit `0`. Record the exact invocation and returned envelope. On failure, parse the structured stderr error and keep stdout empty.
 
