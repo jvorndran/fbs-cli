@@ -24,6 +24,14 @@ import {
 } from "../transformers/analytics-coaches";
 import { asAnalyticsApi } from "./analytics-shared";
 import { parseInteger, suppliedLeafOptions, suppliedOptions } from "./options";
+import {
+  filterRows,
+  localFilters,
+  numberMatches,
+  parseNonNegativeInteger,
+  validateOrderedRange,
+  valueAt,
+} from "./local-filters";
 import { asQueryRecord, withCommandContext } from "./shared";
 
 function parseBoolean(value: string): boolean {
@@ -68,16 +76,27 @@ function registerSeasons(coaches: Command, runtime: CommandRuntime): void {
     .option("--max-year <number>", "End of season range", parseInteger)
     .option("--min-year <number>", "Start of season range", parseInteger)
     .option("--team <name>", "Team name")
-    .option("--year <number>", "Exact season year", parseInteger);
+    .option("--year <number>", "Exact season year", parseInteger)
+    .option("--min-wins <number>", "Local filter: minimum season wins (inclusive)", parseNonNegativeInteger)
+    .option("--max-wins <number>", "Local filter: maximum season wins (inclusive)", parseNonNegativeInteger)
+    .option("--min-losses <number>", "Local filter: minimum season losses (inclusive)", parseNonNegativeInteger)
+    .option("--max-losses <number>", "Local filter: maximum season losses (inclusive)", parseNonNegativeInteger);
   seasons
     .addHelpText(
       "after",
       "\nAll filters are optional. --min-year must not exceed --max-year.\n\nExamples:\n  fbs coaches seasons --coach-id 123\n  fbs coaches seasons --team \"Florida State\" --year 2025\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const options = suppliedLeafOptions<Partial<CoachSeasonsQuery>>(command);
+      const { minWins, maxWins, minLosses, maxLosses, ...options } = suppliedLeafOptions<
+        Partial<CoachSeasonsQuery> & {
+          minWins?: number; maxWins?: number; minLosses?: number; maxLosses?: number;
+        }
+      >(command);
+      const filters = localFilters({ minWins, maxWins, minLosses, maxLosses });
       const rawQuery = buildCoachSeasonsQuery(options);
       await withCommandContext("coaches seasons", rawQuery, async () => {
+        validateOrderedRange(minWins, maxWins, "min-wins", "max-wins");
+        validateOrderedRange(minLosses, maxLosses, "min-losses", "max-losses");
         const query = validateCoachSeasonsQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "coaches seasons",
@@ -86,6 +105,10 @@ function registerSeasons(coaches: Command, runtime: CommandRuntime): void {
           resultKey: "coach_seasons",
           request: (api) => asAnalyticsApi(api).coachSeasons(query),
           transform: transformCoachSeasons,
+          ...(filters === undefined ? {} : { filters }),
+          filter: (rows) => filterRows(rows, (row) =>
+            numberMatches(valueAt(row, "wins"), minWins, maxWins) &&
+            numberMatches(valueAt(row, "losses"), minLosses, maxLosses)),
         });
       });
     })
