@@ -52,6 +52,10 @@ function registerTeamSeason(team: Command, runtime: CommandRuntime): void {
     .option("--max-epa <number>", "Local filter: maximum total EPA (inclusive)", parseNumber)
     .option("--min-epa-allowed <number>", "Local filter: minimum total EPA allowed (inclusive)", parseNumber)
     .option("--max-epa-allowed <number>", "Local filter: maximum total EPA allowed (inclusive)", parseNumber)
+    .option("--min-passing-epa <number>", "Local filter: minimum passing EPA (inclusive)", parseNumber)
+    .option("--max-passing-epa <number>", "Local filter: maximum passing EPA (inclusive)", parseNumber)
+    .option("--min-rushing-epa <number>", "Local filter: minimum rushing EPA (inclusive)", parseNumber)
+    .option("--max-rushing-epa <number>", "Local filter: maximum rushing EPA (inclusive)", parseNumber)
     .option("--min-success-rate <number>", "Local filter: minimum total success rate (0-1, inclusive)", parseNumber)
     .option("--max-success-rate <number>", "Local filter: maximum total success rate (0-1, inclusive)", parseNumber)
     .option("--min-success-rate-allowed <number>", "Local filter: minimum total success rate allowed (0-1, inclusive)", parseNumber)
@@ -64,6 +68,7 @@ function registerTeamSeason(team: Command, runtime: CommandRuntime): void {
     .action(async (_options: unknown, command: Command) => {
       const {
         minEpa, maxEpa, minEpaAllowed, maxEpaAllowed,
+        minPassingEpa, maxPassingEpa, minRushingEpa, maxRushingEpa,
         minSuccessRate, maxSuccessRate, minSuccessRateAllowed, maxSuccessRateAllowed, ...options
       } = suppliedOptions<
         Partial<WepaTeamSeasonQuery> & {
@@ -71,6 +76,10 @@ function registerTeamSeason(team: Command, runtime: CommandRuntime): void {
           maxEpa?: number;
           minEpaAllowed?: number;
           maxEpaAllowed?: number;
+          minPassingEpa?: number;
+          maxPassingEpa?: number;
+          minRushingEpa?: number;
+          maxRushingEpa?: number;
           minSuccessRate?: number;
           maxSuccessRate?: number;
           minSuccessRateAllowed?: number;
@@ -79,12 +88,15 @@ function registerTeamSeason(team: Command, runtime: CommandRuntime): void {
       >(command);
       const filters = localFilters({
         minEpa, maxEpa, minEpaAllowed, maxEpaAllowed,
+        minPassingEpa, maxPassingEpa, minRushingEpa, maxRushingEpa,
         minSuccessRate, maxSuccessRate, minSuccessRateAllowed, maxSuccessRateAllowed,
       });
       const rawQuery = buildWepaTeamSeasonQuery(options);
       await withCommandContext("wepa team season", rawQuery, async () => {
         validateOrderedRange(minEpa, maxEpa, "min-epa", "max-epa");
         validateOrderedRange(minEpaAllowed, maxEpaAllowed, "min-epa-allowed", "max-epa-allowed");
+        validateOrderedRange(minPassingEpa, maxPassingEpa, "min-passing-epa", "max-passing-epa");
+        validateOrderedRange(minRushingEpa, maxRushingEpa, "min-rushing-epa", "max-rushing-epa");
         if ([minSuccessRate, maxSuccessRate, minSuccessRateAllowed, maxSuccessRateAllowed]
           .some((value) => value !== undefined && (value < 0 || value > 1))) {
           throw new QueryValidationError("Success rate bounds must be between 0 and 1 inclusive.");
@@ -104,6 +116,8 @@ function registerTeamSeason(team: Command, runtime: CommandRuntime): void {
             filterRows(
               rows,
               (row) =>
+                numberMatches(valueAt(row, "epa.passing"), minPassingEpa, maxPassingEpa) &&
+                numberMatches(valueAt(row, "epa.rushing"), minRushingEpa, maxRushingEpa) &&
                 numberMatches(valueAt(row, "epa.total"), minEpa, maxEpa) &&
                 numberMatches(valueAt(row, "epa_allowed.total"), minEpaAllowed, maxEpaAllowed) &&
                 numberMatches(valueAt(row, "success_rate.total"), minSuccessRate, maxSuccessRate) &&
