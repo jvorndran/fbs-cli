@@ -218,7 +218,7 @@ Use `player portal --year YEAR` with `--min-rating`/`--max-rating` and `--min-st
 
 | Command | Endpoint -> result key | Accepted flags | Required rule |
 |---|---|---|---|
-| `fbs wepa team season` | `/wepa/team/season` -> `team_metrics` | `--year`, `--team`, `--conference`, `--min-epa`, `--max-epa`, `--min-epa-allowed`, `--max-epa-allowed`, `--min-success-rate`, `--max-success-rate`, `--min-success-rate-allowed`, `--max-success-rate-allowed` | Optional; inclusive local total EPA and success-rate bounds for offense and defense. |
+| `fbs wepa team season` | `/wepa/team/season` -> `team_metrics` | `--year`, `--team`, `--conference`, `--min-epa`, `--max-epa`, `--min-epa-allowed`, `--max-epa-allowed`, `--min-passing-epa`, `--max-passing-epa`, `--min-rushing-epa`, `--max-rushing-epa`, `--min-success-rate`, `--max-success-rate`, `--min-success-rate-allowed`, `--max-success-rate-allowed` | Optional; inclusive local total EPA and success-rate bounds for offense and defense. |
 | `fbs wepa players passing` | `/wepa/players/passing` -> `player_metrics` | `--year`, `--team`, `--conference`, `--position`, `--player`, `--min-plays`, `--min-wepa`, `--max-wepa` | Optional. |
 | `fbs wepa players rushing` | `/wepa/players/rushing` -> `player_metrics` | `--year`, `--team`, `--conference`, `--position`, `--player`, `--min-plays`, `--min-wepa`, `--max-wepa` | Optional. |
 | `fbs wepa players kicking` | `/wepa/players/kicking` -> `kicker_ratings` | `--year`, `--team`, `--conference`, `--player`, `--min-attempts`, `--min-paar`, `--max-paar` | Optional. |
@@ -273,6 +273,8 @@ For `fbs ratings sp`, supplying both `--year` and `--team` makes one full-year p
 Kebab-case provider flags map directly to the corresponding CFBD camelCase query fields, such as `--game-id` -> `gameId`, `--player-id` -> `playerId`, `--season-type` -> `seasonType`, and `--exclude-garbage-time` -> `excludeGarbageTime`. Do not invent aliases.
 
 ### Local filters and output budget
+
+Use `wepa team season --year 2026 --min-passing-epa 0 --max-rushing-epa 0` to select teams by reported `epa.passing` and `epa.rushing`. Each split accepts inclusive finite signed `--min-`/`--max-` bounds. They combine with total EPA, success-rate bounds and provider scopes after the single unchanged request. Missing split values fail only active bounds for that field. Reversed ranges fail before a request; order, IDs, zero and full precision are preserved. Read applied bounds in `filters` and the match total in `count`.
 
 Use `wepa team season --year 2026 --min-epa 0 --max-epa-allowed 0` to select teams by reported total EPA and total EPA allowed. The inclusive `--min-epa`/`--max-epa` bounds apply to `epa.total`; `--min-epa-allowed`/`--max-epa-allowed` apply to `epa_allowed.total`. Bounds accept finite signed numbers and reject reversed ranges before requesting data. They combine locally after the single year/team/conference query. Missing totals fail only an active bound for that field. Results preserve provider order and precision; `filters` records the bounds and `count` reports matches. These are full-season provider metrics; the CLI does not derive a net rating or pregame forecast.
 
