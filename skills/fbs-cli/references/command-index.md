@@ -76,10 +76,12 @@ For historical ATS cohorts, use `teams ats --year YEAR --min-games 10 --min-avg-
 | `fbs metrics wp` | `--game-id`, `--period` |
 | `fbs metrics wp pregame` | `--year`, `--week`, `--team`, `--season-type`, `--home`, `--away`, `--min-home-win-probability`, `--max-home-win-probability` |
 | `fbs metrics fg ep` | None. |
-| `fbs wepa team season` | `--year`, `--team`, `--conference`, `--min-epa`, `--max-epa`, `--min-epa-allowed`, `--max-epa-allowed`, `--min-passing-epa`, `--max-passing-epa`, `--min-rushing-epa`, `--max-rushing-epa`, `--min-success-rate`, `--max-success-rate`, `--min-success-rate-allowed`, `--max-success-rate-allowed` |
+| `fbs wepa team season` | `--year`, `--team`, `--conference`, `--min-epa`, `--max-epa`, `--min-epa-allowed`, `--max-epa-allowed`, `--min-passing-epa`, `--max-passing-epa`, `--min-rushing-epa`, `--max-rushing-epa`, `--min-passing-epa-allowed`, `--max-passing-epa-allowed`, `--min-rushing-epa-allowed`, `--max-rushing-epa-allowed`, `--min-success-rate`, `--max-success-rate`, `--min-success-rate-allowed`, `--max-success-rate-allowed` |
 | `fbs wepa players passing` | `--year`, `--team`, `--conference`, `--position`, `--player`, `--min-plays`, `--min-wepa`, `--max-wepa` |
 | `fbs wepa players rushing` | `--year`, `--team`, `--conference`, `--position`, `--player`, `--min-plays`, `--min-wepa`, `--max-wepa` |
 | `fbs wepa players kicking` | `--year`, `--team`, `--conference`, `--player`, `--min-attempts`, `--min-paar`, `--max-paar` |
+
+Use `wepa team season --year 2026 --max-passing-epa-allowed 0 --max-rushing-epa-allowed 0` to select teams by reported `epa_allowed.passing` and `epa_allowed.rushing`. Each split accepts inclusive finite signed `--min-`/`--max-` bounds. They combine with offensive splits, total EPA, success-rate bounds and provider scopes after one unchanged request. Missing split values fail only active bounds for that field. Reversed ranges fail before a request; provider order, IDs, zero and precision are preserved. Applied bounds appear in `filters`.
 
 Use `wepa team season --year 2026 --min-passing-epa 0 --max-rushing-epa 0` to select teams by reported `epa.passing` and `epa.rushing`. Each split accepts inclusive finite signed `--min-`/`--max-` bounds. They combine with total EPA, success-rate bounds and provider scopes after the single unchanged request. Missing split values fail only active bounds for that field. Reversed ranges fail before a request; order, IDs, zero and full precision are preserved. Read applied bounds in `filters` and the match total in `count`.
 
