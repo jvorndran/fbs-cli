@@ -105,7 +105,7 @@ Recruiting players `--name TEXT` is a trimmed, case-insensitive literal substrin
 | `fbs ratings srs` | `--year`, `--team`, `--conference`, `--min-rating`, `--max-rating` |
 | `fbs ratings srs expanded` | `--year`, `--team`, `--conference`, `--min-rating`, `--max-rating`, `--classification` |
 | `fbs ratings elo` | `--year`, `--week`, `--team`, `--conference`, `--season-type`, `--min-elo`, `--max-elo` |
-| `fbs ratings fpi` | `--year`, `--team`, `--conference`, `--min-fpi`, `--max-fpi` |
+| `fbs ratings fpi` | `--year`, `--team`, `--conference`, `--min-fpi`, `--max-fpi`, `--min-overall-efficiency`, `--max-overall-efficiency`, `--min-offense-efficiency`, `--max-offense-efficiency`, `--min-defense-efficiency`, `--max-defense-efficiency`, `--min-special-teams-efficiency`, `--max-special-teams-efficiency` |
 | `fbs rankings` | `--year`, `--week`, `--poll`, `--season-type`, `--latest`, `--final` |
 | `fbs playoffs cfp` | `--year` |
 | `fbs playoffs cfp participants` | `--year` |
@@ -165,3 +165,5 @@ Use `fbs wepa team season --year 2026 --min-success-rate 0.4 --max-success-rate-
 Use `coaches seasons --year YEAR --min-wins 10 --max-losses 2` to inspect coach-season records with inclusive win/loss bounds. `--min-wins`, `--max-wins`, `--min-losses` and `--max-losses` accept non-negative safe integers; reversed ranges fail before a request. These local filters combine with the existing provider scopes without entering the single `/coaches/seasons` query. Missing measurements fail only a bound for that field; zero records, IDs, ties, precision and provider order are preserved. Read the applied bounds in `filters` and the filtered total in `count`.
 
 Use `wepa team season` with `--min-passing-downs-success-rate`/`--max-passing-downs-success-rate` and `--min-standard-downs-success-rate`/`--max-standard-downs-success-rate` to filter offensive splits. Append `-allowed` to each flag for defensive splits. These inclusive local bounds accept finite numbers from 0 to 1 and compose with total success-rate, EPA and provider filters. Missing split values fail only an active bound. Reversed or invalid bounds fail before a request. Provider query fields, row order and numerical precision stay unchanged; `filters` records the bounds and `count` reflects matching teams.
+
+Use `ratings fpi --year 2026 --min-offense-efficiency 80 --max-defense-efficiency 60` to filter reported unit efficiencies. Each of `overall`, `offense`, `defense` and `special-teams` supports inclusive `--min-<unit>-efficiency`/`--max-<unit>-efficiency` bounds from 0 to 100. These apply to the corresponding nested `efficiencies` values and combine with top-level FPI bounds and provider scopes after one unchanged request. Missing values fail only an active bound for that unit. Invalid or reversed ranges fail before a request. Provider order, zero and precision are preserved; `filters` records the bounds and `count` reports matches.

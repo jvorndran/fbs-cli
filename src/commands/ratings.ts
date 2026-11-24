@@ -20,6 +20,7 @@ import {
   validateSpRatingsQuery,
   validateSrsRatingsQuery,
 } from "../cfbd/query-builders-analytics";
+import { QueryValidationError } from "../errors";
 import type { CommandRuntime } from "../runtime";
 import { runEndpoint } from "../runtime";
 import {
@@ -284,20 +285,42 @@ function registerFpi(ratings: Command, runtime: CommandRuntime): void {
     .option("--team <name>", "Team name")
     .option("--year <number>", "Season year", parseInteger)
     .option("--min-fpi <number>", "Local filter: minimum FPI (inclusive)", parseNumber)
-    .option("--max-fpi <number>", "Local filter: maximum FPI (inclusive)", parseNumber);
+    .option("--max-fpi <number>", "Local filter: maximum FPI (inclusive)", parseNumber)
+    .option("--min-overall-efficiency <number>", "Local filter: minimum overall efficiency (0-100, inclusive)", parseNumber)
+    .option("--max-overall-efficiency <number>", "Local filter: maximum overall efficiency (0-100, inclusive)", parseNumber)
+    .option("--min-offense-efficiency <number>", "Local filter: minimum offense efficiency (0-100, inclusive)", parseNumber)
+    .option("--max-offense-efficiency <number>", "Local filter: maximum offense efficiency (0-100, inclusive)", parseNumber)
+    .option("--min-defense-efficiency <number>", "Local filter: minimum defense efficiency (0-100, inclusive)", parseNumber)
+    .option("--max-defense-efficiency <number>", "Local filter: maximum defense efficiency (0-100, inclusive)", parseNumber)
+    .option("--min-special-teams-efficiency <number>", "Local filter: minimum special-teams efficiency (0-100, inclusive)", parseNumber)
+    .option("--max-special-teams-efficiency <number>", "Local filter: maximum special-teams efficiency (0-100, inclusive)", parseNumber);
   fpi
     .addHelpText(
       "after",
       "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs ratings fpi --year 2025\n  fbs ratings fpi --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { minFpi, maxFpi, ...options } = suppliedOptions<
-        Partial<FpiRatingsQuery> & { minFpi?: number; maxFpi?: number }
+      const { minFpi, maxFpi, minOverallEfficiency, maxOverallEfficiency, minOffenseEfficiency, maxOffenseEfficiency, minDefenseEfficiency, maxDefenseEfficiency, minSpecialTeamsEfficiency, maxSpecialTeamsEfficiency, ...options } = suppliedOptions<
+        Partial<FpiRatingsQuery> & {
+          minFpi?: number; maxFpi?: number;
+          minOverallEfficiency?: number; maxOverallEfficiency?: number;
+          minOffenseEfficiency?: number; maxOffenseEfficiency?: number;
+          minDefenseEfficiency?: number; maxDefenseEfficiency?: number;
+          minSpecialTeamsEfficiency?: number; maxSpecialTeamsEfficiency?: number;
+        }
       >(command);
-      const filters = localFilters({ minFpi, maxFpi });
+      const filters = localFilters({ minFpi, maxFpi, minOverallEfficiency, maxOverallEfficiency, minOffenseEfficiency, maxOffenseEfficiency, minDefenseEfficiency, maxDefenseEfficiency, minSpecialTeamsEfficiency, maxSpecialTeamsEfficiency });
       const rawQuery = buildFpiRatingsQuery(options);
       await withCommandContext("ratings fpi", rawQuery, async () => {
         validateOrderedRange(minFpi, maxFpi, "min-fpi", "max-fpi");
+
+        if ([minOverallEfficiency, maxOverallEfficiency, minOffenseEfficiency, maxOffenseEfficiency, minDefenseEfficiency, maxDefenseEfficiency, minSpecialTeamsEfficiency, maxSpecialTeamsEfficiency].some(value => value !== undefined && (value < 0 || value > 100))) {
+          throw new QueryValidationError("Efficiency bounds must be between 0 and 100 inclusive.");
+        }
+        validateOrderedRange(minOverallEfficiency, maxOverallEfficiency, "min-overall-efficiency", "max-overall-efficiency");
+        validateOrderedRange(minOffenseEfficiency, maxOffenseEfficiency, "min-offense-efficiency", "max-offense-efficiency");
+        validateOrderedRange(minDefenseEfficiency, maxDefenseEfficiency, "min-defense-efficiency", "max-defense-efficiency");
+        validateOrderedRange(minSpecialTeamsEfficiency, maxSpecialTeamsEfficiency, "min-special-teams-efficiency", "max-special-teams-efficiency");
         const query = validateFpiRatingsQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "ratings fpi",
@@ -307,7 +330,13 @@ function registerFpi(ratings: Command, runtime: CommandRuntime): void {
           request: (api) => asAnalyticsApi(api).fpiRatings(query),
           transform: transformFpiRatings,
           ...(filters === undefined ? {} : { filters }),
-          filter: (rows) => filterRows(rows, (row) => numberMatches(row.fpi, minFpi, maxFpi)),
+          filter: (rows) => filterRows(rows, (row) =>
+              numberMatches(row.fpi, minFpi, maxFpi) &&
+              numberMatches(valueAt(row, "efficiencies.overall"), minOverallEfficiency, maxOverallEfficiency) &&
+              numberMatches(valueAt(row, "efficiencies.offense"), minOffenseEfficiency, maxOffenseEfficiency) &&
+              numberMatches(valueAt(row, "efficiencies.defense"), minDefenseEfficiency, maxDefenseEfficiency) &&
+              numberMatches(valueAt(row, "efficiencies.special_teams"), minSpecialTeamsEfficiency, maxSpecialTeamsEfficiency),
+            ),
         });
       });
     })
