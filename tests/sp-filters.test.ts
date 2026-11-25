@@ -96,7 +96,7 @@ describe("SP+ rating cohorts", () => {
     const sp = ratings.commands.find((command) => command.name() === "sp")!;
     expect(sp.helpInformation()).toContain("--min-rating");
     expect(sp.helpInformation()).toContain("--max-rating");
-    expect(sp.helpInformation()).toContain("Local filter: minimum SP+ rating (inclusive)");
+    expect(sp.helpInformation().replace(/\s+/g, " ")).toContain("Local filter: minimum SP+ rating (inclusive)");
   });
 });
 

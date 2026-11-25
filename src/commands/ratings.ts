@@ -105,26 +105,30 @@ function registerSp(ratings: Command, runtime: CommandRuntime): void {
     .option("--min-offense-rating <number>", "Local filter: minimum offense SP+ rating (inclusive)", parseNumber)
     .option("--max-offense-rating <number>", "Local filter: maximum offense SP+ rating (inclusive)", parseNumber)
     .option("--min-defense-rating <number>", "Local filter: minimum defense SP+ rating (inclusive)", parseNumber)
-    .option("--max-defense-rating <number>", "Local filter: maximum defense SP+ rating (inclusive)", parseNumber);
+    .option("--max-defense-rating <number>", "Local filter: maximum defense SP+ rating (inclusive)", parseNumber)
+    .option("--min-special-teams-rating <number>", "Local filter: minimum special-teams SP+ rating (inclusive)", parseNumber)
+    .option("--max-special-teams-rating <number>", "Local filter: maximum special-teams SP+ rating (inclusive)", parseNumber);
   sp
     .addHelpText(
       "after",
       "\nAt least one of --year or --team is required. When both are supplied, fbs filters the full-year response locally so provider ranking fields remain national.\n\nExamples:\n  fbs ratings sp --year 2025\n  fbs ratings sp --year 2025 --team \"Florida State\"\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { minRating, maxRating, minOffenseRating, maxOffenseRating, minDefenseRating, maxDefenseRating, ...options } = suppliedOptions<
+      const { minRating, maxRating, minOffenseRating, maxOffenseRating, minDefenseRating, maxDefenseRating, minSpecialTeamsRating, maxSpecialTeamsRating, ...options } = suppliedOptions<
         Partial<SpRatingsQuery> & {
           minRating?: number; maxRating?: number;
           minOffenseRating?: number; maxOffenseRating?: number;
           minDefenseRating?: number; maxDefenseRating?: number;
+          minSpecialTeamsRating?: number; maxSpecialTeamsRating?: number;
         }
       >(command);
-      const filters = localFilters({ minRating, maxRating, minOffenseRating, maxOffenseRating, minDefenseRating, maxDefenseRating });
+      const filters = localFilters({ minRating, maxRating, minOffenseRating, maxOffenseRating, minDefenseRating, maxDefenseRating, minSpecialTeamsRating, maxSpecialTeamsRating });
       const rawQuery = buildSpRatingsQuery(options);
       await withCommandContext("ratings sp", rawQuery, async () => {
         validateOrderedRange(minRating, maxRating, "min-rating", "max-rating");
         validateOrderedRange(minOffenseRating, maxOffenseRating, "min-offense-rating", "max-offense-rating");
         validateOrderedRange(minDefenseRating, maxDefenseRating, "min-defense-rating", "max-defense-rating");
+        validateOrderedRange(minSpecialTeamsRating, maxSpecialTeamsRating, "min-special-teams-rating", "max-special-teams-rating");
         const query = validateSpRatingsQuery(rawQuery);
         const preserveNationalRanks = query.year !== undefined && query.team !== undefined;
         const requestQuery: SpRatingsQuery =
@@ -150,7 +154,8 @@ function registerSp(ratings: Command, runtime: CommandRuntime): void {
           filter: (rows) => filterRows(rows, (row) =>
               numberMatches(row.rating, minRating, maxRating) &&
               numberMatches(valueAt(row, "offense.rating"), minOffenseRating, maxOffenseRating) &&
-              numberMatches(valueAt(row, "defense.rating"), minDefenseRating, maxDefenseRating)),
+              numberMatches(valueAt(row, "defense.rating"), minDefenseRating, maxDefenseRating) &&
+              numberMatches(valueAt(row, "special_teams.rating"), minSpecialTeamsRating, maxSpecialTeamsRating)),
         });
       });
     })
