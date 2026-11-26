@@ -185,6 +185,14 @@ function registerReturningProduction(
   player
     .command("returning")
     .description("Retrieve returning production metrics")
+    .option("--min-total-ppa <number>", "Local filter: minimum returning total PPA (inclusive)", parseNumber)
+    .option("--max-total-ppa <number>", "Local filter: maximum returning total PPA (inclusive)", parseNumber)
+    .option("--min-total-passing-ppa <number>", "Local filter: minimum returning passing PPA (inclusive)", parseNumber)
+    .option("--max-total-passing-ppa <number>", "Local filter: maximum returning passing PPA (inclusive)", parseNumber)
+    .option("--min-total-receiving-ppa <number>", "Local filter: minimum returning receiving PPA (inclusive)", parseNumber)
+    .option("--max-total-receiving-ppa <number>", "Local filter: maximum returning receiving PPA (inclusive)", parseNumber)
+    .option("--min-total-rushing-ppa <number>", "Local filter: minimum returning rushing PPA (inclusive)", parseNumber)
+    .option("--max-total-rushing-ppa <number>", "Local filter: maximum returning rushing PPA (inclusive)", parseNumber)
     .option("--year <number>", "Season year", parseInteger)
     .option("--team <name>", "Team name")
     .option("--conference <value>", "Conference abbreviation")
@@ -201,16 +209,25 @@ function registerReturningProduction(
     .action(async (_options: unknown, command: Command) => {
       const {
         minUsage, maxUsage, minPassingUsage, maxPassingUsage,
-        minRushingUsage, maxRushingUsage, ...options
+        minRushingUsage, maxRushingUsage,
+        minTotalPpa, maxTotalPpa, minTotalPassingPpa, maxTotalPassingPpa,
+        minTotalReceivingPpa, maxTotalReceivingPpa, minTotalRushingPpa, maxTotalRushingPpa,
+        ...options
       } = suppliedOptions<
         Partial<ReturningProductionQuery> & {
           minUsage?: number; maxUsage?: number;
           minPassingUsage?: number; maxPassingUsage?: number;
           minRushingUsage?: number; maxRushingUsage?: number;
+          minTotalPpa?: number; maxTotalPpa?: number;
+          minTotalPassingPpa?: number; maxTotalPassingPpa?: number;
+          minTotalReceivingPpa?: number; maxTotalReceivingPpa?: number;
+          minTotalRushingPpa?: number; maxTotalRushingPpa?: number;
         }
       >(command);
       const filters = localFilters({
         minUsage, maxUsage, minPassingUsage, maxPassingUsage, minRushingUsage, maxRushingUsage,
+        minTotalPpa, maxTotalPpa, minTotalPassingPpa, maxTotalPassingPpa,
+        minTotalReceivingPpa, maxTotalReceivingPpa, minTotalRushingPpa, maxTotalRushingPpa,
       });
       const rawQuery = buildReturningProductionQuery(options);
 
@@ -222,6 +239,10 @@ function registerReturningProduction(
         validateOrderedRange(minUsage, maxUsage, "min-usage", "max-usage");
         validateOrderedRange(minPassingUsage, maxPassingUsage, "min-passing-usage", "max-passing-usage");
         validateOrderedRange(minRushingUsage, maxRushingUsage, "min-rushing-usage", "max-rushing-usage");
+        validateOrderedRange(minTotalPpa, maxTotalPpa, "min-total-ppa", "max-total-ppa");
+        validateOrderedRange(minTotalPassingPpa, maxTotalPassingPpa, "min-total-passing-ppa", "max-total-passing-ppa");
+        validateOrderedRange(minTotalReceivingPpa, maxTotalReceivingPpa, "min-total-receiving-ppa", "max-total-receiving-ppa");
+        validateOrderedRange(minTotalRushingPpa, maxTotalRushingPpa, "min-total-rushing-ppa", "max-total-rushing-ppa");
         const query = validateReturningProductionQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "player returning",
@@ -234,7 +255,11 @@ function registerReturningProduction(
           filter: (rows) => filterRows(rows, (row) =>
             isObject(row) && numberMatches(valueAt(row, "usage"), minUsage, maxUsage) &&
             numberMatches(valueAt(row, "passing_usage"), minPassingUsage, maxPassingUsage) &&
-            numberMatches(valueAt(row, "rushing_usage"), minRushingUsage, maxRushingUsage)),
+            numberMatches(valueAt(row, "rushing_usage"), minRushingUsage, maxRushingUsage) &&
+            numberMatches(valueAt(row, "total_ppa"), minTotalPpa, maxTotalPpa) &&
+            numberMatches(valueAt(row, "total_passing_ppa"), minTotalPassingPpa, maxTotalPassingPpa) &&
+            numberMatches(valueAt(row, "total_receiving_ppa"), minTotalReceivingPpa, maxTotalReceivingPpa) &&
+            numberMatches(valueAt(row, "total_rushing_ppa"), minTotalRushingPpa, maxTotalRushingPpa)),
         });
       });
     })
