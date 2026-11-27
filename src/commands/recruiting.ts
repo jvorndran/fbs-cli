@@ -11,6 +11,7 @@ import {
   validateRecruitingPlayersQuery,
   validateRecruitingTeamsQuery,
 } from "../cfbd/query-builders-analytics";
+import { QueryValidationError } from "../errors";
 import type { CommandRuntime } from "../runtime";
 import { runEndpoint } from "../runtime";
 import {
@@ -38,6 +39,10 @@ function registerPlayers(recruiting: Command, runtime: CommandRuntime): void {
   const players = recruiting
     .command("players")
     .description("Retrieve player recruiting rankings")
+    .option("--min-height <number>", "Local filter: minimum provider height (inclusive)", parseNumber)
+    .option("--max-height <number>", "Local filter: maximum provider height (inclusive)", parseNumber)
+    .option("--min-weight <number>", "Local filter: minimum provider weight (inclusive)", parseNumber)
+    .option("--max-weight <number>", "Local filter: maximum provider weight (inclusive)", parseNumber)
     .addOption(
       new Option("--classification <value>", "Recruit classification").choices([
         ...RECRUIT_TYPES,
@@ -60,7 +65,8 @@ function registerPlayers(recruiting: Command, runtime: CommandRuntime): void {
       "\nAt least one of --year or --team is required.\n\nExamples:\n  fbs recruiting players --year 2026\n  fbs recruiting players --team \"Florida State\" --position QB\n",
     )
     .action(async (_options: unknown, command: Command) => {
-      const { name, minStars, maxStars, minRating, maxRating, minRanking, maxRanking, ...options } = suppliedOptions<
+      const { name, minStars, maxStars, minRating, maxRating, minRanking, maxRanking,
+        minHeight, maxHeight, minWeight, maxWeight, ...options } = suppliedOptions<
         Partial<RecruitingPlayersQuery> & {
           name?: string;
           minStars?: number;
@@ -69,15 +75,25 @@ function registerPlayers(recruiting: Command, runtime: CommandRuntime): void {
           maxRating?: number;
           minRanking?: number;
           maxRanking?: number;
+          minHeight?: number; maxHeight?: number;
+          minWeight?: number; maxWeight?: number;
         }
       >(command);
-      const filters = localFilters({ name, minStars, maxStars, minRating, maxRating, minRanking, maxRanking });
+      const filters = localFilters({
+        name, minStars, maxStars, minRating, maxRating, minRanking, maxRanking,
+        minHeight, maxHeight, minWeight, maxWeight,
+      });
       const nameSearch = (filters?.name as string | undefined)?.toLowerCase();
       const rawQuery = buildRecruitingPlayersQuery(options);
       await withCommandContext("recruiting players", rawQuery, async () => {
         validateOrderedRange(minStars, maxStars, "min-stars", "max-stars");
         validateOrderedRange(minRating, maxRating, "min-rating", "max-rating");
         validateOrderedRange(minRanking, maxRanking, "min-ranking", "max-ranking");
+        if ([minHeight, maxHeight, minWeight, maxWeight].some(value => value !== undefined && value < 0)) {
+          throw new QueryValidationError("Height and weight bounds must be non-negative.");
+        }
+        validateOrderedRange(minHeight, maxHeight, "min-height", "max-height");
+        validateOrderedRange(minWeight, maxWeight, "min-weight", "max-weight");
         const query = validateRecruitingPlayersQuery(rawQuery);
         await runEndpoint(runtime, {
           command: "recruiting players",
@@ -95,7 +111,9 @@ function registerPlayers(recruiting: Command, runtime: CommandRuntime): void {
                   (typeof row.name === "string" && row.name.toLowerCase().includes(nameSearch))) &&
                 numberMatches(valueAt(row, "stars"), minStars, maxStars) &&
                 numberMatches(valueAt(row, "rating"), minRating, maxRating) &&
-                numberMatches(valueAt(row, "ranking"), minRanking, maxRanking),
+                numberMatches(valueAt(row, "ranking"), minRanking, maxRanking) &&
+                numberMatches(valueAt(row, "height"), minHeight, maxHeight) &&
+                numberMatches(valueAt(row, "weight"), minWeight, maxWeight),
             ),
         });
       });
